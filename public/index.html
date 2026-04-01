@@ -12458,6 +12458,38 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd) {
   const assignments = [];
   const usedWorkerDays = new Map();
 
+  // === VIRTUAL SCHEDULE: tracks planned assignments to validate across days ===
+  // Key: 'year-month', Value: { workerId: [...shifts] } (shallow copy of real schedule)
+  const virtualSchedules = {};
+  function getVirtualSchedule(year, month) {
+    const key = `${year}-${month}`;
+    if (!virtualSchedules[key]) {
+      const real = scheduleData[key] || genSchedule(year, month);
+      virtualSchedules[key] = {};
+      for (const wId in real) {
+        virtualSchedules[key][wId] = [...real[wId]]; // shallow copy per worker
+      }
+    }
+    return virtualSchedules[key];
+  }
+
+  // Validate candidate against virtual schedule (includes prior plan assignments)
+  function isValidInPlan(wId, dayIdx, shift, year, month) {
+    const vSch = getVirtualSchedule(year, month);
+    if (!vSch[wId]) return false;
+    return canAssignShift(wId, dayIdx, shift, vSch);
+  }
+
+  // Count consecutive nights in virtual schedule (includes plan assignments)
+  function virtualConsecNights(wId, dayIdx, year, month) {
+    const vSch = getVirtualSchedule(year, month);
+    if (!vSch[wId]) return 0;
+    let count = 0;
+    for (let i = dayIdx - 1; i >= 0; i--) { if (vSch[wId][i] === 'N') count++; else break; }
+    for (let i = dayIdx + 1; i < vSch[wId].length; i++) { if (vSch[wId][i] === 'N') count++; else break; }
+    return count; // Does not include target day
+  }
+
   // Sort days by urgency (critical first, then fewest candidates)
   const sortedDays = [...days].sort((a, b) => {
     if (a.isCritical && !b.isCritical) return -1;
@@ -12469,7 +12501,17 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd) {
     const available = da.candidates.map(c => {
       const multiInfo = candidates.find(mc => mc.w.id === c.w.id);
       return { ...c, multiInfo };
-    }).filter(c => c.multiInfo);
+    }).filter(c => {
+      if (!c.multiInfo) return false;
+      // === CRITICAL: Validate against virtual schedule (includes prior plan assignments) ===
+      if (!isValidInPlan(c.w.id, da.dayIdx, da.workerShift, da.year, da.month)) return false;
+      // Extra night check: if assigning N, count consecutive in virtual schedule
+      if (da.workerShift === 'N' || da.effShift === 'N') {
+        const consecInPlan = virtualConsecNights(c.w.id, da.dayIdx, da.year, da.month);
+        if (consecInPlan + 1 > RULES.MAX_CONSECUTIVE_NIGHTS) return false; // +1 for this day
+      }
+      return true;
+    });
 
     if (available.length === 0) {
       assignments.push({ dayAnalysis: da, candidate: null, reason: 'Sin candidatos disponibles' });
@@ -12481,6 +12523,12 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd) {
       let stratScore = c.score;
       let whyChosen = [];
 
+      // Penalize candidates approaching night limit in virtual schedule
+      if (da.workerShift === 'N' || da.effShift === 'N') {
+        const consecInPlan = virtualConsecNights(c.w.id, da.dayIdx, da.year, da.month);
+        if (consecInPlan >= 1) { stratScore += 15; whyChosen.push(`Ya ${consecInPlan}N previas en plan`); }
+      }
+
       if (strategy === 'multiday') {
         if (c.multiInfo && c.multiInfo.coversMultiple) { stratScore -= 8; whyChosen.push('Cubre multiples dias'); }
         if (timesUsed > 0) { stratScore -= 3; whyChosen.push('Ya asignado (consistencia)'); }
@@ -12489,19 +12537,15 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd) {
         const nightDiff = c.stats.n - avgN;
         const hourDiff = c.stats.h - avgH;
         stratScore += nightDiff * 3 + hourDiff / 50;
-        // v3.0: Weekend equity in balance strategy
         const wkndDiff = c.stats.wknd - avgWknd;
         if (wkndDiff > 1) { stratScore += wkndDiff * 1.5; whyChosen.push(`+${wkndDiff.toFixed(0)} fds`); }
       } else if (strategy === 'impact') {
-        // v3.0 NEW: Minimize future impact strategy
         const impact = c.futureImpact || simulateFutureImpact(c.w.id, da.dayIdx, da.month, da.year, da.effShift);
         stratScore += impact.impactScore * 2;
         if (impact.impactScore === 0) { stratScore -= 5; whyChosen.push('Sin impacto futuro'); }
         else { whyChosen.push(`Impacto futuro: ${impact.impactScore}pts`); }
-        // Also factor consecutive days heavily
         const consec = c.consecutiveDays || 0;
         if (consec >= 4) { stratScore += 12; whyChosen.push(`Racha ${consec}d`); }
-        // Extras penalty
         const extras = c.extrasCoverage || 0;
         if (extras >= 3) { stratScore += extras * 2; whyChosen.push(`${extras} extras`); }
       }
@@ -12513,8 +12557,13 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd) {
     available.sort((a, b) => a.stratScore - b.stratScore);
     const chosen = available[0];
 
+    // === UPDATE VIRTUAL SCHEDULE with this assignment ===
+    const vSch = getVirtualSchedule(da.year, da.month);
+    if (vSch[chosen.w.id]) {
+      vSch[chosen.w.id][da.dayIdx] = da.workerShift; // Mark candidate as working this shift
+    }
+
     const multiInfo = candidates.find(mc => mc.w.id === chosen.w.id);
-    // v3.0: Build detailed per-candidate explanation
     const alternates = available.slice(1, 3).map(a => a.w.name);
     let chosenReason = chosen.whyChosen.length > 0 ? chosen.whyChosen.join(', ') : 'Menor carga global';
     if (chosen.consecutiveDays === 0) chosenReason += ', viene de descanso';
