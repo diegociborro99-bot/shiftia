@@ -11818,9 +11818,9 @@ function buildAICoverageAnalysis(w, days, action) {
 
   // Step 0: Rules summary (v3.1 NEW)
   reasoningSteps.push({
-    label: 'Reglas de convenio activas',
+    title: 'Reglas de convenio activas',
     detail: `Máx ${RULES.MAX_CONSECUTIVE_NIGHTS} noches consecutivas · Descanso obligatorio tras noche (no M/T) · Equidad de fines de semana · Máx 5 días consecutivos de trabajo · Conciliación familiar respetada`,
-    icon: '⚖️'
+    icon: 'info'
   });
 
   const offDays = dayAnalyses.filter(da => da.isOff);
