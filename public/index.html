@@ -13145,7 +13145,7 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWor
         const candidate = available[checkIdx];
         const blocked = hasLookaheadBlockage(candidate.w.id, da.dayIdx, days, da.month, da.year);
         if (blocked) {
-          chosenReason = `Descartado ${candidate.w.name} para día ${da.dayIdx + 1}: dejaría sin opciones día${s === 'N' ? ' siguiente' : 's posteriores'}`;
+          chosenReason = `Descartado ${candidate.w.name} para día ${da.dayIdx + 1}: dejaría sin opciones días posteriores`;
           continue;
         }
         tentative = candidate;
@@ -14403,27 +14403,34 @@ function calculateViolations(wId, dayIdx, shift, year, month) {
 function hasLookaheadBlockage(wId, dayIdx, days, month, year) {
   const key = `${year}-${month}`;
   const sch = scheduleData[key] || genSchedule(year, month);
+  if (!sch) return false;
 
   // Check if there are more days to cover after this one
   const remainingDays = days.filter(d => d.dayIdx > dayIdx);
-  if (remainingDays.length === 0) return false; // No future days, no blockage possible
+  if (remainingDays.length === 0) return false;
 
   // Simulate assignment and check if next days have 0 candidates
   const simSch = {};
   for (const wid in sch) simSch[wid] = [...sch[wid]];
-  simSch[wId][dayIdx] = 'N'; // Simulate
+  if (simSch[wId]) simSch[wId][dayIdx] = 'N';
 
   // Check next 2 days
   for (let i = 0; i < Math.min(2, remainingDays.length); i++) {
     const nextDay = remainingDays[i];
     let hasCandidate = false;
 
-    workers.forEach(w => {
-      if (!canWorkInPlan(w.id, nextDay.dayIdx, nextDay.workerShift, year, month)) return;
-      hasCandidate = true;
-    });
+    for (const w of workers) {
+      if (w.id === wId) continue;
+      const cs = simSch[w.id] ? simSch[w.id][nextDay.dayIdx] : '';
+      const isOff = !cs || cs === '' || cs === 'D';
+      if (!isOff) continue;
+      if (canAssignShift(w.id, nextDay.dayIdx, nextDay.workerShift, simSch)) {
+        hasCandidate = true;
+        break;
+      }
+    }
 
-    if (!hasCandidate) return true; // Blockage detected
+    if (!hasCandidate) return true;
   }
 
   return false;
