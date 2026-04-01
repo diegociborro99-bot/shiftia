@@ -10650,16 +10650,17 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
 
     if (!canAssignShift(w.id, day, shiftNeeded, sch)) return;
 
+    // --- AI Engine v3.0: Enhanced scoring ---
+    let score = 0;
+    const scoreBreakdown = [];
+
     // === Harden night rules (v3.1) ===
-    // If assigning a night shift, check if they would reach 2 consecutive (the max)
     if (shiftNeeded === 'N') {
       const consecN = getConsecutiveNights(w.id, day, month, year);
       if (consecN === 1) {
-        // Would create exactly 2 consecutive nights (the max) — still allowed but penalize
         scoreBreakdown.push('Llegaría a 2N consecutivas');
-        score += 5; // Add penalty
+        score += 5;
       } else if (consecN >= 2) {
-        // Would exceed max — should have been caught by canAssignShift but be explicit
         return;
       }
     }
@@ -10667,7 +10668,7 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
     // HARD FILTER: If worker had N the day before, they can ONLY be offered N shifts
     if (day > 0 && sch[w.id][day - 1] === 'N') {
       if (shiftNeeded !== 'N') {
-        return; // Cannot offer M or T after night
+        return;
       }
     }
 
@@ -10676,10 +10677,6 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
     const avgN = analysis ? analysis.avgN : 0;
     const avgH = analysis ? analysis.avgH : 0;
     const avgWknd = analysis ? analysis.stats.reduce((a, x) => a + x.s.wknd, 0) / analysis.stats.length : 0;
-
-    // --- AI Engine v3.0: Enhanced scoring ---
-    let score = 0;
-    const scoreBreakdown = [];
 
     // (1) Base workload: nights + hours vs team average
     const nightDiff = stats.n - avgN;
@@ -12165,12 +12162,19 @@ function analyzeGestor() {
 
   // Simulate brief thinking delay then run analysis
   setTimeout(() => {
-    if (action === 'cambio') {
-      resultsDiv.innerHTML = buildSwapAnalysis(w, daysToProcess[0]);
-    } else {
-      resultsDiv.innerHTML = buildAICoverageAnalysis(w, daysToProcess, action);
+    try {
+      if (action === 'cambio') {
+        resultsDiv.innerHTML = buildSwapAnalysis(w, daysToProcess[0]);
+      } else {
+        resultsDiv.innerHTML = buildAICoverageAnalysis(w, daysToProcess, action);
+      }
+      resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      console.error('Gestor AI Error:', err);
+      resultsDiv.innerHTML = `<div style="padding:20px;background:#fee;border:1px solid #c44;border-radius:12px;color:#900;font-size:13px;">
+        <strong>Error en el motor IA:</strong> ${err.message}<br><small>${err.stack}</small>
+      </div>`;
     }
-    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 800);
 }
 
