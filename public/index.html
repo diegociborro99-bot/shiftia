@@ -12098,46 +12098,59 @@ function buildAICoverageAnalysis(w, days, action) {
         ${renderConfidenceGauge(confPct)}
       </div>`;
 
-      // Day-by-day assignments
+      // Day-by-day assignments — grouped by consecutive same-candidate
+      const grouped = [];
       plan.assignments.forEach(a => {
-        const da = a.dayAnalysis;
-        const dayLabel = da.dayName + ' ' + da.dayDate.getDate() + '/' + (da.month + 1);
+        const candId = a.candidate ? a.candidate.w.id : null;
+        const last = grouped[grouped.length - 1];
+        if (last && last.candId === candId && candId !== null) {
+          last.items.push(a);
+        } else {
+          grouped.push({ candId, items: [a] });
+        }
+      });
+
+      grouped.forEach(group => {
+        const first = group.items[0];
+        const da = first.dayAnalysis;
         const shiftColor = da.effShift === 'M' ? '#2e8b7a' : da.effShift === 'T' ? '#4a9dd4' : da.effShift === 'N' ? '#c5a832' : 'var(--text3)';
 
-        if (!a.candidate) {
-          html += `<div class="plan-day-row">
-            <span class="plan-day-date">${dayLabel}</span>
-            <span class="plan-day-arrow">—</span>
-            <span class="plan-day-candidate" style="color:var(--text3);">Sin candidatos disponibles</span>
-            <span class="plan-day-status status-crit">Sin cubrir</span>
-          </div>`;
+        if (!first.candidate) {
+          // Uncovered days — show each
+          group.items.forEach(a => {
+            const d = a.dayAnalysis;
+            const dl = d.dayName + ' ' + d.dayDate.getDate() + '/' + (d.month + 1);
+            html += `<div class="plan-day-row">
+              <span class="plan-day-date">${dl}</span>
+              <span class="plan-day-arrow">—</span>
+              <span class="plan-day-candidate" style="color:var(--text3);">Sin candidatos disponibles</span>
+              <span class="plan-day-status status-crit">Sin cubrir</span>
+            </div>`;
+          });
         } else {
-          const statusClass = da.isCritical ? 'status-crit' : (da.covStillOk ? 'status-ok' : 'status-warn');
-          const statusText = da.isCritical ? 'Critico' : (da.covStillOk ? 'Recomendado' : 'Necesario');
-          const multiLabel = a.candidate.coversMultiple ? `<span class="plan-multi-badge">Cubre ${a.candidate.coverageCount} dias</span>` : '';
-
-          // Check for forbidden combinations and cascade needs per assignment
-          const assignForbidden = detectForbiddenCombinations(a.candidate.w.id, da.dayIdx, da.workerShift, da.month, da.year);
-          const assignCascade = detectCascadeNeeds(a.candidate.w.id, da.dayIdx, da.workerShift, w.id, da.month, da.year);
-
-          // Calculate fatigue score for candidate
-          const candStats = getWorkerStats(a.candidate.w.id);
-          const fatigueScore = candStats && candStats.fatigue ? candStats.fatigue : 0;
-          let fatigueDotColor = '';
-          if (fatigueScore > 80) fatigueDotColor = '#cc4444';
-          else if (fatigueScore > 60) fatigueDotColor = '#e67e22';
-          else if (fatigueScore > 40) fatigueDotColor = '#f39c12';
-          const fatigueHtml = fatigueScore > 40 ? `<span class="fatigue-dot" style="background:${fatigueDotColor};" title="Fatiga: ${fatigueScore.toFixed(0)}%"></span>` : '';
+          // Grouped covered days — single row per candidate
+          const dayLabels = group.items.map(a => {
+            const d = a.dayAnalysis;
+            return d.dayName.substring(0, 2) + ' ' + d.dayDate.getDate() + '/' + (d.month + 1);
+          });
+          const dayStr = dayLabels.length === 1 ? dayLabels[0] : dayLabels[0] + ' → ' + dayLabels[dayLabels.length - 1] + ' (' + dayLabels.length + 'd)';
+          const anyCritical = group.items.some(a => a.dayAnalysis.isCritical);
+          const allOk = group.items.every(a => a.dayAnalysis.covStillOk);
+          const statusClass = anyCritical ? 'status-crit' : (allOk ? 'status-ok' : 'status-warn');
+          const statusText = anyCritical ? 'Critico' : (allOk ? 'Recomendado' : 'Necesario');
 
           html += `<div class="plan-day-row">
-            <span class="plan-day-date">${dayLabel}</span>
+            <span class="plan-day-date">${dayStr}</span>
             <span class="plan-day-shift" style="background:${shiftColor}15;color:${shiftColor};">${da.workerShift}</span>
             <span class="plan-day-arrow">→</span>
-            <span class="plan-day-candidate">${a.candidate.w.name} ${fatigueHtml} ${multiLabel}</span>
+            <span class="plan-day-candidate">${first.candidate.w.name}${dayLabels.length > 1 ? ' <span style="font-size:10px;color:var(--accent);font-weight:500;">×' + dayLabels.length + ' días</span>' : ''}</span>
             <span class="plan-day-status ${statusClass}">${statusText}</span>
           </div>`;
 
-          // Show inline warnings for this assignment
+          // Warnings only for first item (avoid repetition)
+          const assignForbidden = detectForbiddenCombinations(first.candidate.w.id, da.dayIdx, da.workerShift, da.month, da.year);
+          const assignCascade = detectCascadeNeeds(first.candidate.w.id, da.dayIdx, da.workerShift, w.id, da.month, da.year);
+
           if (assignForbidden.length > 0) {
             html += `<div style="margin:-4px 0 6px 24px;padding:6px 10px;background:rgba(204,68,68,0.08);border-left:3px solid var(--danger);border-radius:0 6px 6px 0;font-size:10px;color:#cc4444;">
               <strong>⚠ Combinacion prohibida:</strong> ${assignForbidden.map(f => f.desc).join('; ')}
@@ -12147,7 +12160,7 @@ function buildAICoverageAnalysis(w, days, action) {
             assignCascade.cascadeDetails.forEach(c => {
               const candNames = c.candidates.length > 0 ? c.candidates.map(x => x.w.name + ' (score ' + x.score.toFixed(0) + ')').join(', ') : '<em>sin candidatos</em>';
               html += `<div style="margin:-4px 0 6px 24px;padding:6px 10px;background:rgba(230,126,34,0.08);border-left:3px solid #e67e22;border-radius:0 6px 6px 0;font-size:10px;color:#b5651d;">
-                <strong>🔄 Cascada:</strong> ${a.candidate.w.name} deja turno <strong>${c.gapShift}</strong> → ${c.gapWorker.type === 'enf' ? 'enfermeria' : 'tecnicos'} queda ${c.have}/${c.needed}. Sugerencias: ${candNames}
+                <strong>🔄 Cascada:</strong> ${first.candidate.w.name} deja turno <strong>${c.gapShift}</strong> → ${c.gapWorker.type === 'enf' ? 'enfermeria' : 'tecnicos'} queda ${c.have}/${c.needed}. Sugerencias: ${candNames}
               </div>`;
             });
           }
