@@ -7943,7 +7943,6 @@ function integratePDFData(parsedData, matchedWorker) {
   matchedWorker.scheduleImported = true;
 
   // Restore persistent worker memory (rules survive reimport)
-  const wId = matchedWorker.id;
   if (workerMemory[wId] && workerMemory[wId].rules) {
     Object.assign(matchedWorker.rules, workerMemory[wId].rules);
     console.log('[Shiftia] Memoria restaurada para', matchedWorker.name, '— reglas personalizadas preservadas');
