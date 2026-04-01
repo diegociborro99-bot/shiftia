@@ -3783,60 +3783,74 @@ table.schedule th.month-total-header {
   margin-bottom: 24px;
 }
 
-.heatmap-grid {
-  display: grid;
-  grid-template-columns: 120px repeat(31, 1fr);
-  gap: 2px;
-  background: var(--surface2);
-  padding: 12px;
-  border-radius: 12px;
-  min-width: 100%;
-  font-size: 11px;
-}
+/* ===== PREMIUM HEATMAP ===== */
+.hm-wrap { background: var(--surface); border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04); overflow: hidden; }
+.hm-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--surface2); }
+.hm-toolbar-left { display: flex; align-items: center; gap: 12px; }
+.hm-month-nav { display: flex; align-items: center; gap: 6px; }
+.hm-month-nav button { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--surface2); background: var(--bg); color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; font-size: 13px; }
+.hm-month-nav button:hover { background: var(--surface2); color: var(--text1); }
+.hm-month-label { font-size: 15px; font-weight: 600; color: var(--text1); min-width: 140px; text-align: center; }
+.hm-legend { display: flex; gap: 12px; flex-wrap: wrap; }
+.hm-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); font-weight: 500; }
+.hm-legend-dot { width: 10px; height: 10px; border-radius: 3px; }
 
-.heatmap-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 32px;
-  border-radius: 6px;
-  background: white;
-  border: 1px solid var(--surface2);
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
+.hm-scroll { overflow-x: auto; overflow-y: auto; max-height: 75vh; }
+.hm-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.hm-scroll::-webkit-scrollbar-thumb { background: var(--text3); border-radius: 3px; opacity: 0.4; }
 
-.heatmap-cell:hover {
-  transform: scale(1.05);
-  box-shadow: var(--shadow);
-}
+.hm-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: max-content; }
+.hm-table thead { position: sticky; top: 0; z-index: 2; }
+.hm-table thead th { background: var(--bg); padding: 0; border-bottom: 2px solid var(--surface2); }
+.hm-table thead .hm-day-col { min-width: 36px; width: 36px; text-align: center; padding: 8px 2px; }
+.hm-day-num { font-size: 13px; font-weight: 700; color: var(--text1); line-height: 1.2; }
+.hm-day-name { font-size: 9px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+.hm-day-col.hm-weekend .hm-day-num { color: #e67e22; }
+.hm-day-col.hm-today { background: rgba(41,128,185,0.08); border-radius: 8px 8px 0 0; }
+.hm-day-col.hm-today .hm-day-num { color: #2980b9; }
+.hm-day-col.hm-today .hm-day-name { color: #2980b9; }
 
-.heatmap-header {
-  background: var(--surface);
-  font-weight: 600;
-  color: var(--text2);
-}
+.hm-table thead .hm-name-col { min-width: 150px; width: 150px; text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; position: sticky; left: 0; z-index: 3; background: var(--bg); }
 
-.heatmap-worker-name {
-  font-weight: 600;
-  color: var(--text1);
-  background: var(--surface);
-  text-align: left;
-  padding: 0 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.hm-table tbody tr { transition: background 0.15s; }
+.hm-table tbody tr:hover { background: rgba(41,128,185,0.03); }
+.hm-table tbody tr:hover .hm-worker { background: rgba(41,128,185,0.06); }
 
-.heatmap-cell.M { background: #3498db; color: white; }
-.heatmap-cell.T { background: #e67e22; color: white; }
-.heatmap-cell.N { background: #9b59b6; color: white; }
-.heatmap-cell.D { background: #95a5a6; color: white; }
-.heatmap-cell.V { background: #27ae60; color: white; }
-.heatmap-cell.empty { background: #ecf0f1; }
-.heatmap-cell.today { border: 2px solid #f39c12; box-shadow: 0 0 8px rgba(243,156,18,0.4); }
-.heatmap-cell.other-shift { background: #bdc3c7; color: white; }
+.hm-worker { position: sticky; left: 0; z-index: 1; background: var(--bg); padding: 6px 14px; border-bottom: 1px solid var(--surface2); white-space: nowrap; }
+.hm-worker-inner { display: flex; align-items: center; gap: 8px; }
+.hm-worker-avatar { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; flex-shrink: 0; }
+.hm-worker-avatar.enf { background: linear-gradient(135deg, #3498db, #2980b9); }
+.hm-worker-avatar.tec { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+.hm-worker-avatar.micro { background: linear-gradient(135deg, #1abc9c, #16a085); }
+.hm-worker-name { font-size: 12px; font-weight: 600; color: var(--text1); max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
+.hm-worker-type { font-size: 9px; font-weight: 500; color: var(--text3); }
+
+.hm-td { padding: 3px 1px; border-bottom: 1px solid var(--surface2); text-align: center; vertical-align: middle; }
+.hm-td.hm-today-col { background: rgba(41,128,185,0.04); }
+
+.hm-shift { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 26px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.02em; transition: all 0.15s; cursor: default; position: relative; }
+.hm-shift:hover { transform: scale(1.15); z-index: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+
+/* Shift colors — soft, rounded, professional */
+.hm-shift.s-M, .hm-shift.s-MR, .hm-shift.s-M7H, .hm-shift.s-M6R, .hm-shift.s-M55 { background: #dbeafe; color: #1e40af; }
+.hm-shift.s-T { background: #ffedd5; color: #9a3412; }
+.hm-shift.s-N { background: #ede9fe; color: #5b21b6; }
+.hm-shift.s-D { background: var(--surface2); color: var(--text3); font-weight: 500; opacity: 0.6; }
+.hm-shift.s-empty { background: transparent; color: transparent; }
+.hm-shift.s-VAC, .hm-shift.s-VAA, .hm-shift.s-VAN { background: #d1fae5; color: #065f46; }
+.hm-shift.s-BAJ { background: #fecaca; color: #991b1b; }
+.hm-shift.s-LD, .hm-shift.s-LAC { background: #fef3c7; color: #92400e; }
+.hm-shift.s-CJ, .hm-shift.s-FN { background: #e0f2fe; color: #075985; }
+.hm-shift.s-INT, .hm-shift.s-FOR, .hm-shift.s-HS, .hm-shift.s-HF { background: #f3e8ff; color: #6b21a8; }
+.hm-shift.s-other { background: #f1f5f9; color: #475569; }
+
+/* Summary column */
+.hm-summary { font-size: 10px; color: var(--text3); font-weight: 500; padding: 4px 6px; text-align: center; border-bottom: 1px solid var(--surface2); }
+.hm-summary-head { font-size: 10px; font-weight: 600; color: var(--text3); padding: 8px 4px; text-align: center; background: var(--bg); border-bottom: 2px solid var(--surface2); }
+
+/* Group separator rows */
+.hm-group-row td { background: var(--surface2); padding: 4px 14px; font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; border: none; }
+.hm-group-row .hm-worker { background: var(--surface2); }
 
 /* ========== FEATURE: METRICS DASHBOARD ========== */
 .metrics-grid {
@@ -5460,18 +5474,7 @@ html {
 
     <!-- Heatmap Calendar -->
     <div class="view-panel" id="heatmapPanel">
-      <div style="max-width:100%;margin:0 auto;">
-        <h2 style="font-size:24px;font-weight:300;margin-bottom:8px;">Mapa de Cobertura</h2>
-        <p style="color:var(--text2);font-size:13px;margin-bottom:24px;line-height:1.6;">
-          Visualización mensual de turnos por trabajador. Azul=Mañana, Naranja=Tarde, Morado=Noche, Gris=Descanso, Verde=Vacaciones
-        </p>
-        <div class="month-nav">
-          <button class="nav-btn" id="heatmapPrevMonth">◀</button>
-          <button class="mini-cal-btn" id="heatmapMonthDisplay" style="cursor:pointer;">Marzo 2026</button>
-          <button class="nav-btn" id="heatmapNextMonth">▶</button>
-        </div>
-        <div class="heatmap-container" id="heatmapContainer"></div>
-      </div>
+      <div id="heatmapContainer"></div>
     </div>
 
     <!-- Metrics Dashboard -->
@@ -14126,50 +14129,121 @@ document.addEventListener('keydown', (e) => {
 // ============= FEATURE 1: HEATMAP CALENDAR =============
 function renderHeatmap() {
   const container = document.getElementById('heatmapContainer');
-  const monthDisplay = document.getElementById('heatmapMonthDisplay');
   const year = appState.currentMonth.getFullYear();
   const month = appState.currentMonth.getMonth();
-
-  monthDisplay.textContent = getMonthName(appState.currentMonth) + ' ' + year;
-
   const key = `${year}-${month}`;
   const sch = scheduleData[key] || genSchedule(year, month);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = new Date().toDateString();
+  const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const dayNames = ['D','L','M','X','J','V','S'];
 
-  let html = '<div class="heatmap-grid">';
+  function shiftCls(s) {
+    if (!s || s === '') return 's-empty';
+    if (['M','MR','M7H','M6R','M55'].includes(s)) return 's-M';
+    if (s === 'T') return 's-T';
+    if (s === 'N') return 's-N';
+    if (s === 'D') return 's-D';
+    if (['VAC','VAA','VAN'].includes(s)) return 's-VAC';
+    if (s === 'BAJ') return 's-BAJ';
+    if (['LD','LAC'].includes(s)) return 's-LD';
+    if (['CJ','FN'].includes(s)) return 's-CJ';
+    if (['INT','FOR','HS','HF'].includes(s)) return 's-INT';
+    return 's-other';
+  }
 
-  // Header row
-  html += '<div class="heatmap-cell heatmap-header" style="grid-column:1;"></div>';
+  function shiftLabel(s) {
+    if (!s || s === '' || s === 'D') return '';
+    return s;
+  }
+
+  // Group workers by type
+  const groups = [
+    { label: 'Enfermería', workers: workers.filter(w => w.type === 'enf') },
+    { label: 'Técnicos Lab', workers: workers.filter(w => w.type === 'tec' && w.area !== 'micro') },
+    { label: 'Microbiología', workers: workers.filter(w => w.area === 'micro') }
+  ].filter(g => g.workers.length > 0);
+
+  let html = `<div class="hm-wrap">`;
+
+  // Toolbar
+  html += `<div class="hm-toolbar">
+    <div class="hm-toolbar-left">
+      <div class="hm-month-nav">
+        <button id="heatmapPrevMonth">◂</button>
+        <div class="hm-month-label" id="heatmapMonthDisplay">${monthNames[month]} ${year}</div>
+        <button id="heatmapNextMonth">▸</button>
+      </div>
+    </div>
+    <div class="hm-legend">
+      <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#dbeafe;border:1px solid #93c5fd;"></div>Mañana</div>
+      <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#ffedd5;border:1px solid #fdba74;"></div>Tarde</div>
+      <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#ede9fe;border:1px solid #c4b5fd;"></div>Noche</div>
+      <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#d1fae5;border:1px solid #6ee7b7;"></div>Vacaciones</div>
+      <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#fecaca;border:1px solid #fca5a5;"></div>Baja</div>
+    </div>
+  </div>`;
+
+  // Table
+  html += `<div class="hm-scroll"><table class="hm-table"><thead><tr>`;
+  html += `<th class="hm-name-col">Trabajador</th>`;
+
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(year, month, d);
     const dow = date.getDay();
-    const dayName = ['Dom','Lun','Mar','Mié','Jue','Vie','Sab'][dow];
-    const isToday = date.toDateString() === new Date().toDateString();
-    html += `<div class="heatmap-cell heatmap-header ${isToday ? 'today' : ''}" style="grid-column:${d+1};">${d}<br><small>${dayName}</small></div>`;
+    const isWknd = dow === 0 || dow === 6;
+    const isToday = date.toDateString() === todayStr;
+    html += `<th class="hm-day-col ${isWknd ? 'hm-weekend' : ''} ${isToday ? 'hm-today' : ''}">
+      <div class="hm-day-num">${d}</div>
+      <div class="hm-day-name">${dayNames[dow]}</div>
+    </th>`;
   }
+  html += `<th class="hm-summary-head">N</th><th class="hm-summary-head">H</th>`;
+  html += `</tr></thead><tbody>`;
 
-  // Worker rows
-  workers.forEach(w => {
-    html += `<div class="heatmap-cell heatmap-worker-name" style="grid-column:1;">${w.name}</div>`;
-    const workerSch = sch[w.id] || [];
-    for (let d = 0; d < daysInMonth; d++) {
-      const shift = workerSch[d] || '';
-      const shiftClass = shift || 'empty';
-      const isToday = new Date(year, month, d + 1).toDateString() === new Date().toDateString();
-      html += `<div class="heatmap-cell ${shiftClass} ${isToday ? 'today' : ''}" style="grid-column:${d+2};" title="${w.name} — ${shift || 'Descanso'}">${shift}</div>`;
-    }
+  groups.forEach(group => {
+    // Group separator
+    html += `<tr class="hm-group-row"><td class="hm-worker" colspan="${daysInMonth + 3}">${group.label} (${group.workers.length})</td></tr>`;
+
+    group.workers.forEach(w => {
+      const workerSch = sch[w.id] || [];
+      const initials = w.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      const avatarCls = w.area === 'micro' ? 'micro' : w.type;
+      const stats = getWorkerStats(w.id);
+
+      html += `<tr><td class="hm-worker"><div class="hm-worker-inner">
+        <div class="hm-worker-avatar ${avatarCls}">${initials}</div>
+        <div><div class="hm-worker-name">${w.name}</div></div>
+      </div></td>`;
+
+      for (let d = 0; d < daysInMonth; d++) {
+        const shift = workerSch[d] || '';
+        const cls = shiftCls(shift);
+        const label = shiftLabel(shift);
+        const date = new Date(year, month, d + 1);
+        const isToday = date.toDateString() === todayStr;
+        html += `<td class="hm-td ${isToday ? 'hm-today-col' : ''}" title="${w.name} · ${date.getDate()}/${month+1} · ${shift || 'Descanso'}">
+          <div class="hm-shift ${cls}">${label}</div>
+        </td>`;
+      }
+
+      // Summary: nights and hours
+      html += `<td class="hm-summary">${stats.n}</td>`;
+      html += `<td class="hm-summary">${stats.h}</td>`;
+      html += `</tr>`;
+    });
   });
 
-  html += '</div>';
+  html += `</tbody></table></div></div>`;
   container.innerHTML = html;
 
-  // Add month nav handlers
+  // Month nav handlers
   document.getElementById('heatmapPrevMonth').onclick = () => {
-    appState.currentMonth = new Date(appState.currentMonth.getFullYear(), appState.currentMonth.getMonth() - 1, 1);
+    appState.currentMonth = new Date(year, month - 1, 1);
     renderHeatmap();
   };
   document.getElementById('heatmapNextMonth').onclick = () => {
-    appState.currentMonth = new Date(appState.currentMonth.getFullYear(), appState.currentMonth.getMonth() + 1, 1);
+    appState.currentMonth = new Date(year, month + 1, 1);
     renderHeatmap();
   };
 }
