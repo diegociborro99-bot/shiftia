@@ -2332,7 +2332,7 @@ table.schedule th.month-total-header {
   height: 48px;
   padding: 0 20px;
   border-radius: 24px;
-  background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+  background: linear-gradient(135deg, #4ecdc4 0%, #2980b9 100%);
   color: white;
   border: none;
   cursor: pointer;
@@ -2342,14 +2342,14 @@ table.schedule th.month-total-header {
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
-  box-shadow: 0 4px 20px rgba(230, 126, 34, 0.35);
+  box-shadow: 0 4px 20px rgba(41, 128, 185, 0.35);
   z-index: 100;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .gestor-fab:hover {
   transform: scale(1.05) translateY(-2px);
-  box-shadow: 0 6px 24px rgba(230, 126, 34, 0.45);
+  box-shadow: 0 6px 24px rgba(41, 128, 185, 0.45);
 }
 
 .gestor-fab svg { flex-shrink: 0; }
@@ -2374,6 +2374,7 @@ table.schedule th.month-total-header {
 }
 
 .gestor-modal {
+  position: relative;
   background: var(--surface);
   border-radius: 20px;
   width: 95%;
@@ -2382,6 +2383,17 @@ table.schedule th.month-total-header {
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0,0,0,0.2);
   animation: gestorSlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.gestor-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(135deg, #4ecdc4, #2980b9);
+  border-radius: 20px 20px 0 0;
 }
 
 @keyframes gestorSlideUp {
@@ -2408,7 +2420,7 @@ table.schedule th.month-total-header {
 
 .gestor-header h2 span {
   font-size: 10px;
-  background: linear-gradient(135deg, #e67e22, #d35400);
+  background: linear-gradient(135deg, #4ecdc4, #2980b9);
   color: white;
   padding: 3px 10px;
   border-radius: 10px;
@@ -2762,6 +2774,93 @@ table.schedule th.month-total-header {
 .gestor-success .success-icon { font-size: 32px; margin-bottom: 8px; }
 .gestor-success .success-text { font-size: 14px; font-weight: 600; color: #27ae60; }
 .gestor-success .success-detail { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+.gestor-metric-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 3px 0;
+  font-size: 11px;
+}
+
+.gestor-metric-label {
+  width: 55px;
+  color: var(--text3);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gestor-metric-track {
+  flex: 1;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.gestor-metric-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.gestor-metric-value {
+  width: 40px;
+  text-align: right;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.gestor-timeline {
+  display: flex;
+  gap: 3px;
+  margin: 8px 0 4px;
+  justify-content: center;
+}
+
+.gestor-timeline-day {
+  width: 28px;
+  height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: white;
+  transition: transform 0.2s;
+}
+
+.gestor-timeline-day.target {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  transform: scale(1.15);
+}
+
+.gestor-timeline-day.shift-M {
+  background: #2e8b7a;
+}
+
+.gestor-timeline-day.shift-T {
+  background: #4a9dd4;
+}
+
+.gestor-timeline-day.shift-N {
+  background: #c5a832;
+}
+
+.gestor-timeline-day.shift-D {
+  background: var(--surface2);
+  color: var(--text3);
+}
+
+.gestor-timeline-day.shift-empty {
+  background: var(--surface2);
+  color: var(--text3);
+}
 
 .gestor-impact {
   margin-top: 12px;
@@ -5139,6 +5238,11 @@ const workers = [
   { id: 24, name: 'Maria Pilar', role: 'tec', type: 'tec', area: 'micro', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, noLab: true, noLabReason: 'Fija de Microbiología — no cubre Lab', notes: 'Microbiología' } },
 ];
 
+// Persistent worker memory — survives schedule deletion and reimport
+// Stores subjective conditions, learned preferences, and custom rules
+const workerMemory = {};
+// Structure: workerMemory[workerId] = { rules: {...}, notes: '', customPrefs: {...}, lastModified: '' }
+
 // Helper: is this worker a lab worker (counts for lab coverage)?
 function isLabWorker(w) { return w.area !== 'micro'; }
 // Helper: get only lab workers (exclude micro)
@@ -6677,6 +6781,9 @@ function renderWorkers() {
     else if (w.rules && w.rules.conciliacion) statusBadge = '<span style="font-size:9px;padding:2px 6px;background:rgba(122,171,138,0.12);color:var(--success);border-radius:4px;margin-left:4px;">Conciliacion</span>';
     else if (w.scheduleImported) statusBadge = '<span style="font-size:9px;padding:2px 6px;background:rgba(122,171,138,0.12);color:var(--success);border-radius:4px;margin-left:4px;">OK</span>';
 
+    // Memory indicator
+    const memoryIndicator = workerMemory[w.id] ? '<span title="Memoria activa — reglas y preferencias preservadas" style="font-size:12px;margin-left:4px;cursor:help;">🧠</span>' : '';
+
     // Night equity indicator
     const nightColor = nightDiff > 8 ? 'var(--danger)' : nightDiff > 3 ? 'var(--afternoon)' : nightDiff < -5 ? 'var(--accent)' : 'var(--text2)';
     const nightLabel = nightDiff > 0 ? '+' + nightDiff.toFixed(0) : nightDiff.toFixed(0);
@@ -6689,7 +6796,7 @@ function renderWorkers() {
         <div class="worker-header">
           <div class="worker-avatar ${w.type}">${w.name[0]}</div>
           <div class="worker-info">
-            <div class="worker-name">${w.name}</div>
+            <div class="worker-name">${w.name}${memoryIndicator}</div>
             <div class="worker-role">${w.type === 'enf' ? 'Enfermero/a' : 'Tecnico/a'}${statusBadge}</div>
           </div>
         </div>
@@ -6702,7 +6809,7 @@ function renderWorkers() {
       <div class="worker-header">
         <div class="worker-avatar ${w.type}">${w.name[0]}</div>
         <div class="worker-info">
-          <div class="worker-name">${w.name}</div>
+          <div class="worker-name">${w.name}${memoryIndicator}</div>
           <div class="worker-role">${w.type === 'enf' ? 'Enfermero/a' : 'Tecnico/a'}${statusBadge}</div>
         </div>
       </div>
@@ -7835,6 +7942,13 @@ function integratePDFData(parsedData, matchedWorker) {
   // Mark worker as imported
   matchedWorker.scheduleImported = true;
 
+  // Restore persistent worker memory (rules survive reimport)
+  const wId = matchedWorker.id;
+  if (workerMemory[wId] && workerMemory[wId].rules) {
+    Object.assign(matchedWorker.rules, workerMemory[wId].rules);
+    console.log('[Shiftia] Memoria restaurada para', matchedWorker.name, '— reglas personalizadas preservadas');
+  }
+
   // Update worker computo data
   if (parsedData.computoData.reduccionNoches) {
     matchedWorker.computoBalance = parsedData.computoData.reduccionNoches;
@@ -7929,6 +8043,9 @@ function purgeWorkerData(workerId) {
   }
   w.scheduleImported = false;
   w.nights = 0; w.nightsThisYear = 0; w.hours = 0; w.computoBalance = 0;
+
+  // NOTE: workerMemory[workerId] is intentionally NOT deleted
+  // Worker memory persists across schedule deletions and reimports
 
   // Also remove from importedFiles if present
   const impIdx = importedFiles.findIndex(f => f.workerId === workerId);
@@ -8225,6 +8342,12 @@ async function handleImport(files) {
       integratePDFData(parsed, matchedWorker);
       await new Promise(r => setTimeout(r, 400));
 
+      // Step 7b: Check if worker has memory
+      if (workerMemory[matchedWorker.id]) {
+        addStep('🧠 Memoria restaurada: reglas y preferencias de ' + matchedWorker.name + ' preservadas', 95);
+        await new Promise(r => setTimeout(r, 400));
+      }
+
       // Step 8: Done
       const computoAnual = parsed.computoData.computoAnual || parseFloat((totalH - 1519 + computoReduc).toFixed(1));
       completeStep('Integración completada — ' + totalH + 'h volcadas al calendario', 100);
@@ -8500,7 +8623,7 @@ function validateShiftChange(newShift) {
     if (day > 1 && sch[wId][day-2] === 'N') consec++;
     if (day < days-1 && sch[wId][day+1] === 'N') consec++;
     if (consec >= 2) {
-      alerts.push({ type: 'warning', msg: `Atención: superaría 2 noches consecutivas (máx. permitido por convenio).` });
+      alerts.push({ type: 'danger', msg: `BLOQUEADO: ${w.name} haría ${consec + 1} noches consecutivas (máximo 2 por convenio). No se puede asignar.` });
     }
   }
 
@@ -8751,6 +8874,21 @@ function applyWorkerMeta(arr) {
       if (meta.area !== undefined) w.area = meta.area;
     }
   });
+}
+
+// Update persistent worker memory (called when rules change)
+function updateWorkerMemory(wId) {
+  const w = workers.find(x => x.id === wId);
+  if (!w) return;
+  workerMemory[wId] = {
+    rules: { ...w.rules },
+    name: w.name,
+    type: w.type,
+    area: w.area,
+    role: w.role,
+    lastModified: new Date().toISOString()
+  };
+  saveToStorage();
 }
 
 
@@ -9228,7 +9366,8 @@ function saveToStorage() {
       importedFiles,
       incidents,
       shiftHistory,
-      workerMeta: getWorkerMeta()
+      workerMeta: getWorkerMeta(),
+      workerMemory
     };
     // Save to localStorage (works offline, instant)
     localStorage.setItem('shiftia_data', JSON.stringify(data));
@@ -9306,6 +9445,17 @@ async function loadFromStorage() {
       if (data.incidents) { incidents.length = 0; data.incidents.forEach(i => incidents.push(i)); }
       if (data.shiftHistory) { shiftHistory.length = 0; data.shiftHistory.forEach(h => shiftHistory.push(h)); }
       applyWorkerMeta(data.workerMeta);
+      // Restore persistent worker memory
+      if (data.workerMemory) {
+        Object.assign(workerMemory, data.workerMemory);
+        // Apply remembered rules to workers
+        for (const wId in workerMemory) {
+          const w = workers.find(x => x.id === parseInt(wId));
+          if (w && workerMemory[wId].rules) {
+            Object.assign(w.rules, workerMemory[wId].rules);
+          }
+        }
+      }
     }
 
     const hasData = Object.keys(scheduleData).length > 0;
@@ -9804,6 +9954,24 @@ function getConsecutiveWorkDays(wId, dayIdx, month, year) {
   return { before, after, total: before + 1 + after, streak: before };
 }
 
+// Count consecutive nights around a given day (backward + forward)
+// Does NOT include the target day itself
+function getConsecutiveNights(wId, day, month, year) {
+  const key = `${year}-${month}`;
+  const sch = scheduleData[key];
+  if (!sch || !sch[wId]) return 0;
+  let count = 0;
+  // Count backwards
+  for (let i = day - 1; i >= 0; i--) {
+    if (sch[wId][i] === 'N') count++; else break;
+  }
+  // Count forwards
+  for (let i = day + 1; i < sch[wId].length; i++) {
+    if (sch[wId][i] === 'N') count++; else break;
+  }
+  return count; // Does NOT include the target day
+}
+
 // Count how many extra coverage assignments a worker has received (from shiftHistory)
 function getExtraCoverageCount(wId, monthsBack) {
   const now = new Date();
@@ -10030,6 +10198,27 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
     if (!isOff) return;
 
     if (!canAssignShift(w.id, day, shiftNeeded, sch)) return;
+
+    // === Harden night rules (v3.1) ===
+    // If assigning a night shift, check if they would reach 2 consecutive (the max)
+    if (shiftNeeded === 'N') {
+      const consecN = getConsecutiveNights(w.id, day, month, year);
+      if (consecN === 1) {
+        // Would create exactly 2 consecutive nights (the max) — still allowed but penalize
+        scoreBreakdown.push('Llegaría a 2N consecutivas');
+        score += 5; // Add penalty
+      } else if (consecN >= 2) {
+        // Would exceed max — should have been caught by canAssignShift but be explicit
+        return;
+      }
+    }
+
+    // HARD FILTER: If worker had N the day before, they can ONLY be offered N shifts
+    if (day > 0 && sch[w.id][day - 1] === 'N') {
+      if (shiftNeeded !== 'N') {
+        return; // Cannot offer M or T after night
+      }
+    }
 
     const stats = getWorkerStats(w.id);
     const analysis = getTeamWorkloadAnalysis(w.type);
@@ -11628,10 +11817,17 @@ function buildAICoverageAnalysis(w, days, action) {
   // ===== PHASE 4: Build reasoning steps (v3.0 Enhanced) =====
   let reasoningSteps = [];
 
+  // Step 0: Rules summary (v3.1 NEW)
+  reasoningSteps.push({
+    label: 'Reglas de convenio activas',
+    detail: `Máx ${RULES.MAX_CONSECUTIVE_NIGHTS} noches consecutivas · Descanso obligatorio tras noche (no M/T) · Equidad de fines de semana · Máx 5 días consecutivos de trabajo · Conciliación familiar respetada`,
+    icon: '⚖️'
+  });
+
   const offDays = dayAnalyses.filter(da => da.isOff);
   const critDays = dayAnalyses.filter(da => da.isCritical);
 
-  // Step 0: Detect simultaneous absences
+  // Step 1: Detect simultaneous absences (was Step 0)
   const simulAbsences = {};
   dayAnalyses.forEach(da => {
     if (!da.isOff) {
@@ -11894,11 +12090,13 @@ function buildAICoverageAnalysis(w, days, action) {
       const confLabel = confPct >= 80 ? 'Alta' : confPct >= 50 ? 'Media' : 'Baja';
       const confClr = confPct >= 80 ? '#27ae60' : confPct >= 50 ? '#e67e22' : '#cc4444';
       const stratNames = { multiday: 'Min. disrupcion', balance: 'Equilibrio', impact: 'Min. impacto', basic: 'Basico' };
-      html += `<div class="plan-card-header">
-        <span class="plan-card-badge ${isBest ? 'badge-best' : 'badge-alt'}">${isBest ? 'Plan Optimo' : 'Alternativa ' + pIdx}</span>
-        <span style="font-size:9px;color:var(--text3);background:var(--surface2);padding:2px 6px;border-radius:6px;">${stratNames[plan.strategy] || plan.strategy}</span>
-        <span class="plan-card-score"><strong>${plan.score.toFixed(0)}</strong> pts</span>
-        <span style="font-size:10px;color:${confClr};font-weight:600;">${confPct}% ${confLabel}</span>
+      html += `<div class="plan-card-header" style="display:flex;align-items:center;gap:12px;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="plan-card-badge ${isBest ? 'badge-best' : 'badge-alt'}">${isBest ? 'Plan Optimo' : 'Alternativa ' + pIdx}</span>
+          <span style="font-size:9px;color:var(--text3);background:var(--surface2);padding:2px 6px;border-radius:6px;">${stratNames[plan.strategy] || plan.strategy}</span>
+          <span class="plan-card-score"><strong>${plan.score.toFixed(0)}</strong> pts</span>
+        </div>
+        ${renderConfidenceGauge(confPct)}
       </div>`;
 
       // Day-by-day assignments
@@ -12097,22 +12295,137 @@ function buildAICoverageAnalysis(w, days, action) {
   return html;
 }
 
+// Generate chain swap plan (v3.1): Worker X takes absent person's shift, Worker Y covers Worker X's shift
+function generateChainSwapPlan(daysNeedingCoverage, candidates, absentWorker, avgN, avgH, avgWknd) {
+  const assignments = [];
+  if (!daysNeedingCoverage || daysNeedingCoverage.length === 0) return null;
+  const key = `${daysNeedingCoverage[0].year}-${daysNeedingCoverage[0].month}`;
+  const sch = scheduleData[key];
+  if (!sch) return null;
+
+  daysNeedingCoverage.forEach(da => {
+    const dayWithoutRest = !da.candidates || da.candidates.length === 0;
+    if (!dayWithoutRest) return; // Skip if rest candidates exist
+
+    const neededShift = da.effShift;
+    let bestChain = null;
+    let bestScore = 1000;
+
+    // Find workers currently working a DIFFERENT shift on this day
+    workers.forEach(workerX => {
+      if (workerX.id === absentWorker.id || (workerX.rules && (workerX.rules.noSwap || workerX.rules.noCover))) return;
+
+      const currentShiftX = sch[workerX.id] ? sch[workerX.id][da.dayIdx] : '';
+      const effShiftX = ['MR','M7H','M6R','M55'].includes(currentShiftX) ? 'M' : currentShiftX;
+
+      // X must be working a DIFFERENT shift than needed
+      if (!currentShiftX || currentShiftX === 'D' || effShiftX === neededShift || !['M','T','N'].includes(effShiftX)) return;
+
+      // Check if X can take the needed shift
+      const tempSch = JSON.parse(JSON.stringify(sch));
+      tempSch[workerX.id][da.dayIdx] = da.workerShift;
+      if (!canAssignShift(workerX.id, da.dayIdx, da.workerShift, tempSch)) return;
+
+      // Find someone on rest (Y) who can cover X's original shift
+      workers.forEach(workerY => {
+        if (workerY.id === absentWorker.id || workerY.id === workerX.id) return;
+        if (workerY.type !== workerX.type || (workerY.rules && (workerY.rules.noSwap || workerY.rules.noCover))) return;
+
+        const currentShiftY = sch[workerY.id] ? sch[workerY.id][da.dayIdx] : '';
+        const isOffY = !currentShiftY || currentShiftY === '' || currentShiftY === 'D';
+        if (!isOffY) return;
+
+        // Y must be able to cover X's original shift
+        const tempSch2 = JSON.parse(JSON.stringify(tempSch));
+        tempSch2[workerY.id][da.dayIdx] = currentShiftX;
+        if (!canAssignShift(workerY.id, da.dayIdx, currentShiftX, tempSch2)) return;
+
+        // Valid chain found! Score it
+        const statsX = getWorkerStats(workerX.id);
+        const statsY = getWorkerStats(workerY.id);
+        const chainScore = Math.abs(statsX.n - avgN) + Math.abs(statsY.n - avgN);
+
+        if (chainScore < bestScore) {
+          bestScore = chainScore;
+          bestChain = { workerX, workerY, shiftY: currentShiftX };
+        }
+      });
+    });
+
+    if (bestChain) {
+      assignments.push({
+        dayAnalysis: da,
+        candidate: {
+          w: bestChain.workerX,
+          chained: true,
+          chainedWith: bestChain.workerY,
+          chainedShift: bestChain.shiftY,
+          scoreBreakdown: [`Cadena: ${bestChain.workerX.name}→${bestChain.workerY.name}`]
+        },
+        reason: `Cadena con ${bestChain.workerY.name}`
+      });
+    } else {
+      assignments.push({
+        dayAnalysis: da,
+        candidate: null,
+        reason: 'Sin candidatos ni cadenas posibles'
+      });
+    }
+  });
+
+  if (assignments.length === 0) return null;
+
+  let totalScore = 100;
+  assignments.forEach(a => {
+    if (!a.candidate) totalScore -= 20;
+    else if (a.candidate.chained) totalScore -= 10;
+  });
+
+  return {
+    assignments,
+    score: Math.max(0, Math.min(100, totalScore)),
+    strategy: 'chain-swap',
+    reasoning: '<strong>Estrategia: Cadena de Cambios.</strong> Intercambios encadenados donde X cubre al ausente e Y cubre a X.',
+    confidence: 0
+  };
+}
+
+
 function generateCoveragePlans(daysNeedingCoverage, candidates, absentWorker, shiftToAssign, avgN, avgH, avgWknd) {
   if (daysNeedingCoverage.length === 0) return [];
 
   const plans = [];
 
-  // PLAN A: Minimize disruption (multi-day coverage)
+  // PLAN A: Mínima Perturbación — find workers at rest (multi-day coverage)
   const planA = greedyAssign(daysNeedingCoverage, candidates, 'multiday', avgN, avgH, avgWknd);
-  if (planA) { planA.confidence = calculatePlanConfidence(planA, daysNeedingCoverage); plans.push(planA); }
+  if (planA) {
+    planA.label = 'Mínima Perturbación';
+    planA.planLabel = 'Mejor opción';
+    planA.planColor = '#27ae60';
+    planA.confidence = calculatePlanConfidence(planA, daysNeedingCoverage);
+    plans.push(planA);
+  }
 
-  // PLAN B: Balance workload
-  const planB = greedyAssign(daysNeedingCoverage, candidates, 'balance', avgN, avgH, avgWknd);
-  if (planB && !samePlan(planA, planB)) { planB.confidence = calculatePlanConfidence(planB, daysNeedingCoverage); plans.push(planB); }
+  // PLAN B (v3.1 NEW): Cadena de Cambios — chain swap strategy if Plan A can't cover all days
+  // Only generate if Plan A has uncovered days
+  const uncoveredDaysA = planA ? planA.assignments.filter(a => !a.candidate).length : daysNeedingCoverage.length;
+  if (uncoveredDaysA > 0) {
+    const planB = generateChainSwapPlan(daysNeedingCoverage, candidates, absentWorker, avgN, avgH, avgWknd);
+    if (planB && !samePlan(planA, planB)) {
+      planB.label = 'Cadena de Cambios';
+      planB.planLabel = 'Alternativa';
+      planB.planColor = '#3498db';
+      planB.confidence = calculatePlanConfidence(planB, daysNeedingCoverage);
+      plans.push(planB);
+    }
+  }
 
-  // PLAN C (v3.0 NEW): Minimize future impact
-  const planC = greedyAssign(daysNeedingCoverage, candidates, 'impact', avgN, avgH, avgWknd);
-  if (planC && !samePlan(planA, planC) && !samePlan(planB, planC)) {
+  // PLAN C: Equilibrio de Carga — balance strategy (workload distribution)
+  const planC = greedyAssign(daysNeedingCoverage, candidates, 'balance', avgN, avgH, avgWknd);
+  if (planC && !samePlan(planA, planC) && (!plans[1] || !samePlan(plans[1], planC))) {
+    planC.label = 'Equilibrio de Carga';
+    planC.planLabel = 'Alternativa';
+    planC.planColor = '#3498db';
     planC.confidence = calculatePlanConfidence(planC, daysNeedingCoverage);
     plans.push(planC);
   }
@@ -12623,6 +12936,99 @@ function applyGestorPlan(planDataStr, btn) {
   }
 }
 
+
+function renderConfidenceGauge(confidence) {
+  const radius = 24, stroke = 4;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - confidence / 100);
+  const color = confidence >= 80 ? '#27ae60' : confidence >= 50 ? '#e67e22' : '#cc4444';
+  return `<div style="position:relative;width:56px;height:56px;flex-shrink:0;">
+    <svg width="56" height="56" viewBox="0 0 56 56">
+      <circle cx="28" cy="28" r="${radius}" fill="none" stroke="var(--surface2)" stroke-width="${stroke}"/>
+      <circle cx="28" cy="28" r="${radius}" fill="none" stroke="${color}" stroke-width="${stroke}"
+        stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
+        stroke-linecap="round" transform="rotate(-90 28 28)" style="transition: stroke-dashoffset 0.8s ease;"/>
+    </svg>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${color};">${confidence}%</div>
+  </div>`;
+}
+
+function get7DayTimeline(workerId, targetYear, targetMonth, targetDay) {
+  const sch = genSchedule(targetYear, targetMonth);
+  const timeline = [];
+
+  for (let offset = -3; offset <= 3; offset++) {
+    let d = new Date(targetYear, targetMonth, targetDay + offset);
+    const dayIdx = d.getDate() - 1;
+    const shift = sch[workerId] && sch[workerId][dayIdx] ? sch[workerId][dayIdx] : '';
+
+    let shiftKey = 'empty';
+    if (shift === 'D' || shift === '') shiftKey = 'D';
+    else if (['MR','M7H','M6R','M55'].includes(shift)) shiftKey = 'M';
+    else if (['TR','T7H','T6R','T55'].includes(shift)) shiftKey = 'T';
+    else if (['NR','N7H','N6R','N55'].includes(shift)) shiftKey = 'N';
+    else if (['BAJ','VAC','IT'].includes(shift)) shiftKey = 'D';
+
+    const label = shiftKey === 'M' ? 'M' : shiftKey === 'T' ? 'T' : shiftKey === 'N' ? 'N' : '—';
+    const isTarget = offset === 0;
+
+    timeline.push({ label, shiftKey, isTarget });
+  }
+
+  return timeline;
+}
+
+function renderTimeline(workerId, targetYear, targetMonth, targetDay) {
+  const timeline = get7DayTimeline(workerId, targetYear, targetMonth, targetDay);
+  let html = '<div class="gestor-timeline">';
+  timeline.forEach((day, idx) => {
+    const targetClass = day.isTarget ? ' target' : '';
+    const shiftClass = `shift-${day.shiftKey}`;
+    html += `<div class="gestor-timeline-day ${shiftClass}${targetClass}" title="${day.label}">${day.label}</div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderMetricBars(stats, teamAvg) {
+  let html = '';
+
+  const nightDiff = stats.n - teamAvg.n;
+  const nightPct = (stats.n / (teamAvg.n + 5)) * 100;
+  const nightColor = nightDiff <= 0 ? '#27ae60' : nightDiff <= 2 ? '#e67e22' : '#cc4444';
+  html += `<div class="gestor-metric-bar">
+    <div class="gestor-metric-label">Noches</div>
+    <div class="gestor-metric-track">
+      <div class="gestor-metric-fill" style="width:${Math.min(100, nightPct)}%;background:${nightColor};"></div>
+    </div>
+    <div class="gestor-metric-value">${stats.n}</div>
+  </div>`;
+
+  const hourDiff = stats.h - teamAvg.h;
+  const hourPct = (stats.h / (teamAvg.h + 100)) * 100;
+  const hourColor = hourDiff <= 0 ? '#27ae60' : hourDiff <= 20 ? '#e67e22' : '#cc4444';
+  html += `<div class="gestor-metric-bar">
+    <div class="gestor-metric-label">Horas</div>
+    <div class="gestor-metric-track">
+      <div class="gestor-metric-fill" style="width:${Math.min(100, hourPct)}%;background:${hourColor};"></div>
+    </div>
+    <div class="gestor-metric-value">${stats.h}h</div>
+  </div>`;
+
+  const wkndDiff = stats.wknd - (teamAvg.wknd || 0);
+  const wkndPct = (stats.wknd / ((teamAvg.wknd || 0) + 3)) * 100;
+  const wkndColor = wkndDiff <= 0 ? '#27ae60' : wkndDiff <= 1 ? '#e67e22' : '#cc4444';
+  html += `<div class="gestor-metric-bar">
+    <div class="gestor-metric-label">Fines sem.</div>
+    <div class="gestor-metric-track">
+      <div class="gestor-metric-fill" style="width:${Math.min(100, wkndPct)}%;background:${wkndColor};"></div>
+    </div>
+    <div class="gestor-metric-value">${stats.wknd}</div>
+  </div>`;
+
+  return html;
+}
+
 function buildSwapAnalysis(w, dayDate) {
   let html = '';
   const year = dayDate.getFullYear();
@@ -12692,6 +13098,7 @@ function buildSwapAnalysis(w, dayDate) {
       const hasIssues = !c.swap.ok || (c.swap.issues && c.swap.issues.length > 0);
       const typeClass = c.w.type === 'enf' ? 'background:#fde8e8;color:#cc4444;' : (c.w.area === 'micro' ? 'background:#f0e6f6;color:#9a6abf;' : 'background:#e8f0fd;color:#4a9dd4;');
 
+      const teamAvgForMetrics = { n: avgN, h: avgH, wknd: 0 };
       html += `<div class="gestor-candidate ${i === 0 && c.swap.ok ? 'best' : ''}">
         <div class="gestor-candidate-rank">${i === 0 && c.swap.ok ? 'Recomendado' : '#' + (i+1)}</div>
         <div class="gestor-candidate-name">${c.w.name} <span class="gestor-candidate-type" style="${typeClass}">${c.w.type === 'enf' ? 'ENF' : 'TEC'}</span>
@@ -12700,28 +13107,8 @@ function buildSwapAnalysis(w, dayDate) {
         <div style="font-size:12px;margin:6px 0;padding:8px;background:var(--surface2);border-radius:8px;text-align:center;">
           ${w.name}: ${wShift} → ${c.currentShift} &nbsp;&nbsp;|&nbsp;&nbsp; ${c.w.name}: ${c.currentShift} → ${wShift}
         </div>
-        <div class="gestor-candidate-stats">
-          <div class="gestor-stat-mini">
-            <div class="stat-val">${c.stats.n}</div>
-            <div class="stat-label">Noches</div>
-            <div class="stat-vs ${nightDiff <= 0 ? 'good' : 'neutral'}">${nightDiff >= 0 ? '+' : ''}${nightDiff.toFixed(1)}</div>
-          </div>
-          <div class="gestor-stat-mini">
-            <div class="stat-val">${c.stats.h}</div>
-            <div class="stat-label">Horas</div>
-            <div class="stat-vs ${hourDiff <= 0 ? 'good' : 'neutral'}">${hourDiff >= 0 ? '+' : ''}${hourDiff.toFixed(0)}h</div>
-          </div>
-          <div class="gestor-stat-mini">
-            <div class="stat-val">${c.stats.total}</div>
-            <div class="stat-label">Total</div>
-            <div class="stat-vs neutral">${c.stats.m}M ${c.stats.t}T ${c.stats.n}N</div>
-          </div>
-          <div class="gestor-stat-mini">
-            <div class="stat-val">${c.swap.ok ? 'OK' : '⚠️'}</div>
-            <div class="stat-label">Estado</div>
-            <div class="stat-vs ${c.swap.ok ? 'good' : 'bad'}">${c.swap.ok ? 'Sin problemas' : 'Con avisos'}</div>
-          </div>
-        </div>
+        ${renderMetricBars(c.stats, teamAvgForMetrics)}
+        ${renderTimeline(c.w.id, year, month, dayIdx + 1)}
         ${hasIssues && c.swap.issues ? `<div class="gestor-warning" style="margin-top:6px;">${c.swap.issues.join('<br>')}</div>` : ''}
         <button class="gestor-apply-btn" onclick="applyGestorSwap(${w.id}, ${c.w.id}, ${year}, ${month}, ${dayIdx}, '${wShift}', '${c.currentShift}', this)">
           Aplicar intercambio
@@ -12737,31 +13124,12 @@ function buildSwapAnalysis(w, dayDate) {
       const hourDiff = c.stats.h - avgH;
       const typeClass = c.w.type === 'enf' ? 'background:#fde8e8;color:#cc4444;' : 'background:#e8f0fd;color:#4a9dd4;';
 
+      const teamAvgForMetrics2 = { n: avgN, h: avgH, wknd: avgWknd || 0 };
       html += `<div class="gestor-candidate ${i === 0 && validSwaps.length === 0 ? 'best' : ''}">
         <div class="gestor-candidate-rank">${i === 0 && validSwaps.length === 0 ? 'Recomendado' : 'Libre'}</div>
         <div class="gestor-candidate-name">${c.w.name} <span class="gestor-candidate-type" style="${typeClass}">${c.w.type === 'enf' ? 'ENF' : 'TEC'}</span></div>
-        <div class="gestor-candidate-stats">
-          <div class="gestor-stat-mini">
-            <div class="stat-val">${c.stats.n}</div>
-            <div class="stat-label">Noches</div>
-            <div class="stat-vs ${nightDiff <= 0 ? 'good' : 'neutral'}">${nightDiff >= 0 ? '+' : ''}${nightDiff.toFixed(1)}</div>
-          </div>
-          <div class="gestor-stat-mini">
-            <div class="stat-val">${c.stats.h}</div>
-            <div class="stat-label">Horas</div>
-            <div class="stat-vs ${hourDiff <= 0 ? 'good' : 'neutral'}">${hourDiff >= 0 ? '+' : ''}${hourDiff.toFixed(0)}h</div>
-          </div>
-          <div class="gestor-stat-mini">
-            <div class="stat-val">${c.stats.wknd}</div>
-            <div class="stat-label">Fines sem.</div>
-            <div class="stat-vs neutral">${c.stats.wknd}</div>
-          </div>
-          <div class="gestor-stat-mini">
-            <div class="stat-val">${c.stats.total}</div>
-            <div class="stat-label">Total</div>
-            <div class="stat-vs neutral">${c.stats.m}M ${c.stats.t}T</div>
-          </div>
-        </div>
+        ${renderMetricBars(c.stats, teamAvgForMetrics2)}
+        ${renderTimeline(c.w.id, year, month, dayIdx + 1)}
         <div class="gestor-candidate-reason"><strong>Estado:</strong> ${c.reason} — puede asumir ${wShift} sin violar reglas.</div>
         <button class="gestor-apply-btn" onclick="applyGestorCover(${c.w.id}, ${year}, ${month}, ${dayIdx}, '${wShift}', this)">
           Asignar ${wShift} a ${c.w.name}
