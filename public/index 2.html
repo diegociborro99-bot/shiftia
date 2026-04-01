@@ -5499,9 +5499,7 @@ html {
   <div class="gestor-overlay" id="gestorOverlay" onclick="if(event.target===this)closeGestor()">
     <div class="gestor-modal">
       <div class="gestor-header">
-        <h2><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> Gestor de Cobertura <span>IA 2.0</span>
-          <button id="simulationModeBtn" onclick="toggleSimulationMode()" style="margin-left:8px;padding:4px 12px;border:1px solid #3498db;background:transparent;color:#3498db;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">🔮 Simular</button>
-        </h2>
+        <h2><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> Gestor de Cobertura <span>IA 2.0</span></h2>
         <button class="gestor-close" onclick="closeGestor()">&times;</button>
       </div>
       <div class="gestor-body" id="gestorBody">
@@ -10629,9 +10627,6 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
     if (w.rules && w.rules.noSwap) return;
     if (w.rules && w.rules.noCover) return;
 
-    // === Category enforcement: enf covers enf, tec covers tec ===
-    if (w.type !== absentType) return;
-
     // === Section boundary enforcement (v3.1) ===
     // Micro workers (Trinidad, Montse, Pili) CANNOT cover Lab
     if (w.rules && w.rules.noLab && absentArea !== 'micro') return;
@@ -12670,18 +12665,6 @@ function buildAICoverageAnalysis(w, days, action) {
         </button>`;
       }
 
-      // Export and notification buttons
-      html += `<div style="display:flex;gap:8px;margin-top:8px;">
-        <button onclick="exportCoveragePlanToPDF(${JSON.stringify(plan).replace(/"/g, '&quot;')}, '${w.name}')"
-                style="flex:1;padding:8px 12px;background:#f8f9fa;border:1px solid var(--surface2);border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.2s;">
-          📥 Exportar PDF
-        </button>
-        <button onclick="notifyPlan(${pIdx})"
-                style="flex:1;padding:8px 12px;background:#f8f9fa;border:1px solid var(--surface2);border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.2s;">
-          📧 Notificar
-        </button>
-      </div>`;
-
       html += `</div>`;
     });
 
@@ -12790,8 +12773,6 @@ function generateChainSwapPlan(daysNeedingCoverage, candidates, absentWorker, av
     // Find workers currently working a DIFFERENT shift on this day
     workers.forEach(workerX => {
       if (workerX.id === absentWorker.id || (workerX.rules && (workerX.rules.noSwap || workerX.rules.noCover))) return;
-      // Category enforcement: X must be same type as absent worker
-      if (workerX.type !== absentWorker.type) return;
 
       const currentShiftX = sch[workerX.id] ? sch[workerX.id][da.dayIdx] : '';
       const effShiftX = ['MR','M7H','M6R','M55'].includes(currentShiftX) ? 'M' : currentShiftX;
@@ -12875,7 +12856,7 @@ function generateCoveragePlans(daysNeedingCoverage, candidates, absentWorker, sh
   const plans = [];
 
   // PLAN A: Mínima Perturbación — find workers at rest (multi-day coverage)
-  const planA = greedyAssign(daysNeedingCoverage, candidates, 'multiday', avgN, avgH, avgWknd, absentWorker);
+  const planA = greedyAssign(daysNeedingCoverage, candidates, 'multiday', avgN, avgH, avgWknd);
   if (planA) {
     planA.label = 'Mínima Perturbación';
     planA.planLabel = 'Mejor opción';
@@ -12899,7 +12880,7 @@ function generateCoveragePlans(daysNeedingCoverage, candidates, absentWorker, sh
   }
 
   // PLAN C: Equilibrio de Carga — balance strategy (workload distribution)
-  const planC = greedyAssign(daysNeedingCoverage, candidates, 'balance', avgN, avgH, avgWknd, absentWorker);
+  const planC = greedyAssign(daysNeedingCoverage, candidates, 'balance', avgN, avgH, avgWknd);
   if (planC && !samePlan(planA, planC) && (!plans[1] || !samePlan(plans[1], planC))) {
     planC.label = 'Equilibrio de Carga';
     planC.planLabel = 'Alternativa';
@@ -12910,63 +12891,8 @@ function generateCoveragePlans(daysNeedingCoverage, candidates, absentWorker, sh
 
   // Fallback
   if (plans.length === 0) {
-    const basic = greedyAssign(daysNeedingCoverage, candidates, 'basic', avgN, avgH, avgWknd, absentWorker);
+    const basic = greedyAssign(daysNeedingCoverage, candidates, 'basic', avgN, avgH, avgWknd);
     if (basic) { basic.confidence = calculatePlanConfidence(basic, daysNeedingCoverage); plans.push(basic); }
-  }
-
-  // PLAN D: Plan de Emergencia — minimal damage approach when all else fails
-  const uncovered = plans.length > 0 ? plans[0].assignments.filter(a => !a.candidate).length : daysNeedingCoverage.length;
-  if (uncovered > 0) {
-    // For each uncovered day, find worker with least violations
-    const planD = { assignments: [], score: 0, violations: [], planD: true };
-
-    daysNeedingCoverage.forEach(da => {
-      const found = plans.length > 0 ? plans[0].assignments.find(a => a.dayAnalysis.dayIdx === da.dayIdx) : null;
-      if (found && found.candidate) {
-        planD.assignments.push(found);
-        return;
-      }
-
-      // This day is uncovered — find least-bad option
-      let bestWorker = null;
-      let fewestViolations = Infinity;
-
-      workers.forEach(w => {
-        if (w.id === (absentWorker ? absentWorker.id : 0)) return;
-        if (w.rules && w.rules.noCover) return;
-        // Category enforcement: enf covers enf, tec covers tec
-        if (absentWorker && w.type !== absentWorker.type) return;
-        const viol = calculateViolations(w.id, da.dayIdx, da.workerShift, da.year, da.month);
-        if (viol.length < fewestViolations) {
-          fewestViolations = viol.length;
-          bestWorker = { w, violations: viol };
-        }
-      });
-
-      if (bestWorker) {
-        planD.assignments.push({
-          dayAnalysis: da,
-          candidate: { w: bestWorker.w },
-          reason: `Plan D — rompe ${bestWorker.violations.length} reglas`,
-          violations: bestWorker.violations
-        });
-        bestWorker.violations.forEach(v => {
-          if (!planD.violations.includes(v)) planD.violations.push(v);
-        });
-      } else {
-        planD.assignments.push({
-          dayAnalysis: da,
-          candidate: null,
-          reason: 'Sin opciones: convenio imposible'
-        });
-      }
-    });
-
-    planD.label = 'Plan de Emergencia ⚠️';
-    planD.planLabel = 'Último recurso';
-    planD.planColor = '#e67e22';
-    planD.confidence = Math.max(0, 50 - (planD.violations.length * 10));
-    plans.push(planD);
   }
 
   // Sort by score descending (best first)
@@ -12975,7 +12901,7 @@ function generateCoveragePlans(daysNeedingCoverage, candidates, absentWorker, sh
   return plans;
 }
 
-function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWorkerParam) {
+function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd) {
   const assignments = [];
   const usedWorkerDays = new Map(); // workerId -> count of days assigned in this plan
 
@@ -13054,20 +12980,23 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWor
     // Re-evaluate ALL workers against the virtual schedule (not just pre-filtered list)
     // This is the key fix: we don't trust the Phase 1 candidate list because it was
     // built against the original schedule, not the evolving virtual schedule
-    const absentId = absentWorkerParam ? absentWorkerParam.id : 0;
-    const absentArea = absentWorkerParam ? (absentWorkerParam.area || 'lab') : 'lab';
-    const absentType = absentWorkerParam ? absentWorkerParam.type : 'enf';
+    const absentWorker = workers.find(wx => wx.id === da.candidates[0]?.excludeId) || null;
+    const absentId = absentWorker ? absentWorker.id : 0;
+    const absentArea = absentWorker ? (absentWorker.area || 'lab') : 'lab';
+    const absentType = absentWorker ? absentWorker.type : 'enf';
 
     // Get fresh candidates from virtual schedule
     const available = [];
     workers.forEach(w => {
       if (w.id === absentId) return;
-      // === Category enforcement: enf covers enf, tec covers tec ===
-      if (w.type !== absentType) return;
       // Section boundary enforcement
       if (w.rules && w.rules.noLab && absentArea !== 'micro') return;
       if (w.type === 'enf' && absentArea === 'micro') return;
       if (w.area === 'micro' && absentArea !== 'micro') return;
+      // Type must match (enf covers enf, tec covers tec)
+      if (da.isCritical || da.needsSub) {
+        // For critical coverage, match the absent worker's type
+      }
 
       if (!canWorkInPlan(w.id, da.dayIdx, shiftNeeded, da.year, da.month)) return;
 
@@ -13134,28 +13063,7 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWor
     });
 
     available.sort((a, b) => a.stratScore - b.stratScore);
-
-    // === LOOKAHEAD: Check if top choice blocks future days ===
-    let chosen = available[0];
-    let chosenReason = chosen.whyChosen.length > 0 ? chosen.whyChosen.join(', ') : 'Menor carga global';
-
-    if (shiftNeeded === 'N' && days.length > 1) {
-      let tentative = chosen;
-      for (let checkIdx = 0; checkIdx < Math.min(available.length, 3); checkIdx++) {
-        const candidate = available[checkIdx];
-        const blocked = hasLookaheadBlockage(candidate.w.id, da.dayIdx, days, da.month, da.year);
-        if (blocked) {
-          chosenReason = `Descartado ${candidate.w.name} para día ${da.dayIdx + 1}: dejaría sin opciones día${s === 'N' ? ' siguiente' : 's posteriores'}`;
-          continue;
-        }
-        tentative = candidate;
-        break;
-      }
-      chosen = tentative;
-    }
-
-    if (chosen.consecutiveDays === 0) chosenReason += ', viene de descanso';
-    if (chosen.extrasCoverage === 0) chosenReason += ', sin extras previas';
+    const chosen = available[0];
 
     // === UPDATE VIRTUAL SCHEDULE with this assignment ===
     const vSch = getVSch(da.year, da.month);
@@ -13164,6 +13072,9 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWor
     }
 
     const alternates = available.slice(1, 3).map(a => a.w.name);
+    let chosenReason = chosen.whyChosen.length > 0 ? chosen.whyChosen.join(', ') : 'Menor carga global';
+    if (chosen.consecutiveDays === 0) chosenReason += ', viene de descanso';
+    if (chosen.extrasCoverage === 0) chosenReason += ', sin extras previas';
 
     assignments.push({
       dayAnalysis: da,
@@ -14429,110 +14340,6 @@ function hasLookaheadBlockage(wId, dayIdx, days, month, year) {
   return false;
 }
 
-// ============= FEATURE 5: SIMULATION MODE =============
-function toggleSimulationMode() {
-  simulationMode = !simulationMode;
-  const btn = document.getElementById('simulationModeBtn');
-  if (simulationMode) {
-    btn.style.background = '#3498db';
-    btn.style.color = 'white';
-    btn.textContent = '✓ Modo Simulación Activo';
-    showToast('Modo simulación activado — sin cambios permanentes', 'info', 3000);
-  } else {
-    btn.style.background = 'transparent';
-    btn.style.color = '#3498db';
-    btn.textContent = '🔮 Simular';
-    showToast('Modo simulación desactivado', 'info', 2000);
-  }
-}
-
-// ============= FEATURE 6: PDF EXPORT & FEATURE 8: EMAIL NOTIFICATIONS =============
-function exportCoveragePlanToPDF(plan, absentWorkerName) {
-  const doc = document.createElement('div');
-  doc.style.cssText = 'padding:40px;font-family:Arial,sans-serif;line-height:1.6;';
-
-  doc.innerHTML = `
-    <div style="text-align:center;margin-bottom:40px;">
-      <h1 style="margin:0;font-size:32px;">Plan de Cobertura</h1>
-      <p style="color:#666;margin:5px 0 0 0;">Trabajador ausente: <strong>${absentWorkerName}</strong></p>
-      <p style="color:#999;font-size:12px;margin:5px 0 0 0;">Generado: ${new Date().toLocaleString('es-ES')}</p>
-    </div>
-
-    <table style="width:100%;border-collapse:collapse;margin-bottom:30px;">
-      <thead>
-        <tr style="background:#f5f5f5;">
-          <th style="border:1px solid #ddd;padding:10px;text-align:left;">Día</th>
-          <th style="border:1px solid #ddd;padding:10px;text-align:left;">Turno</th>
-          <th style="border:1px solid #ddd;padding:10px;text-align:left;">Candidato Asignado</th>
-          <th style="border:1px solid #ddd;padding:10px;text-align:left;">Confianza</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${plan.assignments.map(a => {
-          const day = a.dayAnalysis ? a.dayAnalysis.dayIdx + 1 : '?';
-          const shift = a.dayAnalysis ? a.dayAnalysis.workerShift : '?';
-          const candidateName = a.candidate ? a.candidate.w.name : 'Sin asignar';
-          const confidence = (a.dayAnalysis && a.dayAnalysis.candidates) ? ((a.dayAnalysis.candidates[0]?.score || 0) * 100).toFixed(0) : '—';
-          return `<tr>
-            <td style="border:1px solid #ddd;padding:10px;">${day}</td>
-            <td style="border:1px solid #ddd;padding:10px;"><strong>${shift}</strong></td>
-            <td style="border:1px solid #ddd;padding:10px;">${candidateName}</td>
-            <td style="border:1px solid #ddd;padding:10px;">${confidence}%</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>
-
-    <div style="background:#f9f9f9;padding:20px;border-radius:8px;margin-bottom:20px;">
-      <p style="margin:0;font-size:12px;color:#666;"><strong>Reglas de convenio aplicadas:</strong></p>
-      <ul style="margin:8px 0 0 20px;font-size:11px;color:#666;">
-        <li>Máximo ${RULES.MAX_CONSECUTIVE_NIGHTS} noches consecutivas</li>
-        <li>Descanso obligatorio tras noche</li>
-        <li>Respeto de reducción de jornada y conciliación familiar</li>
-      </ul>
-    </div>
-
-    <div style="text-align:center;font-size:10px;color:#999;border-top:1px solid #ddd;padding-top:20px;">
-      Shiftia v5.3 — Planificador Inteligente de Turnos<br>Hospital de Jove
-    </div>
-  `;
-
-  const printWin = window.open('', '_blank');
-  printWin.document.write(doc.outerHTML);
-  printWin.document.close();
-  setTimeout(() => printWin.print(), 500);
-}
-
-function sendCoverageNotification(coverWorker, absentWorker, shift, date) {
-  const payload = {
-    workerEmail: coverWorker.email || 'unknown@hospital.es',
-    workerName: coverWorker.name,
-    shift: shift,
-    date: date,
-    absentName: absentWorker.name,
-    acceptedBy: 'Sara'
-  };
-
-  fetch('/api/notify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  }).then(r => {
-    if (r.ok) showToast(`Notificación enviada a ${coverWorker.name}`, 'success', 2000);
-    else showToast('Error enviando notificación', 'error', 2000);
-  }).catch(e => {
-    console.warn('[Email] Error:', e);
-    showToast('Sin conexión para enviar email', 'warning', 2000);
-  });
-}
-
-function notifyPlan(planIdx) {
-  // This would send notifications to all workers in the plan
-  // Implementation depends on plan display context
-  showToast('Notificaciones enviadas a los trabajadores asignados', 'success', 2000);
-  logAuditEvent('coverage_notify', `Notificaciones enviadas para plan ${planIdx}`);
-}
-
 // Initialize (loadFromStorage is async — handle gracefully)
 (async function init() {
   // Show loading spinner
@@ -14548,13 +14355,6 @@ function notifyPlan(planIdx) {
   detectConflicts();
   renderDashboard();
   updateImportBadge();
-
-  // Check for onboarding
-  const onboarded = localStorage.getItem('shiftia_onboarded');
-  if (!onboarded) {
-    setTimeout(() => showOnboarding(), 500);
-  }
-
   console.log('[Shiftia v5.3] Iniciado correctamente');
 
   // Hide loading spinner

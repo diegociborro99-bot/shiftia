@@ -806,6 +806,71 @@ app.get('/docs', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'docs.html'));
 });
 
+// Coverage notification endpoint
+app.post('/api/notify', async (req, res) => {
+  try {
+    const { workerEmail, workerName, shift, date, absentName, acceptedBy } = req.body;
+
+    // Configure email (console.log fallback if SMTP not configured)
+    const hasEmail = process.env.SMTP_HOST;
+
+    if (hasEmail) {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT || 587,
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      });
+
+      const mailOptions = {
+        from: process.env.SMTP_FROM || 'noreply@hospital.es',
+        to: workerEmail,
+        subject: `Asignación de Cobertura — Hospital de Jove`,
+        html: `
+          <h2>Hola ${workerName},</h2>
+          <p>Se te ha asignado una cobertura por ausencia.</p>
+          <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+            <tr style="background:#f5f5f5;">
+              <td style="padding:10px;border:1px solid #ddd;"><strong>Trabajador Ausente</strong></td>
+              <td style="padding:10px;border:1px solid #ddd;">${absentName}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px;border:1px solid #ddd;"><strong>Turno</strong></td>
+              <td style="padding:10px;border:1px solid #ddd;">${shift}</td>
+            </tr>
+            <tr style="background:#f5f5f5;">
+              <td style="padding:10px;border:1px solid #ddd;"><strong>Fecha</strong></td>
+              <td style="padding:10px;border:1px solid #ddd;">${date}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px;border:1px solid #ddd;"><strong>Aprobado por</strong></td>
+              <td style="padding:10px;border:1px solid #ddd;">${acceptedBy}</td>
+            </tr>
+          </table>
+          <p style="color:#666;font-size:12px;">Mensaje generado automáticamente por Shiftia v5.3</p>
+        `
+      };
+
+      await transporter.sendMail(mailOptions);
+      res.json({ success: true, message: 'Email enviado correctamente' });
+    } else {
+      // Fallback: log to console if no SMTP configured
+      console.log('[Email Notification]');
+      console.log(`To: ${workerEmail}`);
+      console.log(`Worker: ${workerName}`);
+      console.log(`Coverage: ${absentName} → ${shift} on ${date}`);
+      console.log(`Approved by: ${acceptedBy}`);
+      res.json({ success: true, message: 'Notificación registrada (sin SMTP configurado)' });
+    }
+  } catch (err) {
+    console.error('[Notify Error]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', version: '2.0.0', auth: 'enabled' });
