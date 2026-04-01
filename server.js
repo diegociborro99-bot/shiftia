@@ -111,17 +111,17 @@ async function initializeDatabase() {
 
     console.log('Database initialized: all tables created');
 
-    // Seed admin user
-    const adminEmail = 'admin@shiftia.es';
-    const existingAdmin = await client.query('SELECT id FROM users WHERE email = $1', [adminEmail]);
+    // Seed Sara admin user (SAV)
+    const saraEmail = 'sara@shiftia.es';
+    const existingSara = await client.query('SELECT id FROM users WHERE email = $1', [saraEmail]);
 
-    if (existingAdmin.rows.length === 0) {
-      const hashedPassword = await bcrypt.hash('Shiftia2024!', 10);
+    if (existingSara.rows.length === 0) {
+      const hashedPassword = await bcrypt.hash('vinicius1', 10);
       await client.query(`
         INSERT INTO users (email, password_hash, name, company, plan, plan_status, workers_limit)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `, [adminEmail, hashedPassword, 'Administrador', 'Shiftia', 'enterprise', 'active', 1000]);
-      console.log('Admin user created: admin@shiftia.es');
+      `, [saraEmail, hashedPassword, 'Sara — Supervisora', 'Hospital de Jove', 'enterprise', 'active', 1000]);
+      console.log('Admin user created: sara@shiftia.es (SAV)');
     }
 
     client.release();
@@ -222,18 +222,29 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+// Username → email mapping for single-user mode
+const USERNAME_MAP = {
+  'sav': 'sara@shiftia.es',
+};
+
 // POST /api/auth/login
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, username } = req.body;
+
+    // Resolve login identifier: username (SAV) or email
+    let loginEmail = email;
+    if (username && !email) {
+      loginEmail = USERNAME_MAP[username.toLowerCase()] || username.toLowerCase();
+    }
 
     // Validate required fields
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+    if (!loginEmail || !password) {
+      return res.status(400).json({ error: 'Usuario y contraseña son obligatorios' });
     }
 
     // Find user by email
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [loginEmail.toLowerCase()]);
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }

@@ -132,20 +132,6 @@
   color: var(--danger); font-size: 12px; font-weight: 500; margin-top: 12px;
   min-height: 18px; transition: opacity 0.2s;
 }
-.login-tabs {
-  display: flex; gap: 4px; margin-bottom: 16px; background: rgba(255,255,255,0.06);
-  border-radius: 10px; padding: 3px;
-}
-.login-tab {
-  flex: 1; padding: 9px 0; border: none; border-radius: 8px; background: transparent;
-  color: var(--text3); font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
-  cursor: pointer; transition: all 0.2s;
-}
-.login-tab.active {
-  background: linear-gradient(135deg, var(--accent), #2980b9); color: #fff;
-  box-shadow: 0 2px 8px rgba(46,139,122,0.3);
-}
-.login-tab:hover:not(.active) { color: var(--text1); }
 .login-btn:disabled {
   opacity: 0.6; cursor: not-allowed; transform: none !important;
 }
@@ -221,7 +207,9 @@
 }
 
 /* Skeleton loading */
-.skeleton-container { padding: 0 40px; max-width: 1100px; margin: 80px auto 0; }
+.skeleton-container.hidden { display: none; }
+.skeleton-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99997; background: var(--bg); padding: 80px 40px 0; }
+.skeleton-inner { max-width: 1100px; margin: 0 auto; }
 .skeleton-header { height: 36px; width: 280px; background: var(--surface2); border-radius: 8px; margin-bottom: 8px; }
 .skeleton-subtitle { height: 14px; width: 220px; background: var(--surface2); border-radius: 6px; margin-bottom: 32px; }
 .skeleton-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
@@ -4107,8 +4095,6 @@ table.schedule th.month-total-header {
   .login-card {
     width: 92%; max-width: 380px; padding: 28px 22px;
   }
-  .login-tabs { margin-bottom: 12px; }
-  .login-tab { padding: 8px 0; font-size: 12px; }
   .login-field input { padding: 12px 14px; font-size: 15px; }
   .login-btn { padding: 14px; font-size: 15px; min-height: 48px; }
 
@@ -4669,14 +4655,16 @@ html {
 
 <!-- Skeleton Loading Screen -->
 <div id="skeletonScreen" class="skeleton-container hidden">
-  <div class="skeleton-header skeleton-shimmer"></div>
-  <div class="skeleton-subtitle skeleton-shimmer"></div>
-  <div class="skeleton-grid">
-    <div class="skeleton-card skeleton-shimmer"></div>
-    <div class="skeleton-card skeleton-shimmer"></div>
-    <div class="skeleton-card skeleton-shimmer"></div>
+  <div class="skeleton-inner">
+    <div class="skeleton-header skeleton-shimmer"></div>
+    <div class="skeleton-subtitle skeleton-shimmer"></div>
+    <div class="skeleton-grid">
+      <div class="skeleton-card skeleton-shimmer"></div>
+      <div class="skeleton-card skeleton-shimmer"></div>
+      <div class="skeleton-card skeleton-shimmer"></div>
+    </div>
+    <div class="skeleton-table skeleton-shimmer"></div>
   </div>
-  <div class="skeleton-table skeleton-shimmer"></div>
 </div>
 
 <!-- Login Screen -->
@@ -4692,44 +4680,17 @@ html {
       <div class="login-logo-text">Sh<span>iftia</span></div>
     </div>
     <div class="login-hospital">Hospital de Jove — Laboratorio</div>
-    <!-- Login / Register tabs -->
-    <div class="login-tabs" id="authTabs">
-      <button class="login-tab active" data-tab="login" onclick="switchAuthTab('login')">Acceder</button>
-      <button class="login-tab" data-tab="register" onclick="switchAuthTab('register')">Crear cuenta</button>
-    </div>
-    <!-- Login Form -->
     <form id="loginForm" onsubmit="return handleLogin(event)">
       <div class="login-field">
-        <label for="loginEmail">Email</label>
-        <input type="email" id="loginEmail" name="email" autocomplete="email" placeholder="tu@hospital.es" autofocus required>
+        <label for="loginUser">Usuario</label>
+        <input type="text" id="loginUser" name="username" autocomplete="username" placeholder="Introduce tu usuario" autofocus required>
       </div>
       <div class="login-field">
         <label for="loginPass">Contraseña</label>
-        <input type="password" id="loginPass" name="password" autocomplete="current-password" placeholder="Tu contraseña" required>
+        <input type="password" id="loginPass" name="password" autocomplete="current-password" placeholder="Introduce tu contraseña" required>
       </div>
       <button type="submit" class="login-btn" id="loginBtn">Acceder</button>
       <div class="login-error-msg" id="loginError"></div>
-    </form>
-    <!-- Register Form (hidden by default) -->
-    <form id="registerForm" onsubmit="return handleRegister(event)" style="display:none;">
-      <div class="login-field">
-        <label for="regName">Nombre</label>
-        <input type="text" id="regName" name="name" autocomplete="name" placeholder="Tu nombre completo" required>
-      </div>
-      <div class="login-field">
-        <label for="regEmail">Email</label>
-        <input type="email" id="regEmail" name="email" autocomplete="email" placeholder="tu@hospital.es" required>
-      </div>
-      <div class="login-field">
-        <label for="regCompany">Hospital / Empresa</label>
-        <input type="text" id="regCompany" name="company" autocomplete="organization" placeholder="Nombre del centro">
-      </div>
-      <div class="login-field">
-        <label for="regPass">Contraseña</label>
-        <input type="password" id="regPass" name="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required minlength="8">
-      </div>
-      <button type="submit" class="login-btn" id="registerBtn">Crear cuenta</button>
-      <div class="login-error-msg" id="registerError"></div>
     </form>
     <div class="login-footer">Acceso restringido — Solo personal autorizado</div>
   </div>
@@ -12987,7 +12948,7 @@ function showAuthSuccess(btn, name) {
 
 function showAuthError(formId, message) {
   const card = document.getElementById('loginCard');
-  const errorEl = document.getElementById(formId === 'loginForm' ? 'loginError' : 'registerError');
+  const errorEl = document.getElementById('loginError');
   errorEl.textContent = message;
   card.classList.add('login-shake');
   setTimeout(() => card.classList.remove('login-shake'), 600);
@@ -12995,13 +12956,13 @@ function showAuthError(formId, message) {
 
 async function handleLogin(e) {
   e.preventDefault();
-  const email = document.getElementById('loginEmail').value.trim();
+  const user = document.getElementById('loginUser').value.trim();
   const pass = document.getElementById('loginPass').value;
   const btn = document.getElementById('loginBtn');
   const errorEl = document.getElementById('loginError');
   errorEl.textContent = '';
 
-  if (!email || !pass) { showAuthError('loginForm', 'Introduce email y contraseña'); return false; }
+  if (!user || !pass) { showAuthError('loginForm', 'Introduce usuario y contraseña'); return false; }
 
   btn.disabled = true;
   btn.textContent = 'Accediendo...';
@@ -13010,7 +12971,7 @@ async function handleLogin(e) {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: pass })
+      body: JSON.stringify({ username: user, password: pass })
     });
     const data = await res.json();
 
@@ -13040,69 +13001,10 @@ async function handleLogin(e) {
   return false;
 }
 
-async function handleRegister(e) {
-  e.preventDefault();
-  const name = document.getElementById('regName').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
-  const company = document.getElementById('regCompany').value.trim();
-  const pass = document.getElementById('regPass').value;
-  const btn = document.getElementById('registerBtn');
-  const errorEl = document.getElementById('registerError');
-  errorEl.textContent = '';
-
-  if (!name || !email || !pass) { showAuthError('registerForm', 'Nombre, email y contraseña son obligatorios'); return false; }
-  if (pass.length < 8) { showAuthError('registerForm', 'La contraseña debe tener al menos 8 caracteres'); return false; }
-
-  btn.disabled = true;
-  btn.textContent = 'Creando cuenta...';
-
-  try {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: pass, name, company: company || undefined })
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      showAuthError('registerForm', data.error || 'Error al crear la cuenta');
-      btn.disabled = false;
-      btn.textContent = 'Crear cuenta';
-      return false;
-    }
-
-    // Success
-    setAuthToken(data.token);
-    currentUser = data.user;
-    isAuthenticated = true;
-    try { localStorage.setItem('shiftia_sara_user', JSON.stringify(data.user)); } catch(e) {}
-
-    showAuthSuccess(btn, data.user.name.split(' ')[0]);
-  } catch (err) {
-    showAuthError('registerForm', 'Error de conexión. Inténtalo de nuevo.');
-    btn.disabled = false;
-    btn.textContent = 'Crear cuenta';
-  }
-  return false;
-}
-
-function switchAuthTab(tab) {
-  document.querySelectorAll('.login-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  document.getElementById('loginForm').style.display = tab === 'login' ? '' : 'none';
-  document.getElementById('registerForm').style.display = tab === 'register' ? '' : 'none';
-  document.getElementById('loginError').textContent = '';
-  document.getElementById('registerError').textContent = '';
-  // Reset buttons
-  document.getElementById('loginBtn').disabled = false;
-  document.getElementById('loginBtn').textContent = 'Acceder';
-  document.getElementById('registerBtn').disabled = false;
-  document.getElementById('registerBtn').textContent = 'Crear cuenta';
-}
-
 function showLoginScreen() {
   const login = document.getElementById('loginScreen');
   login.classList.add('active');
-  setTimeout(() => { document.getElementById('loginEmail').focus(); }, 400);
+  setTimeout(() => { document.getElementById('loginUser').focus(); }, 400);
 }
 
 async function checkSession() {
@@ -13132,11 +13034,11 @@ function handleLogout() {
   document.getElementById('loginScreen').style.opacity = '1';
   document.getElementById('loginScreen').style.pointerEvents = '';
   document.getElementById('loginScreen').classList.add('active');
-  // Reset forms
   document.getElementById('loginForm').reset();
-  if (document.getElementById('registerForm')) document.getElementById('registerForm').reset();
-  switchAuthTab('login');
-  setTimeout(() => document.getElementById('loginEmail').focus(), 400);
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('loginBtn').disabled = false;
+  document.getElementById('loginBtn').textContent = 'Acceder';
+  setTimeout(() => document.getElementById('loginUser').focus(), 400);
 }
 
 // Keyboard Shortcuts
