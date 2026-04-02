@@ -238,6 +238,15 @@ body {
   line-height: 1.6;
 }
 
+/* Accessibility: focus-visible for keyboard navigation */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* Remove outline for mouse clicks */
+:focus:not(:focus-visible) { outline: none; }
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
@@ -266,17 +275,28 @@ body {
 
 /* Navigation */
 .topbar {
-  background: var(--surface);
+  background: rgba(255,255,255,0.85);
   padding: 14px 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   margin-bottom: 24px;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition: background 0.3s ease, box-shadow 0.3s ease, padding 0.3s ease;
   border-bottom: 1px solid var(--border);
-  position: relative;
-  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+[data-theme="dark"] .topbar {
+  background: rgba(17,17,20,0.88);
+}
+.topbar.scrolled {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 }
 
 .topbar-left {
@@ -338,6 +358,11 @@ body {
   height: 2.5px;
   background: var(--accent);
   border-radius: 2px;
+  animation: tabIndicatorIn 0.25s ease-out;
+}
+@keyframes tabIndicatorIn {
+  from { transform: scaleX(0); opacity: 0; }
+  to { transform: scaleX(1); opacity: 1; }
 }
 
 .topbar-right {
@@ -499,8 +524,13 @@ button:active, .nav-btn:active, .btn:active {
 }
 
 .stat-pill:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--shadow-md);
+  border-color: var(--accent2);
+}
+.stat-pill:hover .stat-pill-value {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
 }
 
 .stat-pill-value {
@@ -926,15 +956,21 @@ table.schedule td.name-cell:hover {
 }
 
 .shift-pill:hover {
-  transform: scale(1.15) translateY(-1px);
+  transform: scale(1.18) translateY(-2px);
+  z-index: 3;
   box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-  z-index: 2;
   position: relative;
   border-color: rgba(0,0,0,0.08);
 }
 
 .shift-pill:active {
   transform: scale(0.95);
+}
+
+/* Dark mode: shift-pill hover glow */
+[data-theme="dark"] .shift-pill:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.12);
 }
 
 /* Shift Editor Popup */
@@ -7094,6 +7130,134 @@ html {
   [data-theme="dark"] .schedule-table-wrap::after {
     background: linear-gradient(to left, var(--surface), transparent) !important;
   }
+}
+
+/* ========== DARK MODE POLISH ========== */
+
+/* Smooth theme transitions on all key surfaces */
+.topbar, .nav-tabs, .nav-tab, .content, .stat-pill, .worker-card,
+.conflict-card, .gestor-modal, .gestor-overlay, .briefing-card,
+table.schedule th, table.schedule td, table.schedule td.name-cell {
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Dark mode: elevated surfaces get subtle glow borders */
+[data-theme="dark"] .gestor-modal {
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+[data-theme="dark"] .gestor-modal::before {
+  background: linear-gradient(135deg, #4ecdc4, #2980b9);
+  opacity: 0.85;
+}
+
+/* Dark mode overlay deeper blur */
+[data-theme="dark"] .gestor-overlay {
+  background: rgba(0,0,0,0.65);
+}
+
+/* Dark mode cards: subtle border glow on hover */
+[data-theme="dark"] .worker-card:hover,
+[data-theme="dark"] .conflict-card:hover,
+[data-theme="dark"] .stat-card:hover {
+  box-shadow: var(--shadow-md), 0 0 0 1px rgba(78,205,196,0.1);
+}
+
+/* Dark mode stat-pills: glass effect */
+[data-theme="dark"] .stat-pill {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.08);
+}
+
+[data-theme="dark"] .stat-pill:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: var(--accent2);
+}
+
+/* Dark mode worker cards: soft edge glow */
+[data-theme="dark"] .worker-card {
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+[data-theme="dark"] .worker-card:hover {
+  border-color: rgba(78,205,196,0.15);
+}
+
+/* Dark mode scrollbar polish */
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* ========== SCHEDULE TABLE READABILITY ========== */
+
+/* Dark mode: today column richer tint */
+[data-theme="dark"] .today-col-header {
+  background: rgba(78,205,196,0.12) !important;
+}
+[data-theme="dark"] .today-col-header::before {
+  background: linear-gradient(90deg, #4ecdc4, #2980b9);
+}
+
+/* Dark mode: weekend/festivo column contrast */
+[data-theme="dark"] .weekend-col-header {
+  background: rgba(204,68,68,0.06) !important;
+}
+[data-theme="dark"] .weekend-col {
+  background: rgba(204,68,68,0.03) !important;
+}
+[data-theme="dark"] .festivo-header {
+  background: rgba(204,68,68,0.08) !important;
+}
+
+/* Alternating row stripes for readability */
+table.schedule tbody tr:nth-child(even) {
+  background: rgba(0,0,0,0.012);
+}
+[data-theme="dark"] table.schedule tbody tr:nth-child(even) {
+  background: rgba(255,255,255,0.015);
+}
+
+/* Stronger row hover */
+table.schedule tbody tr:hover {
+  background: rgba(92,122,111,0.07) !important;
+}
+[data-theme="dark"] table.schedule tbody tr:hover {
+  background: rgba(78,205,196,0.06) !important;
+}
+
+/* Dark mode: better cell border visibility */
+[data-theme="dark"] table.schedule td {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Dark mode: name cell sticky column shadow */
+[data-theme="dark"] table.schedule td.name-cell {
+  box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+}
+[data-theme="dark"] table.schedule th.name-col {
+  box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+}
+
+/* Table header sticky top on scroll (desktop) */
+@media (min-width: 769px) {
+  table.schedule thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+  }
+  table.schedule th.name-col {
+    z-index: 4;
+  }
+}
+
+/* Dark mode: name cell hover glow */
+[data-theme="dark"] table.schedule td.name-cell:hover {
+  background: var(--surface2) !important;
+  border-left-color: #4ecdc4;
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -18041,6 +18205,21 @@ function notifyPlan(planIdx) {
   }
 
   console.log('[Shiftia v5.3] Iniciado correctamente');
+
+  // Topbar scroll shrink effect
+  const topbar = document.querySelector('.topbar');
+  if (topbar) {
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          topbar.classList.toggle('scrolled', window.scrollY > 20);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
+  }
 
   // Hide loading spinner
   if (spinner) {
