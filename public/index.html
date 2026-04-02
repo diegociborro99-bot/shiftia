@@ -7741,6 +7741,424 @@ table.schedule tbody tr:hover {
 .skip-to-content:focus {
   top: 0;
 }
+
+/* ============================================================= */
+/* INTELLIGENT DASHBOARD v5.0                                     */
+/* ============================================================= */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+  animation: fadeUp 0.4s ease;
+}
+.kpi-card {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.kpi-card:hover::before { opacity: 1; }
+.kpi-card.kpi-alert { border-left: 3px solid #cc4444; }
+.kpi-card.kpi-warn { border-left: 3px solid #e67e22; }
+.kpi-card.kpi-ok { border-left: 3px solid #27ae60; }
+.kpi-value { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1.1; }
+.kpi-subvalue { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.kpi-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); font-weight: 600; margin-bottom: 6px; }
+.kpi-bar { width: 100%; height: 4px; background: var(--surface2); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.kpi-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+.kpi-trend { font-size: 10px; font-weight: 700; margin-left: 4px; }
+.kpi-trend.up { color: #27ae60; }
+.kpi-trend.down { color: #cc4444; }
+
+/* Coverage mini-heatmap */
+.dash-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dash-section-title .dst-icon { font-size: 14px; opacity: 0.7; }
+
+.cov-heatmap-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.cov-heatmap {
+  display: grid;
+  grid-template-columns: 40px repeat(7, 1fr);
+  gap: 4px;
+  align-items: center;
+}
+.cov-hm-header {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text3);
+  text-align: center;
+  padding: 4px 0;
+}
+.cov-hm-header.today-hdr { color: var(--accent); font-weight: 800; }
+.cov-hm-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text2);
+  padding-right: 6px;
+  text-align: right;
+}
+.cov-hm-cell {
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.cov-hm-cell:hover { transform: scale(1.08); z-index: 5; box-shadow: 0 3px 10px rgba(0,0,0,0.2); }
+.cov-hm-cell.hm-ok { background: #27ae60; }
+.cov-hm-cell.hm-warn { background: #e67e22; }
+.cov-hm-cell.hm-crit { background: #cc4444; }
+.cov-hm-cell.hm-off { background: var(--surface2); color: var(--text3); }
+
+/* Conflict predictions */
+.dash-alerts {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.dash-alert-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--surface2);
+  font-size: 12px;
+  color: var(--text2);
+}
+.dash-alert-item:last-child { border-bottom: none; }
+.dash-alert-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.dash-alert-icon.dai-high { background: rgba(204,68,68,0.12); color: #cc4444; }
+.dash-alert-icon.dai-med { background: rgba(230,126,34,0.12); color: #e67e22; }
+.dash-alert-icon.dai-low { background: rgba(39,174,96,0.12); color: #27ae60; }
+.dash-alert-text { flex: 1; line-height: 1.4; }
+.dash-alert-text strong { color: var(--text); }
+.dash-alert-date { font-size: 10px; color: var(--text3); white-space: nowrap; }
+.dash-alert-action {
+  font-size: 10px;
+  padding: 4px 10px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.dash-alert-action:hover { filter: brightness(1.1); transform: scale(1.03); }
+
+/* Team health meters */
+.team-health-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.team-health-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.th-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.th-title { font-size: 12px; font-weight: 700; color: var(--text); }
+.th-score { font-size: 20px; font-weight: 800; }
+.th-meter { width: 100%; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+.th-meter-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+.th-factors { font-size: 10px; color: var(--text3); line-height: 1.6; }
+
+/* ============================================================= */
+/* GLOBAL SEARCH (Cmd+K)                                          */
+/* ============================================================= */
+.global-search-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  z-index: 500;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  animation: fadeIn 0.12s ease;
+}
+.global-search-overlay.hidden { display: none; }
+.global-search-box {
+  width: 92%;
+  max-width: 560px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  overflow: hidden;
+  animation: slideDown 0.2s cubic-bezier(0.22,0.61,0.36,1);
+  border: 1px solid var(--border);
+}
+@keyframes slideDown {
+  from { transform: translateY(-16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.gs-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.gs-input-wrap svg { opacity: 0.4; flex-shrink: 0; }
+.gs-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 17px;
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+}
+.gs-input::placeholder { color: var(--text3); }
+.gs-kbd {
+  font-size: 10px;
+  padding: 3px 7px;
+  background: var(--surface2);
+  border-radius: 5px;
+  color: var(--text3);
+  font-weight: 600;
+  font-family: inherit;
+}
+.gs-results {
+  max-height: 55vh;
+  overflow-y: auto;
+}
+.gs-group { border-bottom: 1px solid var(--surface2); }
+.gs-group:last-child { border-bottom: none; }
+.gs-group-title {
+  padding: 10px 20px 6px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-weight: 700;
+  color: var(--text3);
+}
+.gs-result {
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 0.08s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.gs-result:hover, .gs-result.gs-selected { background: var(--surface2); }
+.gs-result-icon { font-size: 15px; opacity: 0.6; width: 20px; text-align: center; }
+.gs-result-text { flex: 1; font-size: 13px; color: var(--text); }
+.gs-result-text mark { background: rgba(92,122,111,0.2); color: var(--text); border-radius: 2px; padding: 0 2px; }
+.gs-result-meta { font-size: 10px; color: var(--text3); }
+.gs-result-badge {
+  font-size: 8px; font-weight: 700; padding: 2px 7px; border-radius: 5px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.gs-empty { padding: 36px 20px; text-align: center; color: var(--text3); font-size: 13px; }
+.gs-footer {
+  padding: 10px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--text3);
+  background: var(--surface2);
+  display: flex;
+  gap: 16px;
+}
+
+/* ============================================================= */
+/* ADVANCED FILTERS (Schedule View)                               */
+/* ============================================================= */
+.schedule-with-filters {
+  display: flex;
+  gap: 0;
+}
+.adv-filters-panel {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 14px;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  display: none;
+  animation: slideRight 0.25s ease;
+}
+.adv-filters-panel.open { display: flex; flex-direction: column; gap: 14px; }
+@keyframes slideRight {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.af-section { border-bottom: 1px solid var(--surface2); padding-bottom: 12px; }
+.af-section:last-child { border-bottom: none; }
+.af-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  color: var(--text3);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.af-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text2);
+  transition: color 0.1s;
+}
+.af-option:hover { color: var(--text); }
+.af-option input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+.af-badge {
+  font-size: 9px; background: var(--surface2); padding: 1px 6px;
+  border-radius: 8px; font-weight: 600; color: var(--text3); margin-left: auto;
+}
+.af-clear-btn {
+  width: 100%; padding: 8px; border: 1px solid var(--border);
+  background: transparent; border-radius: 8px; font-size: 11px;
+  cursor: pointer; color: var(--text3); font-family: inherit;
+  transition: all 0.15s;
+}
+.af-clear-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+.filter-toggle-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border: 1px solid var(--border);
+  background: var(--surface); border-radius: 8px;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  color: var(--text2); font-family: inherit; transition: all 0.15s;
+}
+.filter-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+.filter-toggle-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+.filter-active-badge {
+  background: #cc4444; color: white; font-size: 9px; font-weight: 700;
+  min-width: 16px; height: 16px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Enhanced incidents timeline */
+.timeline-filters {
+  display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+}
+.tl-filter-chip {
+  padding: 6px 12px; border: 1px solid var(--border);
+  border-radius: 20px; font-size: 11px; cursor: pointer;
+  background: var(--surface); color: var(--text2);
+  font-family: inherit; transition: all 0.15s; font-weight: 500;
+}
+.tl-filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+.tl-filter-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+.tl-filter-select {
+  padding: 6px 10px; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--surface); color: var(--text);
+  font-size: 11px; font-family: inherit; cursor: pointer;
+}
+
+.incident-timeline { position: relative; padding-left: 28px; }
+.incident-timeline::before {
+  content: ''; position: absolute; left: 7px; top: 0; bottom: 0;
+  width: 2px; background: linear-gradient(180deg, var(--accent), var(--surface2));
+}
+.tl-item {
+  position: relative; margin-bottom: 16px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.2s;
+  animation: fadeUp 0.3s ease;
+}
+.tl-item::before {
+  content: ''; position: absolute; left: -24px; top: 16px;
+  width: 10px; height: 10px; background: var(--accent);
+  border: 2px solid var(--surface); border-radius: 50%;
+}
+.tl-item:hover { border-color: var(--accent2); transform: translateX(2px); }
+.tl-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.tl-item-worker { font-size: 12px; font-weight: 700; color: var(--text); }
+.tl-item-time { font-size: 10px; color: var(--text3); }
+.tl-item-desc { font-size: 11px; color: var(--text2); line-height: 1.5; }
+.tl-item-type {
+  display: inline-block; font-size: 8px; padding: 2px 7px;
+  border-radius: 5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; margin-right: 4px;
+}
+.tl-item-type.tl-shift { background: rgba(46,139,122,0.12); color: #2e8b7a; }
+.tl-item-type.tl-coverage { background: rgba(74,157,212,0.12); color: #4a9dd4; }
+.tl-item-type.tl-absence { background: rgba(204,68,68,0.12); color: #cc4444; }
+.tl-item-type.tl-partial { background: rgba(230,126,34,0.12); color: #e67e22; }
+
+/* Dark mode adjustments */
+[data-theme="dark"] .kpi-card { background: var(--surface); border-color: rgba(255,255,255,0.06); }
+[data-theme="dark"] .kpi-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+[data-theme="dark"] .cov-heatmap-wrap, [data-theme="dark"] .dash-alerts,
+[data-theme="dark"] .team-health-card { background: var(--surface); border-color: rgba(255,255,255,0.06); }
+[data-theme="dark"] .global-search-box { box-shadow: 0 20px 60px rgba(0,0,0,0.6); border-color: rgba(255,255,255,0.08); }
+[data-theme="dark"] .adv-filters-panel { border-color: rgba(255,255,255,0.06); }
+[data-theme="dark"] .tl-item { border-color: rgba(255,255,255,0.06); }
+[data-theme="dark"] .tl-item:hover { border-color: rgba(255,255,255,0.12); }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .team-health-grid { grid-template-columns: 1fr; }
+  .cov-heatmap { font-size: 8px; gap: 2px; }
+  .cov-hm-cell { height: 26px; font-size: 9px; }
+  .adv-filters-panel { display: none !important; }
+  .global-search-overlay { padding-top: 5vh; }
+  .global-search-box { width: 96%; border-radius: 12px; }
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -7864,6 +8282,9 @@ table.schedule tbody tr:hover {
       <div class="dashboard-title" id="todayText">Miércoles, 25 de marzo</div>
       <div class="dashboard-subtitle">Visualiza el estado de hoy y próximos días</div>
 
+      <!-- Intelligent Dashboard v5.0 -->
+      <div id="intelligentDashboard"></div>
+
       <div class="stat-pills">
         <div class="stat-pill">
           <div class="stat-pill-value" id="nowCount">8</div>
@@ -7938,6 +8359,12 @@ table.schedule tbody tr:hover {
             <button class="schedule-mode-btn active" onclick="setScheduleMode('normal')" data-mode="normal">Normal</button>
           </div>
           <input type="text" class="search-box" id="workerSearch" placeholder="Buscar trabajador...">
+          <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleAdvFilters()" title="Filtros avanzados">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            Filtros
+            <span class="filter-active-badge" id="filterActiveBadge" style="display:none;">0</span>
+          </button>
+          <span id="filterMatchCount" style="font-size:10px;color:var(--text3);"></span>
           <button class="toolbar-action-btn toolbar-btn-accent" onclick="openBulkEdit()" title="Edicion masiva de turnos">Masivo</button>
           <button class="toolbar-action-btn toolbar-btn-ghost" onclick="exportScheduleCSV()" title="Exportar a CSV">CSV</button>
           <button class="toolbar-action-btn toolbar-btn-primary" onclick="exportSchedulePDF()" title="Imprimir / Guardar como PDF">PDF</button>
@@ -7968,10 +8395,36 @@ table.schedule tbody tr:hover {
         <div class="coverage-heatmap" id="coverageHeatmap"></div>
       </div>
 
-      <div class="schedule-table-wrap">
-        <table class="schedule" id="scheduleTable">
-          <!-- Generated -->
-        </table>
+      <div style="display:flex;gap:0;">
+        <!-- Advanced Filters Panel -->
+        <div class="adv-filters-panel" id="advFiltersPanel">
+          <div class="af-section">
+            <div class="af-title">Turno hoy</div>
+            <label class="af-option"><input type="checkbox" onchange="updateAdvFilter('shifts','M',this.checked)"> Mañana (M) <span class="af-badge" id="af-count-M"></span></label>
+            <label class="af-option"><input type="checkbox" onchange="updateAdvFilter('shifts','T',this.checked)"> Tarde (T) <span class="af-badge" id="af-count-T"></span></label>
+            <label class="af-option"><input type="checkbox" onchange="updateAdvFilter('shifts','N',this.checked)"> Noche (N) <span class="af-badge" id="af-count-N"></span></label>
+            <label class="af-option"><input type="checkbox" onchange="updateAdvFilter('shifts','D',this.checked)"> Descanso (D)</label>
+            <label class="af-option"><input type="checkbox" onchange="updateAdvFilter('shifts','VAC',this.checked)"> Vacaciones</label>
+            <label class="af-option"><input type="checkbox" onchange="updateAdvFilter('shifts','BAJ',this.checked)"> Baja/IT</label>
+          </div>
+          <div class="af-section">
+            <div class="af-title">Tipo</div>
+            <label class="af-option"><input type="checkbox" onchange="updateAdvFilter('types','enf',this.checked)"> Enfermería</label>
+            <label class="af-option"><input type="checkbox" onchange="updateAdvFilter('types','tec',this.checked)"> Técnicos</label>
+          </div>
+          <div class="af-section">
+            <div class="af-title">Área</div>
+            <label class="af-option"><input type="checkbox" onchange="updateAdvFilter('areas','lab',this.checked)"> Laboratorio</label>
+            <label class="af-option"><input type="checkbox" onchange="updateAdvFilter('areas','micro',this.checked)"> Microbiología</label>
+          </div>
+          <button class="af-clear-btn" onclick="clearAdvFilters()">Limpiar filtros</button>
+        </div>
+
+        <div class="schedule-table-wrap" style="flex:1;min-width:0;">
+          <table class="schedule" id="scheduleTable">
+            <!-- Generated -->
+          </table>
+        </div>
       </div>
     </div>
 
@@ -8005,7 +8458,22 @@ table.schedule tbody tr:hover {
 
     <!-- History -->
     <div class="view-panel" id="incidentsPanel">
-      <div class="timeline" id="historyTimeline">
+      <div class="timeline-filters" id="timelineFilters">
+        <button class="tl-filter-chip active" onclick="filterTimeline('all', this)">Todas</button>
+        <button class="tl-filter-chip" onclick="filterTimeline('coverage', this)">Cobertura</button>
+        <button class="tl-filter-chip" onclick="filterTimeline('shift', this)">Cambio turno</button>
+        <button class="tl-filter-chip" onclick="filterTimeline('absence', this)">Ausencias</button>
+        <select class="tl-filter-select" id="tlWorkerFilter" onchange="filterTimelineByWorker(this.value)">
+          <option value="">Todos los trabajadores</option>
+        </select>
+        <select class="tl-filter-select" id="tlDateFilter" onchange="filterTimelineByDate(this.value)">
+          <option value="all">Todo el historial</option>
+          <option value="7">Últimos 7 días</option>
+          <option value="30">Últimos 30 días</option>
+          <option value="90">Últimos 90 días</option>
+        </select>
+      </div>
+      <div class="incident-timeline" id="historyTimeline">
         <!-- Generated -->
       </div>
     </div>
@@ -8243,6 +8711,23 @@ table.schedule tbody tr:hover {
 
   <!-- Toast Notifications Container -->
   <div class="toast-container" id="toastContainer" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Global Search Modal (Cmd+K) -->
+  <div class="global-search-overlay hidden" id="globalSearchOverlay" onclick="if(event.target===this)closeGlobalSearch()">
+    <div class="global-search-box" role="dialog" aria-modal="true" aria-label="Búsqueda global">
+      <div class="gs-input-wrap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="gs-input" id="globalSearchInput" type="text" placeholder="Buscar trabajadores, turnos, incidencias..." autocomplete="off" />
+        <span class="gs-kbd">ESC</span>
+      </div>
+      <div class="gs-results" id="globalSearchResults"></div>
+      <div class="gs-footer">
+        <span>↑↓ Navegar</span>
+        <span>↵ Abrir</span>
+        <span>ESC Cerrar</span>
+      </div>
+    </div>
+  </div>
 
   <!-- Chat Bubble -->
   <div style="position: fixed; bottom: 120px; right: 30px; z-index: 250;">
@@ -8987,6 +9472,9 @@ function renderDashboard() {
 
   // Render weekly dashboard
   renderWeeklyDashboard();
+
+  // Render intelligent dashboard v5.0
+  try { renderIntelligentDashboard(); } catch(e) { console.warn('[Shiftia] renderIntelligentDashboard error:', e); }
 }
 
 // Schedule Filter
@@ -9915,7 +10403,7 @@ function renderSchedule() {
 
     let wM = 0, wT = 0, wN = 0, wD = 0, wH = 0;
     const dotColor = w.type === 'enf' ? '#2e8b7a' : '#4a9dd4';
-    html += `<tr><td class="name-cell" title="${w.name} — clic para foco, doble-clic para perfil" onclick="toggleFocusMode(${w.id})" ondblclick="openWorkerPanel(${w.id})"><span style="display:inline-block;width:5px;height:5px;background:${dotColor};border-radius:50%;flex-shrink:0;vertical-align:middle;margin-right:8px;opacity:0.7;"></span><span style="vertical-align:middle;">${w.name}</span></td>`;
+    html += `<tr data-worker-id="${w.id}"><td class="name-cell" title="${w.name} — clic para foco, doble-clic para perfil" onclick="toggleFocusMode(${w.id})" ondblclick="openWorkerPanel(${w.id})"><span style="display:inline-block;width:5px;height:5px;background:${dotColor};border-radius:50%;flex-shrink:0;vertical-align:middle;margin-right:8px;opacity:0.7;"></span><span style="vertical-align:middle;">${w.name}</span></td>`;
     allDays.forEach((dd, i) => {
       const s = dd.sch[w.id] ? dd.sch[w.id][dd.dayIdx] : '';
       const isToday = dd.isToday;
@@ -10405,8 +10893,24 @@ function renderWorkers() {
   document.getElementById('workersGrid').innerHTML = whtml;
 }
 
-// Render Incidents
+// Render Incidents — Enhanced Timeline v5.0
+let tlFilterType = 'all';
+let tlFilterWorker = '';
+let tlFilterDays = 'all';
+
 function renderIncidents() {
+  // Populate worker filter
+  const wSelect = document.getElementById('tlWorkerFilter');
+  if (wSelect && wSelect.options.length <= 1) {
+    const uniqueWorkers = [...new Set(incidents.map(i => i.worker))].sort();
+    uniqueWorkers.forEach(w => {
+      const opt = document.createElement('option');
+      opt.value = w;
+      opt.textContent = w;
+      wSelect.appendChild(opt);
+    });
+  }
+
   if (incidents.length === 0) {
     document.getElementById('historyTimeline').innerHTML = `
       <div style="text-align:center;padding:48px 20px;">
@@ -10416,22 +10920,71 @@ function renderIncidents() {
       </div>`;
     return;
   }
-  const html = incidents.map(inc => {
-    const typeLabel = { ae: 'AUSENCIA', baja: 'BAJA', vac: 'VACACIONES', for: 'FORMACIÓN', ld: 'LICENCIA', swap: 'CAMBIO' }[inc.type] || inc.type;
-    const badgeClass = `badge-${inc.type}`;
-    return `
-      <div class="timeline-item">
-        <div class="timeline-date">${new Date(inc.date).toLocaleDateString('es-ES', {month:'2-digit', day:'2-digit'})}</div>
-        <div class="timeline-content">
-          <span class="incident-badge ${badgeClass}">${typeLabel}</span>
-          <strong>${inc.worker}</strong>
-          ${inc.covered_by ? ` · Cubrió: ${inc.covered_by}` : ''}
-          ${inc.notes ? ` · ${inc.notes.replace(/</g,'&lt;').replace(/>/g,'&gt;')}` : ''}
+
+  // Apply filters
+  const now = new Date();
+  let filtered = incidents.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  if (tlFilterWorker) {
+    filtered = filtered.filter(i => i.worker === tlFilterWorker);
+  }
+
+  if (tlFilterDays !== 'all') {
+    const cutoff = new Date(now.getTime() - parseInt(tlFilterDays) * 86400000);
+    filtered = filtered.filter(i => new Date(i.date) >= cutoff);
+  }
+
+  if (tlFilterType !== 'all') {
+    filtered = filtered.filter(i => {
+      const t = (i.type || '').toLowerCase();
+      const a = (i.action || '').toLowerCase();
+      if (tlFilterType === 'coverage') return t.includes('cobertura') || t.includes('coverage');
+      if (tlFilterType === 'shift') return t.includes('cambio') || t.includes('shift') || t.includes('turno');
+      if (tlFilterType === 'absence') return t.includes('ausencia') || t.includes('parcial') || a.includes('baja') || a.includes('vac');
+      return true;
+    });
+  }
+
+  const html = filtered.map((inc, idx) => {
+    const typeLC = (inc.type || '').toLowerCase();
+    const tlClass = typeLC.includes('cobertura') || typeLC.includes('coverage') ? 'tl-coverage' :
+                    typeLC.includes('parcial') ? 'tl-partial' :
+                    typeLC.includes('cambio') || typeLC.includes('turno') ? 'tl-shift' : 'tl-absence';
+    const typeLabel = inc.action || inc.type || 'Cambio';
+    const dateObj = new Date(inc.date);
+    const dateStr = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    const timeStr = dateObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+    return `<div class="tl-item" style="animation-delay:${Math.min(idx * 0.03, 0.3)}s">
+      <div class="tl-item-header">
+        <div class="tl-item-worker">
+          <span class="tl-item-type ${tlClass}">${typeLabel}</span>
+          ${inc.worker}
         </div>
+        <div class="tl-item-time">${dateStr} ${timeStr}</div>
       </div>
-    `;
+      <div class="tl-item-desc">${(inc.notes || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+    </div>`;
   }).join('');
-  document.getElementById('historyTimeline').innerHTML = html;
+
+  document.getElementById('historyTimeline').innerHTML = html || '<div class="gs-empty">Sin incidencias con estos filtros</div>';
+}
+
+function filterTimeline(type, btn) {
+  tlFilterType = type;
+  document.querySelectorAll('.tl-filter-chip').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderIncidents();
+}
+
+function filterTimelineByWorker(worker) {
+  tlFilterWorker = worker;
+  renderIncidents();
+}
+
+function filterTimelineByDate(days) {
+  tlFilterDays = days;
+  renderIncidents();
 }
 
 // Render Conflicts — interactive cards with AI insights
@@ -11012,11 +11565,29 @@ document.getElementById('todayBtn').addEventListener('click', () => {
 });
 
 document.getElementById('workerSearch').addEventListener('input', (e) => {
-  const term = e.target.value.toLowerCase();
+  const term = e.target.value.toLowerCase().trim();
+  let matchCount = 0;
   document.querySelectorAll('table.schedule tbody tr').forEach(row => {
-    const name = row.querySelector('.name-cell').textContent.toLowerCase();
-    row.style.display = name.includes(term) ? '' : 'none';
+    const nameCell = row.querySelector('.name-cell');
+    if (!nameCell) return;
+    const name = nameCell.textContent.toLowerCase();
+    // Fuzzy match: each character of search term appears in order
+    let match = false;
+    if (!term) { match = true; }
+    else if (name.includes(term)) { match = true; }
+    else {
+      let pi = 0;
+      for (let ti = 0; ti < name.length && pi < term.length; ti++) {
+        if (name[ti] === term[pi]) pi++;
+      }
+      match = pi === term.length;
+    }
+    row.style.display = match ? '' : 'none';
+    if (match) matchCount++;
   });
+  const countEl = document.getElementById('filterMatchCount');
+  if (countEl && term) countEl.textContent = matchCount + ' coincidencias';
+  else if (countEl) countEl.textContent = '';
 });
 
 document.getElementById('teamSearch').addEventListener('input', (e) => {
@@ -19275,6 +19846,527 @@ function notifyPlan(planIdx) {
   }, { passive: true });
 })();
 
+// ===============================================================
+// INTELLIGENT DASHBOARD v5.0: KPIs + Heatmap + Predictions
+// ===============================================================
+
+function computeDashboardKPIs() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const dayIdx = now.getDate() - 1;
+  const hour = now.getHours();
+  const sch = genSchedule(year, month);
+  const cov = getCoverageRules(year, month, now.getDate());
+
+  let currentShift = 'M';
+  if (hour >= 15 && hour < 22) currentShift = 'T';
+  if (hour >= 22 || hour < 8) currentShift = 'N';
+
+  // Count coverage per shift
+  let mE=0, mT=0, tE=0, tT=0, nE=0, nT=0, absences=0, microM=0;
+  const absenceTypes = {};
+  workers.forEach(w => {
+    const s = sch[w.id] ? sch[w.id][dayIdx] : '';
+    const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+    const isMicro = w.area === 'micro';
+    if (['BAJ','INT','MTC','LAC','VAC','VAA','FOR','HS','CAA'].includes(s)) {
+      absences++;
+      absenceTypes[s] = (absenceTypes[s] || 0) + 1;
+    }
+    if (eff === 'M') { if (w.type === 'enf') mE++; else if (isMicro) microM++; else mT++; }
+    if (eff === 'T') { if (w.type === 'enf') tE++; else tT++; }
+    if (eff === 'N') { if (w.type === 'enf') nE++; else nT++; }
+  });
+
+  // Night equity quick calc
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  let totalNightsEnf = 0, totalNightsTec = 0, nightRotEnf = 0, nightRotTec = 0;
+  workers.forEach(w => {
+    if (w.rules && w.rules.noNights) return;
+    if (w.area === 'micro') return;
+    let nights = 0;
+    for (let d = 0; d < daysInMonth; d++) {
+      if (sch[w.id] && sch[w.id][d] === 'N') nights++;
+    }
+    if (w.type === 'enf') { totalNightsEnf += nights; nightRotEnf++; }
+    else { totalNightsTec += nights; nightRotTec++; }
+  });
+  const avgNEnf = nightRotEnf > 0 ? totalNightsEnf / nightRotEnf : 0;
+  const avgNTec = nightRotTec > 0 ? totalNightsTec / nightRotTec : 0;
+
+  return {
+    currentShift, cov,
+    mE, mT, tE, tT, nE, nT, microM,
+    absences, absenceTypes,
+    avgNEnf, avgNTec, nightRotEnf, nightRotTec,
+    mOk: mE >= cov.M.enf && mT >= cov.M.tec,
+    tOk: tE >= cov.T.enf && tT >= cov.T.tec,
+    nOk: nE >= cov.N.enf && nT >= cov.N.tec
+  };
+}
+
+function renderIntelligentDashboard() {
+  const target = document.getElementById('intelligentDashboard');
+  if (!target) return;
+
+  const kpis = computeDashboardKPIs();
+  const now = new Date();
+  const shiftLabels = { M: 'Mañana', T: 'Tarde', N: 'Noche' };
+  const shiftColors = { M: '#2e8b7a', T: '#4a9dd4', N: '#d4c032' };
+
+  let html = '';
+
+  // KPI Cards Row
+  html += '<div class="kpi-grid">';
+
+  // Coverage cards per shift
+  ['M', 'T', 'N'].forEach(sh => {
+    const e = sh === 'M' ? kpis.mE : sh === 'T' ? kpis.tE : kpis.nE;
+    const t = sh === 'M' ? kpis.mT : sh === 'T' ? kpis.tT : kpis.nT;
+    const needE = kpis.cov[sh] ? kpis.cov[sh].enf : 0;
+    const needT = kpis.cov[sh] ? kpis.cov[sh].tec : 0;
+    const ok = e >= needE && t >= needT;
+    const pct = (needE + needT) > 0 ? Math.min(100, Math.round((e + t) / (needE + needT) * 100)) : 100;
+    const isCurrent = sh === kpis.currentShift;
+    html += `<div class="kpi-card ${ok ? 'kpi-ok' : 'kpi-alert'}" ${isCurrent ? 'style="box-shadow:0 0 0 2px ' + shiftColors[sh] + '30;"' : ''}>
+      <div class="kpi-label" style="color:${shiftColors[sh]};">${isCurrent ? '● ' : ''}${shiftLabels[sh]}</div>
+      <div class="kpi-value">${e + t}<span style="font-size:14px;color:var(--text3);">/${needE + needT}</span></div>
+      <div class="kpi-subvalue">ENF ${e}/${needE} · TEC ${t}/${needT}</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${pct}%;background:${ok ? '#27ae60' : '#cc4444'};"></div></div>
+    </div>`;
+  });
+
+  // Absences card
+  html += `<div class="kpi-card ${kpis.absences > 3 ? 'kpi-warn' : kpis.absences > 0 ? 'kpi-ok' : 'kpi-ok'}">
+    <div class="kpi-label">Ausencias hoy</div>
+    <div class="kpi-value">${kpis.absences}</div>
+    <div class="kpi-subvalue">${Object.entries(kpis.absenceTypes).map(([k,v]) => k + ':' + v).join(' · ') || 'Ninguna'}</div>
+  </div>`;
+
+  // Night equity card
+  html += `<div class="kpi-card kpi-ok">
+    <div class="kpi-label">Noches avg/mes</div>
+    <div class="kpi-value" style="font-size:18px;">E:${kpis.avgNEnf.toFixed(1)} T:${kpis.avgNTec.toFixed(1)}</div>
+    <div class="kpi-subvalue">${kpis.nightRotEnf} rotadores ENF · ${kpis.nightRotTec} TEC</div>
+  </div>`;
+
+  // Micro card
+  html += `<div class="kpi-card kpi-ok">
+    <div class="kpi-label">Microbiología</div>
+    <div class="kpi-value">${kpis.microM}</div>
+    <div class="kpi-subvalue">Técnicos en mañana</div>
+  </div>`;
+
+  html += '</div>';
+
+  // 7-day Coverage Heatmap
+  html += '<div class="cov-heatmap-wrap">';
+  html += '<div class="dash-section-title"><span class="dst-icon">📊</span> Cobertura próximos 7 días</div>';
+  html += '<div class="cov-heatmap">';
+  // Headers
+  html += '<div class="cov-hm-label"></div>';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+    const dayNames = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
+    const isToday = i === 0;
+    html += `<div class="cov-hm-header ${isToday ? 'today-hdr' : ''}">${dayNames[d.getDay()]} ${d.getDate()}</div>`;
+  }
+
+  // Rows for M, T, N
+  ['M', 'T', 'N'].forEach(sh => {
+    html += `<div class="cov-hm-label">${sh}</div>`;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      const yr = d.getFullYear(), mo = d.getMonth(), di = d.getDate() - 1;
+      const daySch = genSchedule(yr, mo);
+      const dayCov = getCoverageRules(yr, mo, d.getDate());
+      let eCount = 0, tCount = 0;
+      workers.forEach(w => {
+        const s = daySch[w.id] ? daySch[w.id][di] : '';
+        const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+        if (eff === sh) {
+          if (w.type === 'enf') eCount++;
+          else if (w.area !== 'micro') tCount++;
+        }
+      });
+      const needE = dayCov[sh] ? dayCov[sh].enf : 0;
+      const needT = dayCov[sh] ? dayCov[sh].tec : 0;
+      const total = eCount + tCount;
+      const need = needE + needT;
+      const pct = need > 0 ? Math.round(total / need * 100) : 100;
+      const cls = pct >= 100 ? 'hm-ok' : pct >= 80 ? 'hm-warn' : 'hm-crit';
+      html += `<div class="cov-hm-cell ${cls}" onclick="goToDay(${yr},${mo},${d.getDate()})" title="${sh}: ${total}/${need} (ENF ${eCount}/${needE}, TEC ${tCount}/${needT})">
+        ${total}/${need}
+      </div>`;
+    }
+  });
+  html += '</div></div>';
+
+  // Conflict predictions — scan next 7 days
+  const alerts = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+    const yr = d.getFullYear(), mo = d.getMonth(), di = d.getDate() - 1;
+    const daySch = genSchedule(yr, mo);
+    const dayCov = getCoverageRules(yr, mo, d.getDate());
+    ['M', 'T', 'N'].forEach(sh => {
+      let eC = 0, tC = 0;
+      workers.forEach(w => {
+        const s = daySch[w.id] ? daySch[w.id][di] : '';
+        const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+        if (eff === sh && w.type === 'enf') eC++;
+        if (eff === sh && w.type === 'tec' && w.area !== 'micro') tC++;
+      });
+      const needE = dayCov[sh] ? dayCov[sh].enf : 0;
+      const needT = dayCov[sh] ? dayCov[sh].tec : 0;
+      if (eC < needE || tC < needT) {
+        const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+        const severity = (eC < needE - 1 || tC < needT - 1) ? 'high' : 'medium';
+        alerts.push({
+          date: d,
+          shift: sh,
+          severity,
+          detail: `${dayNames[d.getDay()]} ${d.getDate()}: ${sh} — ENF ${eC}/${needE}, TEC ${tC}/${needT}`,
+          dayStr: `${dayNames[d.getDay()]} ${d.getDate()}`
+        });
+      }
+    });
+  }
+
+  if (alerts.length > 0) {
+    html += '<div class="dash-alerts">';
+    html += `<div class="dash-section-title"><span class="dst-icon">⚠</span> Alertas de cobertura (${alerts.length})</div>`;
+    alerts.slice(0, 6).forEach(a => {
+      const isCls = a.severity === 'high' ? 'dai-high' : 'dai-med';
+      const shColor = shiftColors[a.shift] || 'var(--text3)';
+      html += `<div class="dash-alert-item">
+        <div class="dash-alert-icon ${isCls}">${a.severity === 'high' ? '🔴' : '🟡'}</div>
+        <div class="dash-alert-text">${a.detail}</div>
+        <button class="dash-alert-action" onclick="goToDay(${a.date.getFullYear()},${a.date.getMonth()},${a.date.getDate()})">Ver</button>
+      </div>`;
+    });
+    html += '</div>';
+  } else {
+    html += `<div class="dash-alerts" style="text-align:center;padding:20px;">
+      <div style="font-size:24px;margin-bottom:8px;">✅</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text2);">Sin alertas de cobertura</div>
+      <div style="font-size:11px;color:var(--text3);">Los próximos 7 días tienen cobertura completa</div>
+    </div>`;
+  }
+
+  // Team health meters
+  const now2 = new Date();
+  const riskEnf = calculateTeamRiskScore('enf', now2.getMonth(), now2.getFullYear());
+  const riskTec = calculateTeamRiskScore('tec', now2.getMonth(), now2.getFullYear());
+
+  html += '<div class="team-health-grid">';
+  [{ label: 'Enfermería', risk: riskEnf }, { label: 'Técnicos', risk: riskTec }].forEach(team => {
+    const color = team.risk.score >= 70 ? '#cc4444' : team.risk.score >= 40 ? '#e67e22' : '#27ae60';
+    const label = team.risk.score >= 70 ? 'ALTO' : team.risk.score >= 40 ? 'MEDIO' : 'BAJO';
+    html += `<div class="team-health-card">
+      <div class="th-header">
+        <div class="th-title">${team.label}</div>
+        <div class="th-score" style="color:${color};">${team.risk.score}%</div>
+      </div>
+      <div class="th-meter"><div class="th-meter-fill" style="width:${team.risk.score}%;background:${color};"></div></div>
+      <div class="th-factors">${team.risk.factors.slice(0, 2).map(f => f.name).join(' · ') || 'Sin factores de riesgo'}</div>
+    </div>`;
+  });
+  html += '</div>';
+
+  target.innerHTML = html;
+}
+
+// ===============================================================
+// GLOBAL SEARCH ENGINE (Cmd+K)
+// ===============================================================
+
+let gsSelectedIdx = 0;
+let gsResults = [];
+
+function openGlobalSearch() {
+  const overlay = document.getElementById('globalSearchOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('hidden');
+  const input = document.getElementById('globalSearchInput');
+  input.value = '';
+  input.focus();
+  gsSelectedIdx = 0;
+  gsResults = [];
+  renderGlobalSearchEmpty();
+}
+
+function closeGlobalSearch() {
+  const overlay = document.getElementById('globalSearchOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+function renderGlobalSearchEmpty() {
+  const container = document.getElementById('globalSearchResults');
+  // Show recent + suggestions
+  const recent = JSON.parse(localStorage.getItem('shiftia_recent_searches') || '[]').slice(0, 3);
+  let html = '';
+  if (recent.length > 0) {
+    html += '<div class="gs-group"><div class="gs-group-title">Recientes</div>';
+    recent.forEach(r => {
+      html += `<div class="gs-result" onclick="document.getElementById('globalSearchInput').value='${r}';performGlobalSearch('${r}')">
+        <span class="gs-result-icon">🕐</span>
+        <span class="gs-result-text">${r}</span>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  html += `<div class="gs-empty">Busca trabajadores, turnos, incidencias...<br><span style="font-size:11px;opacity:0.6;">Escribe para buscar</span></div>`;
+  container.innerHTML = html;
+}
+
+function performGlobalSearch(query) {
+  const q = query.toLowerCase().trim();
+  if (!q) { renderGlobalSearchEmpty(); return; }
+
+  const now = new Date();
+  const sch = genSchedule(now.getFullYear(), now.getMonth());
+  const todayIdx = now.getDate() - 1;
+  gsResults = [];
+
+  // Search workers
+  const workerResults = workers.filter(w =>
+    w.name.toLowerCase().includes(q) ||
+    (w.role || '').toLowerCase().includes(q) ||
+    w.type.toLowerCase().includes(q)
+  ).slice(0, 6).map(w => {
+    const s = sch[w.id] ? sch[w.id][todayIdx] : '';
+    return {
+      type: 'worker', icon: w.type === 'enf' ? '👩‍⚕️' : w.area === 'micro' ? '🔬' : '🧪',
+      text: w.name, meta: `${w.type.toUpperCase()} · Hoy: ${s || 'Sin turno'}`,
+      action: () => { closeGlobalSearch(); switchView('schedule'); setTimeout(() => { const el = document.getElementById('workerSearch'); if (el) { el.value = w.name; el.dispatchEvent(new Event('input')); } }, 200); }
+    };
+  });
+
+  // Search shifts
+  const shiftCodes = ['M','MR','M7H','M6R','M55','T','N','BAJ','VAC','D','HS','FOR','LAC','CAA','MTC'];
+  const shiftResults = shiftCodes.filter(s => s.toLowerCase().includes(q)).slice(0, 3).map(s => {
+    const count = workers.filter(w => sch[w.id] && sch[w.id][todayIdx] === s).length;
+    return {
+      type: 'shift', icon: '📋',
+      text: `Turno ${s}`, meta: `${count} trabajador${count !== 1 ? 'es' : ''} hoy`,
+      action: () => { closeGlobalSearch(); switchView('schedule'); }
+    };
+  });
+
+  // Search incidents
+  const incResults = incidents.filter(i =>
+    (i.worker || '').toLowerCase().includes(q) ||
+    (i.type || '').toLowerCase().includes(q) ||
+    (i.notes || '').toLowerCase().includes(q)
+  ).slice(0, 4).map(i => ({
+    type: 'incident', icon: '📝',
+    text: `${i.worker} — ${i.type}`,
+    meta: new Date(i.date).toLocaleDateString('es-ES'),
+    action: () => { closeGlobalSearch(); switchView('incidents'); }
+  }));
+
+  // Search views
+  const viewMap = [
+    { name: 'dashboard', label: 'Dashboard / Inicio', aliases: ['inicio','hoy','dashboard','panel'] },
+    { name: 'schedule', label: 'Mapa de turnos', aliases: ['mapa','turnos','planilla','schedule','horario'] },
+    { name: 'briefing', label: 'Briefing diario', aliases: ['briefing','resumen','diario'] },
+    { name: 'conflicts', label: 'Conflictos', aliases: ['conflictos','problemas','alertas'] },
+    { name: 'stats', label: 'Estadísticas', aliases: ['estadisticas','stats','graficos','numeros'] },
+    { name: 'incidents', label: 'Incidencias', aliases: ['incidencias','historial','cambios'] },
+    { name: 'config', label: 'Configuración', aliases: ['config','ajustes','reglas'] },
+    { name: 'gestor', label: 'Gestor de cobertura', aliases: ['gestor','cobertura','ausencias','baja','vacaciones'] }
+  ];
+  const viewResults = viewMap.filter(v =>
+    v.label.toLowerCase().includes(q) || v.aliases.some(a => a.includes(q))
+  ).slice(0, 3).map(v => ({
+    type: 'view', icon: '🔗',
+    text: v.label, meta: 'Ir a sección',
+    action: () => { closeGlobalSearch(); switchView(v.name); }
+  }));
+
+  gsResults = [...viewResults, ...workerResults, ...shiftResults, ...incResults];
+  gsSelectedIdx = 0;
+  renderGlobalSearchResults(q);
+}
+
+function renderGlobalSearchResults(query) {
+  const container = document.getElementById('globalSearchResults');
+  if (gsResults.length === 0) {
+    container.innerHTML = '<div class="gs-empty">Sin resultados para "' + query + '"</div>';
+    return;
+  }
+
+  // Group by type
+  const groups = {};
+  const groupLabels = { view: 'Secciones', worker: 'Trabajadores', shift: 'Turnos', incident: 'Incidencias' };
+  gsResults.forEach((r, i) => {
+    if (!groups[r.type]) groups[r.type] = [];
+    groups[r.type].push({ ...r, idx: i });
+  });
+
+  let html = '';
+  Object.keys(groups).forEach(type => {
+    html += `<div class="gs-group"><div class="gs-group-title">${groupLabels[type] || type}</div>`;
+    groups[type].forEach(r => {
+      const highlighted = r.text.replace(new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark>$1</mark>');
+      html += `<div class="gs-result ${r.idx === gsSelectedIdx ? 'gs-selected' : ''}" data-idx="${r.idx}" onclick="gsExecuteResult(${r.idx})">
+        <span class="gs-result-icon">${r.icon}</span>
+        <span class="gs-result-text">${highlighted}</span>
+        <span class="gs-result-meta">${r.meta}</span>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function gsExecuteResult(idx) {
+  if (gsResults[idx] && gsResults[idx].action) {
+    // Save to recent
+    const q = document.getElementById('globalSearchInput').value.trim();
+    if (q) {
+      let recent = JSON.parse(localStorage.getItem('shiftia_recent_searches') || '[]');
+      recent = [q, ...recent.filter(r => r !== q)].slice(0, 5);
+      localStorage.setItem('shiftia_recent_searches', JSON.stringify(recent));
+    }
+    gsResults[idx].action();
+  }
+}
+
+// Global search keyboard handler
+document.addEventListener('keydown', (e) => {
+  // Cmd+K or Ctrl+K to open
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    openGlobalSearch();
+    return;
+  }
+
+  const overlay = document.getElementById('globalSearchOverlay');
+  if (!overlay || overlay.classList.contains('hidden')) return;
+
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closeGlobalSearch();
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    gsSelectedIdx = Math.min(gsSelectedIdx + 1, gsResults.length - 1);
+    renderGlobalSearchResults(document.getElementById('globalSearchInput').value);
+    const sel = document.querySelector('.gs-result.gs-selected');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    gsSelectedIdx = Math.max(gsSelectedIdx - 1, 0);
+    renderGlobalSearchResults(document.getElementById('globalSearchInput').value);
+    const sel = document.querySelector('.gs-result.gs-selected');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    gsExecuteResult(gsSelectedIdx);
+  }
+});
+
+// Global search input listener
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('globalSearchInput');
+  if (input) {
+    let debounce;
+    input.addEventListener('input', () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => performGlobalSearch(input.value), 120);
+    });
+  }
+});
+
+// ===============================================================
+// ADVANCED SCHEDULE FILTERS
+// ===============================================================
+
+const advFilters = { shifts: [], types: [], areas: [], rules: [] };
+
+function toggleAdvFilters() {
+  const panel = document.getElementById('advFiltersPanel');
+  const btn = document.getElementById('filterToggleBtn');
+  if (!panel) return;
+  panel.classList.toggle('open');
+  if (btn) btn.classList.toggle('active');
+}
+
+function updateAdvFilter(category, value, checked) {
+  if (checked) {
+    if (!advFilters[category].includes(value)) advFilters[category].push(value);
+  } else {
+    advFilters[category] = advFilters[category].filter(v => v !== value);
+  }
+  applyAdvancedFilters();
+  updateFilterBadge();
+}
+
+function clearAdvFilters() {
+  advFilters.shifts = [];
+  advFilters.types = [];
+  advFilters.areas = [];
+  advFilters.rules = [];
+  document.querySelectorAll('#advFiltersPanel input[type="checkbox"]').forEach(cb => cb.checked = false);
+  applyAdvancedFilters();
+  updateFilterBadge();
+}
+
+function applyAdvancedFilters() {
+  const rows = document.querySelectorAll('.schedule-table tbody tr, table.schedule tbody tr');
+  if (rows.length === 0) return;
+
+  const now = new Date();
+  const sch = genSchedule(now.getFullYear(), now.getMonth());
+  const todayIdx = now.getDate() - 1;
+  const hasActiveFilters = advFilters.shifts.length > 0 || advFilters.types.length > 0 || advFilters.areas.length > 0;
+
+  if (!hasActiveFilters) {
+    rows.forEach(r => r.style.display = '');
+    return;
+  }
+
+  let matchCount = 0;
+  rows.forEach(row => {
+    const wId = row.dataset.workerId;
+    if (!wId) { row.style.display = ''; return; }
+    const w = workers.find(x => x.id == wId);
+    if (!w) { row.style.display = ''; return; }
+
+    let show = true;
+    // Filter by type
+    if (advFilters.types.length > 0 && !advFilters.types.includes(w.type)) show = false;
+    // Filter by area
+    if (advFilters.areas.length > 0) {
+      const area = w.area || 'lab';
+      if (!advFilters.areas.includes(area)) show = false;
+    }
+    // Filter by today's shift
+    if (advFilters.shifts.length > 0) {
+      const s = sch[w.id] ? sch[w.id][todayIdx] : '';
+      const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+      if (!advFilters.shifts.includes(eff) && !advFilters.shifts.includes(s)) show = false;
+    }
+
+    row.style.display = show ? '' : 'none';
+    if (show) matchCount++;
+  });
+
+  const countEl = document.getElementById('filterMatchCount');
+  if (countEl) countEl.textContent = matchCount + ' coincidencias';
+}
+
+function updateFilterBadge() {
+  const total = advFilters.shifts.length + advFilters.types.length + advFilters.areas.length;
+  const badge = document.getElementById('filterActiveBadge');
+  if (badge) {
+    badge.style.display = total > 0 ? 'flex' : 'none';
+    badge.textContent = total;
+  }
+}
+
 // Initialize (loadFromStorage is async — handle gracefully)
 (async function init() {
   // Show loading spinner
@@ -19324,7 +20416,8 @@ function notifyPlan(planIdx) {
     const splash = document.getElementById('splashScreen');
     if (splash) splash.classList.add('hidden');
 
-    const hasSession = await checkSession();
+    let hasSession = false;
+    try { hasSession = await checkSession(); } catch(e) { console.warn('[Shiftia] checkSession error:', e); }
     if (hasSession) {
       // Show skeleton while data loads
       document.getElementById('loginScreen').classList.add('hidden');
