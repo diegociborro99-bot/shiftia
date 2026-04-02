@@ -1,10 +1,8 @@
-// Shiftia Service Worker v3.0
-// Offline cache + background sync
+// Shiftia Service Worker v3.1
+// Offline cache — network-first for HTML, cache-first for static assets
 
-const CACHE_NAME = 'shiftia-v3';
+const CACHE_NAME = 'shiftia-v3.1';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'
 ];
@@ -32,17 +30,25 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch — network-first for API, cache-first for static
+// Fetch handler
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // API calls: network-first, no cache
+  // Skip WebSocket
+  if (url.pathname === '/ws') return;
+
+  // API calls: network-only (localStorage handles offline)
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => {
-        // Offline fallback for GET /api/data
         if (url.pathname === '/api/data' && event.request.method === 'GET') {
           return new Response(JSON.stringify({}), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        // POST /api/data offline — return success (localStorage already saved)
+        if (url.pathname === '/api/data' && event.request.method === 'POST') {
+          return new Response(JSON.stringify({ success: true, offline: true }), {
             headers: { 'Content-Type': 'application/json' }
           });
         }
@@ -55,29 +61,33 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // WebSocket upgrade — skip
-  if (url.pathname === '/ws') return;
-
-  // Static assets: cache-first, network fallback
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-
-      return fetch(event.request).then(response => {
-        // Cache successful responses
+  // HTML navigation: network-first (always get latest deploy)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).then(response => {
         if (response && response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseClone);
-          });
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
       }).catch(() => {
-        // Offline fallback: return cached index.html for navigation
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+        return caches.match(event.request).then(cached => cached || caches.match('/index.html'));
+      })
+    );
+    return;
+  }
+
+  // Other static assets: cache-first, network fallback
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
+      return fetch(event.request).then(response => {
+        if (response && response.status === 200 && response.type !== 'opaque') {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
-      });
+        return response;
+      }).catch(() => null);
     })
   );
 });

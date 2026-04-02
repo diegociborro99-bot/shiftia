@@ -7548,11 +7548,7 @@ html {
     </div>
   </div>
 
-  <!-- Auto-Save Indicator (v2) -->
-  <div class="save-indicator hidden" id="saveIndicator">
-    <span class="save-dot"></span>
-    <span class="save-text">Guardado</span>
-  </div>
+  <!-- Auto-Save Indicator (v2 only — bottom-right) -->
   <div class="save-indicator-v2 hidden" id="saveIndicatorV2">
     <span class="save-icon"></span>
     <span class="save-text">Guardado</span>
@@ -8159,10 +8155,12 @@ function toggleTheme() {
 // View Switching
 function switchView(view) {
   document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById(view + 'Panel').classList.add('active');
+  const panel = document.getElementById(view + 'Panel');
+  if (panel) panel.classList.add('active');
 
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.querySelector(`[data-view="${view}"]`).classList.add('active');
+  const tab = document.querySelector(`[data-view="${view}"]`);
+  if (tab) tab.classList.add('active');
 
   appState.currentView = view;
 
@@ -8626,219 +8624,161 @@ function buildWhatIfPanel() {
   const shiftLabels = { M: 'Mañana', T: 'Tarde', N: 'Noche' };
   const shiftColors = { M: '#2e8b7a', T: '#4a9dd4', N: '#c5a832' };
 
-  // ═══ SCENARIO 1: 1 baja en el turno actual/proximo ═══
-  const sc1Date = new Date(now);
-  const sc1Shift = currentShift;
-  const sc1Workers = getShiftWorkers(sc1Date, sc1Shift);
-  const sc1Cov = getCov(sc1Date);
-  const sc1Enf = sc1Workers.filter(w => w.type === 'enf');
-  const sc1Tec = sc1Workers.filter(w => w.type === 'tec' && w.area !== 'micro');
-  const sc1AfterEnf = sc1Enf.length - 1;
-  const sc1AfterTec = sc1Tec.length > 0 ? sc1Tec.length - 1 : 0;
-  const sc1NeedEnf = sc1Cov[sc1Shift] ? sc1Cov[sc1Shift].enf : 0;
-  const sc1NeedTec = sc1Cov[sc1Shift] ? sc1Cov[sc1Shift].tec : 0;
-  const sc1EnfOk = sc1AfterEnf >= sc1NeedEnf;
-  const sc1TecOk = sc1Tec.length === 0 || sc1AfterTec >= sc1NeedTec;
-  const sc1Ok = sc1EnfOk && sc1TecOk;
-  const sc1Subs = getAvailableSubs(sc1Date, 'enf', sc1Shift);
+  // ═══════════════════════════════════════════════════════════
+  // Helper to build a single-type scenario (enf or tec)
+  // ═══════════════════════════════════════════════════════════
+  function buildTypeScenario(cfg) {
+    const { id, icon, date, shift, type, bajas, labelDate, labelShift } = cfg;
+    const typeLabel = type === 'enf' ? 'Enfermeria' : 'Tecnicos';
+    const typeTag = type === 'enf' ? 'ENF' : 'TEC';
+    const tagStyle = type === 'enf'
+      ? 'background:rgba(204,68,68,0.1);color:#cc4444;'
+      : 'background:rgba(74,157,212,0.1);color:#4a9dd4;';
+    const allWorkers = getShiftWorkers(date, shift);
+    const typeWorkers = type === 'enf'
+      ? allWorkers.filter(w => w.type === 'enf')
+      : allWorkers.filter(w => w.type === 'tec' && w.area !== 'micro');
+    const cov = getCov(date);
+    const need = cov[shift] ? (cov[shift][type] || 0) : 0;
+    const after = typeWorkers.length - bajas;
+    const ok = after >= need;
+    const subs = getAvailableSubs(date, type, shift);
 
-  scenarios.push({
-    id: 'whatif_1',
-    icon: sc1Shift === 'N' ? '🌙' : sc1Shift === 'T' ? '🌅' : '☀️',
-    text: `1 baja en ${shiftLabels[sc1Shift].toLowerCase()} de hoy`,
-    subtitle: `${sc1Workers.length} personas trabajan ${shiftLabels[sc1Shift]} hoy`,
-    result: sc1Ok ? 'Aguanta' : 'Descubierto',
-    cls: sc1Ok ? 'wr-ok' : 'wr-bad',
-    detail: function() {
-      let h = `<div class="ws-detail-inner">`;
-      // Coverage comparison
-      h += `<div class="ws-coverage-grid">
-        <div class="ws-cov-box">
-          <div class="wcb-label">Enfermeria</div>
-          <div class="wcb-val ${sc1AfterEnf >= sc1NeedEnf ? 'wv-ok' : 'wv-bad'}">${sc1AfterEnf}/${sc1NeedEnf}</div>
-        </div>
-        <div class="ws-cov-box">
-          <div class="wcb-label">Tecnicos</div>
-          <div class="wcb-val ${sc1AfterTec >= sc1NeedTec ? 'wv-ok' : sc1Tec.length === 0 ? 'wv-ok' : 'wv-bad'}">${sc1Tec.length > 0 ? sc1AfterTec + '/' + sc1NeedTec : 'N/A'}</div>
-        </div>
-      </div>`;
-      // Who's working this shift
-      h += `<div class="ws-workers-list">
-        <div class="ws-workers-title">Trabajando ${shiftLabels[sc1Shift]} hoy</div>`;
-      sc1Workers.slice(0, 8).forEach(w => {
-        const typeTag = w.type === 'enf' ? 'ENF' : w.area === 'micro' ? 'MICRO' : 'TEC';
-        const tagColor = w.type === 'enf' ? 'background:rgba(204,68,68,0.1);color:#cc4444;' : 'background:rgba(74,157,212,0.1);color:#4a9dd4;';
-        h += `<div class="ws-worker-row">
-          <span class="ws-worker-name">${w.name}</span>
-          <span class="ws-worker-tag" style="${tagColor}">${typeTag}</span>
+    const bajasLabel = bajas === 1 ? '1 baja' : bajas + ' bajas';
+    const typeNameSingular = type === 'enf' ? 'enfermero/a' : 'tecnico/a';
+    const typeNamePlural = type === 'enf' ? 'enfermeras' : 'tecnicos';
+
+    return {
+      id: id,
+      icon: icon,
+      text: `${bajasLabel} ${typeLabel.toLowerCase()} · ${labelShift} ${labelDate}`,
+      subtitle: `${typeWorkers.length} ${typeNamePlural} asignados · min ${need}`,
+      result: ok ? (after === need ? 'Justo' : 'Aguanta') : 'Descubierto',
+      cls: ok ? (after === need ? 'wr-warn' : 'wr-ok') : 'wr-bad',
+      detail: function() {
+        let h = `<div class="ws-detail-inner">`;
+        h += `<div class="ws-coverage-grid">
+          <div class="ws-cov-box">
+            <div class="wcb-label">${typeLabel} tras ${bajasLabel}</div>
+            <div class="wcb-val ${after >= need ? (after === need ? 'wv-warn' : 'wv-ok') : 'wv-bad'}">${after}/${need}</div>
+          </div>
+          <div class="ws-cov-box">
+            <div class="wcb-label">Pueden cubrir</div>
+            <div class="wcb-val ${subs.length >= bajas ? 'wv-ok' : subs.length > 0 ? 'wv-warn' : 'wv-bad'}">${subs.length}</div>
+          </div>
         </div>`;
-      });
-      h += `</div>`;
-      // Available subs
-      if (!sc1Ok) {
+        // Workers currently assigned
         h += `<div class="ws-workers-list">
-          <div class="ws-workers-title" style="color:#27ae60;">Pueden cubrir (${sc1Subs.length} disponibles)</div>`;
-        if (sc1Subs.length > 0) {
-          sc1Subs.slice(0, 5).forEach(w => {
-            const flagsHtml = w._flags && w._flags.length > 0 ? ' <span style="font-size:8px;color:#e67e22;font-weight:600;">(' + w._flags.join(', ') + ')</span>' : '';
-            h += `<div class="ws-worker-row">
-              <span class="ws-worker-name">${w.name}${flagsHtml}</span>
-              <span class="ws-worker-tag" style="background:rgba(39,174,96,0.1);color:#27ae60;">LIBRE</span>
-            </div>`;
-          });
-        } else {
-          h += `<div style="font-size:11px;color:#cc4444;padding:6px 0;font-weight:600;">Nadie disponible — todos tienen reglas que lo impiden o ya trabajan</div>`;
+          <div class="ws-workers-title">${typeLabel} en ${labelShift} ${labelDate}</div>`;
+        typeWorkers.slice(0, 8).forEach(w => {
+          h += `<div class="ws-worker-row">
+            <span class="ws-worker-name">${w.name}</span>
+            <span class="ws-worker-tag" style="${tagStyle}">${typeTag}</span>
+          </div>`;
+        });
+        if (typeWorkers.length === 0) {
+          h += `<div style="font-size:11px;color:var(--text3);padding:6px 0;">No hay ${typeNamePlural} asignados a este turno</div>`;
         }
         h += `</div>`;
-        h += `<div class="ws-action-hint">
-          <strong>Impacto:</strong> Si cae 1 ${sc1Enf.length > sc1Tec.length ? 'enfermero/a' : 'tecnico/a'}, el turno ${shiftLabels[sc1Shift]} queda por debajo del minimo.
-          ${sc1Subs.length > 0 ? 'Hay ' + sc1Subs.length + ' personas de descanso que podrian cubrir.' : 'No hay nadie de descanso — habria que reasignar de otro turno.'}
-        </div>`;
-      } else {
-        h += `<div class="ws-action-hint" style="background:rgba(39,174,96,0.06);color:#1e6b4a;">
-          <strong>Sin riesgo.</strong> Aunque caiga 1 persona, el turno ${shiftLabels[sc1Shift]} sigue cubierto con ${sc1AfterEnf} enf (minimo: ${sc1NeedEnf}).
-        </div>`;
+        // Available subs
+        if (!ok) {
+          h += `<div class="ws-workers-list">
+            <div class="ws-workers-title" style="color:#27ae60;">Pueden cubrir (${subs.length} disponibles)</div>`;
+          if (subs.length > 0) {
+            subs.slice(0, 5).forEach(w => {
+              const flagsHtml = w._flags && w._flags.length > 0 ? ' <span style="font-size:8px;color:#e67e22;font-weight:600;">(' + w._flags.join(', ') + ')</span>' : '';
+              h += `<div class="ws-worker-row">
+                <span class="ws-worker-name">${w.name}${flagsHtml}</span>
+                <span class="ws-worker-tag" style="background:rgba(39,174,96,0.1);color:#27ae60;">LIBRE</span>
+              </div>`;
+            });
+          } else {
+            h += `<div style="font-size:11px;color:#cc4444;padding:6px 0;font-weight:600;">Nadie disponible — todos tienen reglas que lo impiden o ya trabajan</div>`;
+          }
+          h += `</div>`;
+          const deficit = Math.max(0, need - after);
+          h += `<div class="ws-action-hint">
+            <strong>Impacto:</strong> Si caen ${bajas} ${typeNameSingular}, faltan ${deficit} para cubrir el minimo.
+            ${subs.length >= deficit ? ' Hay ' + subs.length + ' de descanso que podrian cubrir.' : ' No hay suficientes de descanso (' + subs.length + ') — habria que reasignar.'}
+          </div>`;
+        } else {
+          h += `<div class="ws-action-hint" style="background:rgba(39,174,96,0.06);color:#1e6b4a;">
+            <strong>${after === need ? 'Al minimo exacto.' : 'Sin riesgo.'}</strong> Tras ${bajasLabel}, quedan ${after} ${typeNamePlural} (minimo: ${need}).
+            ${after === need && subs.length > 0 ? ' Si cae 1 mas, hay ' + subs.length + ' de descanso.' : ''}
+          </div>`;
+        }
+        h += `</div>`;
+        return h;
       }
-      h += `</div>`;
-      return h;
-    }
-  });
+    };
+  }
 
-  // ═══ SCENARIO 2: 2 bajas mañana en Mañana ═══
+  // ═══ SCENARIO 1a: 1 baja enfermeria en turno actual ═══
+  const sc1Date = new Date(now);
+  const sc1Shift = currentShift;
+  const sc1Icon = sc1Shift === 'N' ? '🌙' : sc1Shift === 'T' ? '🌅' : '☀️';
+
+  scenarios.push(buildTypeScenario({
+    id: 'whatif_1a', icon: sc1Icon, date: sc1Date, shift: sc1Shift,
+    type: 'enf', bajas: 1,
+    labelDate: 'hoy', labelShift: shiftLabels[sc1Shift]
+  }));
+
+  // ═══ SCENARIO 1b: 1 baja tecnico en turno actual ═══
+  scenarios.push(buildTypeScenario({
+    id: 'whatif_1b', icon: sc1Icon, date: sc1Date, shift: sc1Shift,
+    type: 'tec', bajas: 1,
+    labelDate: 'hoy', labelShift: shiftLabels[sc1Shift]
+  }));
+
+  // ═══ SCENARIO 2a: 2 bajas enfermeria mañana Mañana ═══
   const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const tmWorkers = getShiftWorkers(tomorrow, 'M');
-  const tmCov = getCov(tomorrow);
-  const tmEnf = tmWorkers.filter(w => w.type === 'enf');
-  const tmTec = tmWorkers.filter(w => w.type === 'tec' && w.area !== 'micro');
-  const tmAfter2Enf = tmEnf.length - 2;
-  const tmNeedEnf = tmCov.M ? tmCov.M.enf : 0;
-  const tmOk = tmAfter2Enf >= tmNeedEnf;
-  const tmSubs = getAvailableSubs(tomorrow, 'enf', 'M');
   const tmDayName = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'][tomorrow.getDay()];
 
-  scenarios.push({
-    id: 'whatif_2',
-    icon: '🏥',
-    text: `2 bajas mañana (${tmDayName}) en Mañana`,
-    subtitle: `${tmEnf.length} enfermeras + ${tmTec.length} tecnicos asignados`,
-    result: tmOk ? 'Ajustado' : 'Critico',
-    cls: tmOk ? 'wr-warn' : 'wr-bad',
-    detail: function() {
-      let h = `<div class="ws-detail-inner">`;
-      h += `<div class="ws-coverage-grid">
-        <div class="ws-cov-box">
-          <div class="wcb-label">Enf tras 2 bajas</div>
-          <div class="wcb-val ${tmAfter2Enf >= tmNeedEnf ? 'wv-warn' : 'wv-bad'}">${tmAfter2Enf}/${tmNeedEnf}</div>
-        </div>
-        <div class="ws-cov-box">
-          <div class="wcb-label">Disponibles</div>
-          <div class="wcb-val ${tmSubs.length >= 2 ? 'wv-ok' : tmSubs.length >= 1 ? 'wv-warn' : 'wv-bad'}">${tmSubs.length}</div>
-        </div>
-      </div>`;
-      h += `<div class="ws-workers-list">
-        <div class="ws-workers-title">Enfermeras en Mañana mañana</div>`;
-      tmEnf.slice(0, 8).forEach(w => {
-        h += `<div class="ws-worker-row">
-          <span class="ws-worker-name">${w.name}</span>
-          <span class="ws-worker-tag" style="background:rgba(204,68,68,0.1);color:#cc4444;">ENF</span>
-        </div>`;
-      });
-      h += `</div>`;
-      h += `<div class="ws-workers-list">
-        <div class="ws-workers-title" style="color:#27ae60;">Pueden cubrir mañana (${tmSubs.length})</div>`;
-      if (tmSubs.length > 0) {
-        tmSubs.slice(0, 5).forEach(w => {
-          const flagsHtml = w._flags && w._flags.length > 0 ? ' <span style="font-size:8px;color:#e67e22;font-weight:600;">(' + w._flags.join(', ') + ')</span>' : '';
-          h += `<div class="ws-worker-row">
-            <span class="ws-worker-name">${w.name}${flagsHtml}</span>
-            <span class="ws-worker-tag" style="background:rgba(39,174,96,0.1);color:#27ae60;">LIBRE</span>
-          </div>`;
-        });
-      } else {
-        h += `<div style="font-size:11px;color:#cc4444;padding:6px 0;font-weight:600;">Nadie puede cubrir — reglas de convenio o ya trabajan</div>`;
-      }
-      h += `</div>`;
-      const deficit = Math.max(0, tmNeedEnf - tmAfter2Enf);
-      h += `<div class="ws-action-hint">
-        <strong>${tmOk ? 'Situacion ajustada' : 'Situacion critica'}:</strong>
-        ${deficit > 0 ? 'Faltarian ' + deficit + ' enfermera' + (deficit > 1 ? 's' : '') + '.' : 'Cobertura al minimo exacto.'}
-        ${tmSubs.length >= deficit ? ' Hay ' + tmSubs.length + ' de descanso — se podria resolver llamando.' : ' No hay suficientes de descanso (' + tmSubs.length + ') — habria que pedir extras o reasignar.'}
-      </div>`;
-      h += `</div>`;
-      return h;
-    }
-  });
+  scenarios.push(buildTypeScenario({
+    id: 'whatif_2a', icon: '🏥', date: tomorrow, shift: 'M',
+    type: 'enf', bajas: 2,
+    labelDate: `mañana (${tmDayName})`, labelShift: 'Mañana'
+  }));
 
-  // ═══ SCENARIO 3: Baja en noche del proximo fin de semana ═══
+  // ═══ SCENARIO 2b: 2 bajas tecnicos mañana Mañana ═══
+  scenarios.push(buildTypeScenario({
+    id: 'whatif_2b', icon: '🏥', date: tomorrow, shift: 'M',
+    type: 'tec', bajas: 2,
+    labelDate: `mañana (${tmDayName})`, labelShift: 'Mañana'
+  }));
+
+  // ═══ SCENARIO 3a: Baja enfermeria noche sabado ═══
   let nextSat = new Date(now);
   while (nextSat.getDay() !== 6) nextSat.setDate(nextSat.getDate() + 1);
-  const wkNightWorkers = getShiftWorkers(nextSat, 'N');
-  const wkCov = getCov(nextSat);
-  const wkNEnf = wkNightWorkers.filter(w => w.type === 'enf');
-  const wkNTec = wkNightWorkers.filter(w => w.type === 'tec' && w.area !== 'micro');
-  const wkAfterEnf = wkNEnf.length - 1;
-  const wkNeedEnf = wkCov.N ? wkCov.N.enf : 0;
-  const wkOk = wkAfterEnf >= wkNeedEnf;
-  const wkSubs = getAvailableSubs(nextSat, 'enf', 'N');
 
-  scenarios.push({
-    id: 'whatif_3',
-    icon: '📅',
-    text: `Baja noche del sabado ${nextSat.getDate()}`,
-    subtitle: `${wkNightWorkers.length} en noche · Fin de semana = mas dificil cubrir`,
-    result: wkOk ? 'OK' : wkAfterEnf >= wkNeedEnf - 1 ? 'Justo' : 'Critico',
-    cls: wkOk ? 'wr-ok' : wkAfterEnf >= wkNeedEnf - 1 ? 'wr-warn' : 'wr-bad',
-    detail: function() {
-      let h = `<div class="ws-detail-inner">`;
-      h += `<div class="ws-coverage-grid">
-        <div class="ws-cov-box">
-          <div class="wcb-label">Enf noche sab</div>
-          <div class="wcb-val ${wkAfterEnf >= wkNeedEnf ? 'wv-ok' : 'wv-bad'}">${wkAfterEnf}/${wkNeedEnf}</div>
-        </div>
-        <div class="ws-cov-box">
-          <div class="wcb-label">Tec noche sab</div>
-          <div class="wcb-val ${wkNTec.length > 0 ? 'wv-ok' : 'wv-warn'}">${wkNTec.length}</div>
-        </div>
-      </div>`;
-      h += `<div class="ws-workers-list">
-        <div class="ws-workers-title">Noche del sabado ${nextSat.getDate()}</div>`;
-      wkNightWorkers.slice(0, 8).forEach(w => {
-        const typeTag = w.type === 'enf' ? 'ENF' : 'TEC';
-        const tagColor = w.type === 'enf' ? 'background:rgba(204,68,68,0.1);color:#cc4444;' : 'background:rgba(74,157,212,0.1);color:#4a9dd4;';
-        h += `<div class="ws-worker-row">
-          <span class="ws-worker-name">${w.name}</span>
-          <span class="ws-worker-tag" style="${tagColor}">${typeTag}</span>
-        </div>`;
-      });
-      h += `</div>`;
-      h += `<div class="ws-workers-list">
-        <div class="ws-workers-title" style="color:#27ae60;">Pueden cubrir noche sabado (${wkSubs.length})</div>`;
-      if (wkSubs.length > 0) {
-        wkSubs.slice(0, 5).forEach(w => {
-          const flagsHtml = w._flags && w._flags.length > 0 ? ' <span style="font-size:8px;color:#e67e22;font-weight:600;">(' + w._flags.join(', ') + ')</span>' : '';
-          h += `<div class="ws-worker-row">
-            <span class="ws-worker-name">${w.name}${flagsHtml}</span>
-            <span class="ws-worker-tag" style="background:rgba(39,174,96,0.1);color:#27ae60;">LIBRE</span>
-          </div>`;
-        });
-      } else {
-        h += `<div style="font-size:11px;color:#cc4444;padding:6px 0;font-weight:600;">Nadie puede cubrir noche de sabado — reglas de descanso o noches maximas</div>`;
-      }
-      h += `</div>`;
-      h += `<div class="ws-action-hint">
-        ${wkOk ? '<strong>Bajo control.</strong> La noche del sabado aguanta 1 baja.' : '<strong>Atencion.</strong> Si cae alguien en la noche del sabado, no hay cobertura minima.'}
-        ${!wkOk && wkSubs.length > 0 ? ' Podrias llamar a ' + wkSubs[0].name + ' (de descanso).' : !wkOk ? ' No hay enfermeras de descanso — planificar cobertura preventiva.' : ''}
-      </div>`;
-      h += `</div>`;
-      return h;
-    }
-  });
+  scenarios.push(buildTypeScenario({
+    id: 'whatif_3a', icon: '📅', date: nextSat, shift: 'N',
+    type: 'enf', bajas: 1,
+    labelDate: `sabado ${nextSat.getDate()}`, labelShift: 'Noche'
+  }));
+
+  // ═══ SCENARIO 3b: Baja tecnico noche sabado ═══
+  scenarios.push(buildTypeScenario({
+    id: 'whatif_3b', icon: '📅', date: nextSat, shift: 'N',
+    type: 'tec', bajas: 1,
+    labelDate: `sabado ${nextSat.getDate()}`, labelShift: 'Noche'
+  }));
 
   if (scenarios.length === 0) return '';
 
+  // Group: enfermería (a) then técnicos (b)
+  const enfScenarios = scenarios.filter(s => s.id.endsWith('a'));
+  const tecScenarios = scenarios.filter(s => s.id.endsWith('b'));
+
   let html = `<div class="whatif-panel">
     <div class="whatif-title"><span style="font-size:18px;">🔮</span> Que pasaria si...</div>`;
-  scenarios.forEach(s => {
+
+  // Enfermería group
+  html += `<div class="whatif-group-label" style="display:flex;align-items:center;gap:6px;padding:8px 14px 4px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#cc4444;">
+    <span style="width:8px;height:8px;border-radius:50%;background:#cc4444;display:inline-block;"></span> Enfermeria
+  </div>`;
+  enfScenarios.forEach(s => {
     html += `<div class="whatif-scenario">
       <div class="ws-header" onclick="toggleWhatIf('${s.id}')">
         <span class="ws-icon">${s.icon}</span>
@@ -8853,6 +8793,27 @@ function buildWhatIfPanel() {
       </div>
     </div>`;
   });
+
+  // Técnicos group
+  html += `<div class="whatif-group-label" style="display:flex;align-items:center;gap:6px;padding:12px 14px 4px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4a9dd4;border-top:1px solid var(--border-light, #f0f0f0);">
+    <span style="width:8px;height:8px;border-radius:50%;background:#4a9dd4;display:inline-block;"></span> Tecnicos
+  </div>`;
+  tecScenarios.forEach(s => {
+    html += `<div class="whatif-scenario">
+      <div class="ws-header" onclick="toggleWhatIf('${s.id}')">
+        <span class="ws-icon">${s.icon}</span>
+        <div class="ws-info">
+          <div class="ws-text">${s.text}</div>
+          <div class="ws-subtitle">${s.subtitle}</div>
+        </div>
+        <span class="ws-result ${s.cls}">${s.result}</span>
+      </div>
+      <div class="ws-detail" id="${s.id}">
+        ${s.detail()}
+      </div>
+    </div>`;
+  });
+
   html += `</div>`;
   return html;
 }
@@ -11814,36 +11775,26 @@ function updateWorkerMemory(wId) {
 // ===============================================================
 let saveTimeout = null;
 function showSaveIndicator(status) {
-  // Legacy indicator (top-right)
-  const el = document.getElementById('saveIndicator');
-  if (el) {
-    el.className = 'save-indicator ' + status;
-    el.querySelector('.save-text').textContent = status === 'saving' ? 'Guardando...' : 'Guardado';
-    clearTimeout(saveTimeout);
-    if (status === 'saved') {
-      saveTimeout = setTimeout(() => { el.className = 'save-indicator hidden'; }, 2500);
-    }
-  }
-  // V2 indicator (bottom-right, animated)
+  // V2 indicator only (bottom-right, animated)
   const v2 = document.getElementById('saveIndicatorV2');
-  if (v2) {
-    v2.className = 'save-indicator-v2 ' + status;
-    const icon = v2.querySelector('.save-icon');
-    const text = v2.querySelector('.save-text');
-    if (status === 'saving') {
-      icon.innerHTML = '<div class="save-spinner"></div>';
-      text.textContent = 'Guardando...';
-    } else if (status === 'saved') {
-      icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
-      text.textContent = 'Guardado';
-    } else if (status === 'error') {
-      icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#cc4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
-      text.textContent = 'Error al guardar';
-    }
-    clearTimeout(saveTimeout);
-    if (status === 'saved') {
-      saveTimeout = setTimeout(() => { v2.className = 'save-indicator-v2 hidden'; }, 3000);
-    }
+  if (!v2) return;
+  v2.className = 'save-indicator-v2 ' + status;
+  const icon = v2.querySelector('.save-icon');
+  const text = v2.querySelector('.save-text');
+  if (!icon || !text) return;
+  if (status === 'saving') {
+    icon.innerHTML = '<div class="save-spinner"></div>';
+    text.textContent = 'Guardando...';
+  } else if (status === 'saved') {
+    icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+    text.textContent = 'Guardado';
+  } else if (status === 'error') {
+    icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#cc4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+    text.textContent = 'Error al guardar';
+  }
+  clearTimeout(saveTimeout);
+  if (status === 'saved' || status === 'error') {
+    saveTimeout = setTimeout(() => { v2.className = 'save-indicator-v2 hidden'; }, 3000);
   }
 }
 
@@ -18130,6 +18081,18 @@ function notifyPlan(planIdx) {
 // ===============================================================
 let wsConnection = null;
 let wsReconnectTimer = null;
+let wsReconnectAttempts = 0;
+const WS_MAX_RETRIES = 15;
+
+function scheduleWsReconnect() {
+  if (wsReconnectAttempts >= WS_MAX_RETRIES) {
+    console.warn('[WS] Max retries reached, stopping');
+    return;
+  }
+  const delay = Math.min(30000, Math.pow(2, wsReconnectAttempts) * 1000 + Math.random() * 1000);
+  wsReconnectTimer = setTimeout(connectWebSocket, delay);
+  wsReconnectAttempts++;
+}
 
 function connectWebSocket() {
   const token = getAuthToken();
@@ -18139,10 +18102,12 @@ function connectWebSocket() {
   const wsUrl = `${protocol}//${location.host}/ws?token=${encodeURIComponent(token)}`;
 
   try {
+    if (wsConnection && wsConnection.readyState < 2) wsConnection.close();
     wsConnection = new WebSocket(wsUrl);
 
     wsConnection.onopen = () => {
       console.log('[WS] Connected');
+      wsReconnectAttempts = 0;
       clearTimeout(wsReconnectTimer);
     };
 
@@ -18150,7 +18115,6 @@ function connectWebSocket() {
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === 'sessions') {
-          // Show indicator if multiple sessions are active
           const badge = document.getElementById('wsSyncBadge');
           if (badge) {
             if (msg.count > 1) {
@@ -18161,10 +18125,8 @@ function connectWebSocket() {
             }
           }
         } else if (msg.type === 'data_saved') {
-          // Another session saved data — reload
-          showToast('Datos actualizados desde otra sesion', 'info', 3000);
+          showToast('Datos actualizados desde otra sesion — recarga para ver cambios', 'info', 5000);
         } else if (msg.type === 'shift_change') {
-          // Real-time shift change from another tab
           showToast('Turno cambiado desde otra sesion', 'info', 2000);
         }
       } catch (e) { /* ignore */ }
@@ -18172,15 +18134,15 @@ function connectWebSocket() {
 
     wsConnection.onclose = () => {
       console.log('[WS] Disconnected');
-      wsReconnectTimer = setTimeout(connectWebSocket, 5000);
+      scheduleWsReconnect();
     };
 
     wsConnection.onerror = () => {
-      wsConnection.close();
+      try { wsConnection.close(); } catch(e) {}
     };
   } catch (e) {
     console.warn('[WS] Connection failed:', e.message);
-    wsReconnectTimer = setTimeout(connectWebSocket, 10000);
+    scheduleWsReconnect();
   }
 }
 

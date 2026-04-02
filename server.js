@@ -63,10 +63,26 @@ function broadcastToUser(userId, data, excludeWs) {
   const msg = JSON.stringify(data);
   set.forEach(client => {
     if (client !== excludeWs && client.readyState === WebSocket.OPEN) {
-      client.send(msg);
+      client.send(msg, (err) => {
+        if (err) {
+          console.warn('[WS] Send failed, removing client:', err.message);
+          set.delete(client);
+          if (set.size === 0) wsClients.delete(userId);
+        }
+      });
     }
   });
 }
+
+// Periodic cleanup of stale WebSocket connections
+setInterval(() => {
+  wsClients.forEach((set, userId) => {
+    set.forEach(ws => {
+      if (ws.readyState !== WebSocket.OPEN) set.delete(ws);
+    });
+    if (set.size === 0) wsClients.delete(userId);
+  });
+}, 30000);
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -539,12 +555,12 @@ app.post('/api/data', authMiddleware, async (req, res) => {
       SET data = $2, updated_at = NOW()
     `, [req.user.id, JSON.stringify(data)]);
 
-    // Audit log (fire-and-forget)
+    // Audit log
     const ip = req.ip || req.connection.remoteAddress;
-    logAudit(req.user.id, 'data_save', { size: JSON.stringify(data).length }, ip);
+    logAudit(req.user.id, 'data_save', { size: JSON.stringify(data).length }, ip).catch(() => {});
 
-    // Auto-backup (fire-and-forget, max 1/hour)
-    createAutoBackup(req.user.id);
+    // Auto-backup (max 1/hour)
+    createAutoBackup(req.user.id).catch(e => console.warn('[Backup] Failed:', e.message));
 
     // Notify other sessions via WebSocket
     broadcastToUser(req.user.id, { type: 'data_saved', timestamp: Date.now() });
@@ -646,17 +662,28 @@ app.post('/api/support', authMiddleware, async (req, res) => {
 });
 
 // ====== RATE LIMITING ======
-const rateLimit = new Map();
-function isRateLimited(ip) {
+const rateLimitMap = new Map();
+function isRateLimited(ip, maxPerMinute = 3) {
   const now = Date.now();
-  const attempts = rateLimit.get(ip) || [];
-  const recent = attempts.filter(t => now - t < 60000); // 1 minute window
-  rateLimit.set(ip, recent);
-  if (recent.length >= 3) return true; // Max 3 per minute
+  const attempts = rateLimitMap.get(ip) || [];
+  const recent = attempts.filter(t => now - t < 60000);
+  if (recent.length === 0) {
+    rateLimitMap.delete(ip); // Clean up empty entries
+  }
+  if (recent.length >= maxPerMinute) return true;
   recent.push(now);
-  rateLimit.set(ip, recent);
+  rateLimitMap.set(ip, recent);
   return false;
 }
+// Periodic cleanup of stale rate limit entries
+setInterval(() => {
+  const now = Date.now();
+  rateLimitMap.forEach((attempts, ip) => {
+    const recent = attempts.filter(t => now - t < 60000);
+    if (recent.length === 0) rateLimitMap.delete(ip);
+    else rateLimitMap.set(ip, recent);
+  });
+}, 300000); // Every 5 minutes
 
 // ====== CONTACT FORM API ======
 app.post('/api/contact', async (req, res) => {
@@ -1018,9 +1045,9 @@ app.post('/api/notify', async (req, res) => {
 // GET /api/my-shifts?worker=Name — Get shifts for a specific worker (read-only, for workers)
 app.get('/api/my-shifts', authMiddleware, async (req, res) => {
   try {
-    const workerName = req.query.worker;
-    const month = parseInt(req.query.month) || new Date().getMonth();
-    const year = parseInt(req.query.year) || new Date().getFullYear();
+    const workerName = (req.query.worker || '').slice(0, 200);
+    const month = Math.max(0, Math.min(11, parseInt(req.query.month, 10) || new Date().getMonth()));
+    const year = Math.max(2020, Math.min(2100, parseInt(req.query.year, 10) || new Date().getFullYear()));
 
     if (!workerName) {
       return res.status(400).json({ error: 'worker parameter is required' });
@@ -1106,7 +1133,7 @@ app.get('/api/workers', authMiddleware, async (req, res) => {
 // GET /api/audit — Get recent audit entries
 app.get('/api/audit', authMiddleware, async (req, res) => {
   try {
-    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const limit = Math.min(Math.max(1, parseInt(req.query.limit, 10) || 50), 200);
     const result = await pool.query(
       'SELECT id, action, details, ip_address, created_at FROM audit_logs WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2',
       [req.user.id, limit]
@@ -1123,7 +1150,7 @@ app.get('/api/audit', authMiddleware, async (req, res) => {
 app.get('/api/backups', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, backup_type, created_at, pg_column_size(data) as size_bytes FROM schedule_backups WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30",
+      "SELECT id, backup_type, created_at, octet_length(data::text) as size_bytes FROM schedule_backups WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30",
       [req.user.id]
     );
     res.json({ backups: result.rows });
@@ -1155,7 +1182,10 @@ app.post('/api/backups', authMiddleware, async (req, res) => {
 // POST /api/backups/:id/restore — Restore from a backup
 app.post('/api/backups/:id/restore', authMiddleware, async (req, res) => {
   try {
-    const backupId = parseInt(req.params.id);
+    const backupId = parseInt(req.params.id, 10);
+    if (isNaN(backupId) || backupId <= 0) {
+      return res.status(400).json({ error: 'Invalid backup ID' });
+    }
     const backup = await pool.query(
       'SELECT data FROM schedule_backups WHERE id = $1 AND user_id = $2',
       [backupId, req.user.id]
