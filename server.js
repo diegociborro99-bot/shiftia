@@ -1,13 +1,72 @@
 const express = require('express');
 const path = require('path');
+const http = require('http');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const WebSocket = require('ws');
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'shiftia-secret-dev-2024';
+
+// ====== WEBSOCKET SERVER (real-time sync) ======
+const wss = new WebSocket.Server({ server, path: '/ws' });
+const wsClients = new Map(); // userId → Set<ws>
+
+wss.on('connection', (ws, req) => {
+  // Authenticate via query param token
+  try {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const token = url.searchParams.get('token');
+    if (!token) { ws.close(4001, 'No token'); return; }
+    const decoded = jwt.verify(token, JWT_SECRET);
+    ws.userId = decoded.id;
+    ws.userEmail = decoded.email;
+
+    if (!wsClients.has(decoded.id)) wsClients.set(decoded.id, new Set());
+    wsClients.get(decoded.id).add(ws);
+    console.log(`[WS] ${decoded.email} connected (${wsClients.get(decoded.id).size} sessions)`);
+
+    // Broadcast online count to same user's sessions
+    broadcastToUser(decoded.id, { type: 'sessions', count: wsClients.get(decoded.id).size });
+  } catch (e) {
+    ws.close(4001, 'Invalid token');
+    return;
+  }
+
+  ws.on('message', (msg) => {
+    try {
+      const data = JSON.parse(msg);
+      if (data.type === 'shift_change') {
+        // Broadcast to other sessions of same user
+        broadcastToUser(ws.userId, { type: 'shift_change', payload: data.payload, from: ws.userEmail }, ws);
+      }
+    } catch (e) { /* ignore bad messages */ }
+  });
+
+  ws.on('close', () => {
+    const set = wsClients.get(ws.userId);
+    if (set) {
+      set.delete(ws);
+      if (set.size === 0) wsClients.delete(ws.userId);
+      else broadcastToUser(ws.userId, { type: 'sessions', count: set.size });
+    }
+  });
+});
+
+function broadcastToUser(userId, data, excludeWs) {
+  const set = wsClients.get(userId);
+  if (!set) return;
+  const msg = JSON.stringify(data);
+  set.forEach(client => {
+    if (client !== excludeWs && client.readyState === WebSocket.OPEN) {
+      client.send(msg);
+    }
+  });
+}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -106,6 +165,29 @@ async function initializeDatabase() {
         data JSONB NOT NULL DEFAULT '{}',
         updated_at TIMESTAMP DEFAULT NOW(),
         UNIQUE(user_id)
+      );
+    `);
+
+    // Create audit logs table (server-side change history)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        action VARCHAR(100) NOT NULL,
+        details JSONB DEFAULT '{}',
+        ip_address VARCHAR(45),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // Create schedule backups table (automatic daily snapshots)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS schedule_backups (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        data JSONB NOT NULL DEFAULT '{}',
+        backup_type VARCHAR(20) DEFAULT 'auto',
+        created_at TIMESTAMP DEFAULT NOW()
       );
     `);
 
@@ -267,6 +349,9 @@ app.post('/api/auth/login', async (req, res) => {
     // Return user without password_hash
     const { password_hash, ...userWithoutPassword } = user;
 
+    // Audit log login
+    logAudit(user.id, 'login', { email: user.email }, req.ip || req.connection.remoteAddress);
+
     res.json({ token, user: userWithoutPassword });
   } catch (err) {
     console.error('Login error:', err.message);
@@ -369,6 +454,54 @@ app.put('/api/auth/update', authMiddleware, async (req, res) => {
   }
 });
 
+// ====== AUDIT LOG HELPER ======
+async function logAudit(userId, action, details, ip) {
+  try {
+    await pool.query(
+      'INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)',
+      [userId, action, JSON.stringify(details || {}), ip || null]
+    );
+  } catch (e) {
+    console.warn('[Audit] Log failed:', e.message);
+  }
+}
+
+// ====== AUTO-BACKUP LOGIC ======
+async function createAutoBackup(userId) {
+  try {
+    // Check last backup time — only backup once per hour max
+    const lastBackup = await pool.query(
+      "SELECT created_at FROM schedule_backups WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1",
+      [userId]
+    );
+    if (lastBackup.rows.length > 0) {
+      const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      if (new Date(lastBackup.rows[0].created_at) > hourAgo) return; // Too recent
+    }
+
+    // Get current data and create snapshot
+    const current = await pool.query('SELECT data FROM schedule_data WHERE user_id = $1', [userId]);
+    if (current.rows.length === 0) return;
+
+    await pool.query(
+      'INSERT INTO schedule_backups (user_id, data, backup_type) VALUES ($1, $2, $3)',
+      [userId, JSON.stringify(current.rows[0].data), 'auto']
+    );
+
+    // Keep only last 30 backups per user
+    await pool.query(`
+      DELETE FROM schedule_backups WHERE id IN (
+        SELECT id FROM schedule_backups WHERE user_id = $1
+        ORDER BY created_at DESC OFFSET 30
+      )
+    `, [userId]);
+
+    console.log(`[Backup] Auto-backup created for user ${userId}`);
+  } catch (e) {
+    console.warn('[Backup] Auto-backup failed:', e.message);
+  }
+}
+
 // ====== SCHEDULE DATA ROUTES ======
 // GET /api/data (protected) — Load user's SARA workspace data
 app.get('/api/data', authMiddleware, async (req, res) => {
@@ -405,6 +538,16 @@ app.post('/api/data', authMiddleware, async (req, res) => {
       ON CONFLICT (user_id) DO UPDATE
       SET data = $2, updated_at = NOW()
     `, [req.user.id, JSON.stringify(data)]);
+
+    // Audit log (fire-and-forget)
+    const ip = req.ip || req.connection.remoteAddress;
+    logAudit(req.user.id, 'data_save', { size: JSON.stringify(data).length }, ip);
+
+    // Auto-backup (fire-and-forget, max 1/hour)
+    createAutoBackup(req.user.id);
+
+    // Notify other sessions via WebSocket
+    broadcastToUser(req.user.id, { type: 'data_saved', timestamp: Date.now() });
 
     res.json({ success: true });
   } catch (err) {
@@ -871,9 +1014,181 @@ app.post('/api/notify', async (req, res) => {
   }
 });
 
+// ====== WORKER MOBILE API ======
+// GET /api/my-shifts?worker=Name — Get shifts for a specific worker (read-only, for workers)
+app.get('/api/my-shifts', authMiddleware, async (req, res) => {
+  try {
+    const workerName = req.query.worker;
+    const month = parseInt(req.query.month) || new Date().getMonth();
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+
+    if (!workerName) {
+      return res.status(400).json({ error: 'worker parameter is required' });
+    }
+
+    const result = await pool.query(
+      'SELECT data FROM schedule_data WHERE user_id = $1',
+      [req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ shifts: [], worker: workerName });
+    }
+
+    const data = result.rows[0].data;
+    const scheduleKey = `${year}-${month}`;
+    const schedule = data.scheduleData && data.scheduleData[scheduleKey];
+
+    if (!schedule) {
+      return res.json({ shifts: [], worker: workerName, month, year });
+    }
+
+    // Find the worker by name
+    const workers = data.workerMeta || [];
+    const worker = workers.find(w => w.name && w.name.toLowerCase().includes(workerName.toLowerCase()));
+
+    if (!worker) {
+      return res.json({ shifts: [], worker: workerName, error: 'Worker not found' });
+    }
+
+    const workerSchedule = schedule[worker.id] || [];
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const shifts = [];
+
+    for (let d = 0; d < daysInMonth; d++) {
+      const date = new Date(year, month, d + 1);
+      shifts.push({
+        day: d + 1,
+        date: date.toISOString().split('T')[0],
+        dayName: ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'][date.getDay()],
+        shift: workerSchedule[d] || '',
+        isWeekend: date.getDay() === 0 || date.getDay() === 6
+      });
+    }
+
+    res.json({
+      worker: worker.name,
+      type: worker.type,
+      month,
+      year,
+      shifts,
+      totalShifts: shifts.filter(s => ['M','MR','M7H','M6R','M55','T','N'].includes(s.shift)).length,
+      totalNights: shifts.filter(s => s.shift === 'N').length,
+      totalRest: shifts.filter(s => s.shift === 'D').length
+    });
+  } catch (err) {
+    console.error('My shifts error:', err.message);
+    res.status(500).json({ error: 'Error loading shifts' });
+  }
+});
+
+// GET /api/workers — List all workers (names + types)
+app.get('/api/workers', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT data FROM schedule_data WHERE user_id = $1',
+      [req.user.id]
+    );
+
+    if (result.rows.length === 0) return res.json({ workers: [] });
+
+    const workers = result.rows[0].data.workerMeta || [];
+    res.json({
+      workers: workers.map(w => ({ id: w.id, name: w.name, type: w.type, area: w.area }))
+    });
+  } catch (err) {
+    console.error('Workers list error:', err.message);
+    res.status(500).json({ error: 'Error loading workers' });
+  }
+});
+
+// ====== AUDIT LOG ROUTES ======
+// GET /api/audit — Get recent audit entries
+app.get('/api/audit', authMiddleware, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const result = await pool.query(
+      'SELECT id, action, details, ip_address, created_at FROM audit_logs WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2',
+      [req.user.id, limit]
+    );
+    res.json({ logs: result.rows });
+  } catch (err) {
+    console.error('Audit log error:', err.message);
+    res.status(500).json({ error: 'Error loading audit log' });
+  }
+});
+
+// ====== BACKUP ROUTES ======
+// GET /api/backups — List backups
+app.get('/api/backups', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, backup_type, created_at, pg_column_size(data) as size_bytes FROM schedule_backups WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30",
+      [req.user.id]
+    );
+    res.json({ backups: result.rows });
+  } catch (err) {
+    console.error('Backups list error:', err.message);
+    res.status(500).json({ error: 'Error loading backups' });
+  }
+});
+
+// POST /api/backups — Create manual backup
+app.post('/api/backups', authMiddleware, async (req, res) => {
+  try {
+    const current = await pool.query('SELECT data FROM schedule_data WHERE user_id = $1', [req.user.id]);
+    if (current.rows.length === 0) return res.status(404).json({ error: 'No data to backup' });
+
+    await pool.query(
+      'INSERT INTO schedule_backups (user_id, data, backup_type) VALUES ($1, $2, $3)',
+      [req.user.id, JSON.stringify(current.rows[0].data), 'manual']
+    );
+
+    logAudit(req.user.id, 'manual_backup', {}, req.ip);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Create backup error:', err.message);
+    res.status(500).json({ error: 'Error creating backup' });
+  }
+});
+
+// POST /api/backups/:id/restore — Restore from a backup
+app.post('/api/backups/:id/restore', authMiddleware, async (req, res) => {
+  try {
+    const backupId = parseInt(req.params.id);
+    const backup = await pool.query(
+      'SELECT data FROM schedule_backups WHERE id = $1 AND user_id = $2',
+      [backupId, req.user.id]
+    );
+    if (backup.rows.length === 0) return res.status(404).json({ error: 'Backup not found' });
+
+    // Create a backup of current state before restoring
+    const current = await pool.query('SELECT data FROM schedule_data WHERE user_id = $1', [req.user.id]);
+    if (current.rows.length > 0) {
+      await pool.query(
+        'INSERT INTO schedule_backups (user_id, data, backup_type) VALUES ($1, $2, $3)',
+        [req.user.id, JSON.stringify(current.rows[0].data), 'pre_restore']
+      );
+    }
+
+    // Restore
+    await pool.query(`
+      INSERT INTO schedule_data (user_id, data, updated_at)
+      VALUES ($1, $2, NOW())
+      ON CONFLICT (user_id) DO UPDATE SET data = $2, updated_at = NOW()
+    `, [req.user.id, JSON.stringify(backup.rows[0].data)]);
+
+    logAudit(req.user.id, 'restore_backup', { backup_id: backupId }, req.ip);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Restore backup error:', err.message);
+    res.status(500).json({ error: 'Error restoring backup' });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', version: '2.0.0', auth: 'enabled' });
+  res.json({ status: 'ok', version: '3.0.0', auth: 'enabled', websocket: true, backups: true });
 });
 
 // SPA fallback
@@ -887,10 +1202,13 @@ async function startServer() {
     // Initialize database
     await initializeDatabase();
 
-    app.listen(PORT, () => {
-      console.log(`Shiftia HUB v2.0 running on port ${PORT}`);
-      console.log('Authentication enabled');
-      console.log(`Database connected`);
+    server.listen(PORT, () => {
+      console.log(`Shiftia v3.0 running on port ${PORT}`);
+      console.log('Authentication: enabled');
+      console.log('WebSocket: enabled (/ws)');
+      console.log('Auto-backups: enabled');
+      console.log('Audit logs: enabled');
+      console.log('Worker API: enabled (/api/my-shifts)');
     });
   } catch (err) {
     console.error('Failed to start server:', err.message);

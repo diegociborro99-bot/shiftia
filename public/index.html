@@ -1690,6 +1690,109 @@ table.schedule td.name-cell:hover {
   50% { opacity: 0.3; }
 }
 
+/* === FEATURE: Stagger Row Animation === */
+@keyframes rowSlideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+table.schedule tbody tr {
+  animation: rowSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+table.schedule tbody tr:nth-child(1) { animation-delay: 0.02s; }
+table.schedule tbody tr:nth-child(2) { animation-delay: 0.04s; }
+table.schedule tbody tr:nth-child(3) { animation-delay: 0.06s; }
+table.schedule tbody tr:nth-child(4) { animation-delay: 0.08s; }
+table.schedule tbody tr:nth-child(5) { animation-delay: 0.10s; }
+table.schedule tbody tr:nth-child(6) { animation-delay: 0.12s; }
+table.schedule tbody tr:nth-child(7) { animation-delay: 0.14s; }
+table.schedule tbody tr:nth-child(8) { animation-delay: 0.16s; }
+table.schedule tbody tr:nth-child(9) { animation-delay: 0.18s; }
+table.schedule tbody tr:nth-child(10) { animation-delay: 0.20s; }
+table.schedule tbody tr:nth-child(11) { animation-delay: 0.22s; }
+table.schedule tbody tr:nth-child(12) { animation-delay: 0.24s; }
+table.schedule tbody tr:nth-child(13) { animation-delay: 0.26s; }
+table.schedule tbody tr:nth-child(14) { animation-delay: 0.28s; }
+table.schedule tbody tr:nth-child(15) { animation-delay: 0.30s; }
+table.schedule tbody tr:nth-child(n+16) { animation-delay: 0.32s; }
+
+/* === FEATURE: Focus Mode (click worker → dim others) === */
+table.schedule.focus-mode tbody tr {
+  opacity: 0.25;
+  transition: opacity 0.3s ease;
+}
+table.schedule.focus-mode tbody tr.focus-active {
+  opacity: 1;
+  background: rgba(92,122,111,0.06);
+  box-shadow: 0 1px 4px rgba(92,122,111,0.08);
+}
+table.schedule.focus-mode tbody tr.focus-active td.name-cell {
+  border-left-color: var(--accent);
+  font-weight: 600;
+  color: var(--accent);
+}
+table.schedule.focus-mode tbody tr.schedule-type-separator {
+  opacity: 0.6;
+}
+
+/* === FEATURE: Auto-save Indicator (redesigned) === */
+.save-indicator-v2 {
+  position: fixed;
+  bottom: 20px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 90;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  border: 1px solid transparent;
+}
+.save-indicator-v2.saving {
+  background: rgba(230,126,34,0.12);
+  color: #e67e22;
+  border-color: rgba(230,126,34,0.2);
+  opacity: 1;
+  transform: translateY(0);
+}
+.save-indicator-v2.saved {
+  background: rgba(39,174,96,0.12);
+  color: #27ae60;
+  border-color: rgba(39,174,96,0.2);
+  opacity: 1;
+  transform: translateY(0);
+}
+.save-indicator-v2.error {
+  background: rgba(204,68,68,0.12);
+  color: #cc4444;
+  border-color: rgba(204,68,68,0.2);
+  opacity: 1;
+  transform: translateY(0);
+}
+.save-indicator-v2.hidden {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.save-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(230,126,34,0.3);
+  border-top-color: #e67e22;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+.save-check {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* === FEATURE: Bulk Edit Modal === */
 .bulk-edit-overlay {
   display: none;
@@ -7099,6 +7202,7 @@ html {
       </div>
     </div>
     <div class="topbar-right">
+      <span id="wsSyncBadge" style="display:none;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:rgba(46,139,122,0.1);color:var(--morning);font-size:10px;font-weight:600;letter-spacing:0.3px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--morning);animation:savePulse 1.5s ease infinite;"></span>2 sesiones</span>
       <span class="user-display" id="userDisplay" style="font-size:12px;color:var(--text3);margin-right:8px;"></span>
       <button class="theme-btn" id="themeToggle">🌙</button>
       <button class="theme-btn" id="logoutBtn" onclick="handleLogout()" title="Cerrar sesión" style="font-size:14px;">⏻</button>
@@ -7444,9 +7548,13 @@ html {
     </div>
   </div>
 
-  <!-- Auto-Save Indicator -->
+  <!-- Auto-Save Indicator (v2) -->
   <div class="save-indicator hidden" id="saveIndicator">
     <span class="save-dot"></span>
+    <span class="save-text">Guardado</span>
+  </div>
+  <div class="save-indicator-v2 hidden" id="saveIndicatorV2">
+    <span class="save-icon"></span>
     <span class="save-text">Guardado</span>
   </div>
 
@@ -9165,7 +9273,7 @@ function renderSchedule() {
 
     let wM = 0, wT = 0, wN = 0, wD = 0, wH = 0;
     const dotColor = w.type === 'enf' ? '#2e8b7a' : '#4a9dd4';
-    html += `<tr><td class="name-cell" title="${w.name}" onclick="openWorkerPanel(${w.id})"><span style="display:inline-block;width:5px;height:5px;background:${dotColor};border-radius:50%;flex-shrink:0;vertical-align:middle;margin-right:8px;opacity:0.7;"></span><span style="vertical-align:middle;">${w.name}</span></td>`;
+    html += `<tr><td class="name-cell" title="${w.name} — clic para foco, doble-clic para perfil" onclick="toggleFocusMode(${w.id})" ondblclick="openWorkerPanel(${w.id})"><span style="display:inline-block;width:5px;height:5px;background:${dotColor};border-radius:50%;flex-shrink:0;vertical-align:middle;margin-right:8px;opacity:0.7;"></span><span style="vertical-align:middle;">${w.name}</span></td>`;
     allDays.forEach((dd, i) => {
       const s = dd.sch[w.id] ? dd.sch[w.id][dd.dayIdx] : '';
       const isToday = dd.isToday;
@@ -11702,19 +11810,96 @@ function updateWorkerMemory(wId) {
 
 
 // ===============================================================
-// FEATURE: Auto-save indicator
+// FEATURE: Auto-save indicator (v2 — bottom-right, spinner/check)
 // ===============================================================
 let saveTimeout = null;
 function showSaveIndicator(status) {
+  // Legacy indicator (top-right)
   const el = document.getElementById('saveIndicator');
-  if (!el) return;
-  el.className = 'save-indicator ' + status;
-  el.querySelector('.save-text').textContent = status === 'saving' ? 'Guardando...' : 'Guardado ✓';
-  clearTimeout(saveTimeout);
-  if (status === 'saved') {
-    saveTimeout = setTimeout(() => { el.className = 'save-indicator hidden'; }, 2500);
+  if (el) {
+    el.className = 'save-indicator ' + status;
+    el.querySelector('.save-text').textContent = status === 'saving' ? 'Guardando...' : 'Guardado';
+    clearTimeout(saveTimeout);
+    if (status === 'saved') {
+      saveTimeout = setTimeout(() => { el.className = 'save-indicator hidden'; }, 2500);
+    }
+  }
+  // V2 indicator (bottom-right, animated)
+  const v2 = document.getElementById('saveIndicatorV2');
+  if (v2) {
+    v2.className = 'save-indicator-v2 ' + status;
+    const icon = v2.querySelector('.save-icon');
+    const text = v2.querySelector('.save-text');
+    if (status === 'saving') {
+      icon.innerHTML = '<div class="save-spinner"></div>';
+      text.textContent = 'Guardando...';
+    } else if (status === 'saved') {
+      icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+      text.textContent = 'Guardado';
+    } else if (status === 'error') {
+      icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#cc4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+      text.textContent = 'Error al guardar';
+    }
+    clearTimeout(saveTimeout);
+    if (status === 'saved') {
+      saveTimeout = setTimeout(() => { v2.className = 'save-indicator-v2 hidden'; }, 3000);
+    }
   }
 }
+
+// ===============================================================
+// FEATURE: Auto-save debounce (saves 2s after last change)
+// ===============================================================
+let autoSaveTimer = null;
+function triggerAutoSave() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
+    saveToStorage();
+  }, 2000);
+}
+
+// ===============================================================
+// FEATURE: Focus Mode (click worker → highlight, dim others)
+// ===============================================================
+let focusedWorkerId = null;
+function toggleFocusMode(workerId) {
+  const table = document.querySelector('table.schedule');
+  if (!table) return;
+
+  if (focusedWorkerId === workerId) {
+    // Deactivate focus
+    focusedWorkerId = null;
+    table.classList.remove('focus-mode');
+    table.querySelectorAll('tr.focus-active').forEach(r => r.classList.remove('focus-active'));
+    return;
+  }
+
+  // Activate focus
+  focusedWorkerId = workerId;
+  table.classList.add('focus-mode');
+  table.querySelectorAll('tr.focus-active').forEach(r => r.classList.remove('focus-active'));
+
+  // Find the row with this worker (by data attribute or by name cell onclick)
+  const rows = table.querySelectorAll('tbody tr');
+  rows.forEach(row => {
+    const nameCell = row.querySelector('td.name-cell');
+    if (nameCell && nameCell.getAttribute('onclick') && nameCell.getAttribute('onclick').includes('(' + workerId + ')')) {
+      row.classList.add('focus-active');
+    }
+  });
+}
+
+// Click anywhere on schedule background to exit focus mode
+document.addEventListener('click', function(e) {
+  if (focusedWorkerId !== null && !e.target.closest('td.name-cell') && e.target.closest('.schedule-table-wrap')) {
+    const table = document.querySelector('table.schedule');
+    if (table) {
+      focusedWorkerId = null;
+      table.classList.remove('focus-mode');
+      table.querySelectorAll('tr.focus-active').forEach(r => r.classList.remove('focus-active'));
+    }
+  }
+});
 
 // ===============================================================
 // FEATURE: Coverage Alerts Banner (next 7 days)
@@ -12196,12 +12381,15 @@ function saveToStorage() {
       if (res && !res.ok) {
         if (res.status === 401) console.warn('[Shiftia] Token expired — data saved locally only');
         else console.warn('[Shiftia] Server save returned:', res.status);
+        showSaveIndicator('saved'); // Local save OK
+      } else {
+        showSaveIndicator('saved');
       }
     }).catch(e => {
       console.warn('[Shiftia] Server save failed:', e.message);
-      showToast('Guardado local OK, pero el servidor no responde', 'warning', 3000);
+      showSaveIndicator('error');
+      setTimeout(() => showSaveIndicator('saved'), 3000); // Show saved (locally)
     });
-    showSaveIndicator('saved');
   } catch (e) { console.warn('[Shiftia] Save error:', e); showSaveIndicator('saved'); }
 }
 
@@ -17936,6 +18124,83 @@ function notifyPlan(planIdx) {
     }
   }, 3200);
 })();
+
+// ===============================================================
+// FEATURE: WebSocket Real-time Sync
+// ===============================================================
+let wsConnection = null;
+let wsReconnectTimer = null;
+
+function connectWebSocket() {
+  const token = getAuthToken();
+  if (!token) return;
+
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${location.host}/ws?token=${encodeURIComponent(token)}`;
+
+  try {
+    wsConnection = new WebSocket(wsUrl);
+
+    wsConnection.onopen = () => {
+      console.log('[WS] Connected');
+      clearTimeout(wsReconnectTimer);
+    };
+
+    wsConnection.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'sessions') {
+          // Show indicator if multiple sessions are active
+          const badge = document.getElementById('wsSyncBadge');
+          if (badge) {
+            if (msg.count > 1) {
+              badge.style.display = 'inline-flex';
+              badge.textContent = msg.count + ' sesiones';
+            } else {
+              badge.style.display = 'none';
+            }
+          }
+        } else if (msg.type === 'data_saved') {
+          // Another session saved data — reload
+          showToast('Datos actualizados desde otra sesion', 'info', 3000);
+        } else if (msg.type === 'shift_change') {
+          // Real-time shift change from another tab
+          showToast('Turno cambiado desde otra sesion', 'info', 2000);
+        }
+      } catch (e) { /* ignore */ }
+    };
+
+    wsConnection.onclose = () => {
+      console.log('[WS] Disconnected');
+      wsReconnectTimer = setTimeout(connectWebSocket, 5000);
+    };
+
+    wsConnection.onerror = () => {
+      wsConnection.close();
+    };
+  } catch (e) {
+    console.warn('[WS] Connection failed:', e.message);
+    wsReconnectTimer = setTimeout(connectWebSocket, 10000);
+  }
+}
+
+// Start WS after auth
+setTimeout(() => {
+  if (getAuthToken()) connectWebSocket();
+}, 4000);
+
+// ===============================================================
+// FEATURE: Service Worker (offline cache)
+// ===============================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      console.log('[SW] Registered:', reg.scope);
+    }).catch(err => {
+      console.warn('[SW] Registration failed:', err.message);
+    });
+  });
+}
 </script>
 
 </body>
