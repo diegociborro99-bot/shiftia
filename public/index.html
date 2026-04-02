@@ -4973,6 +4973,153 @@ table.schedule th.month-total-header {
   color: var(--text);
 }
 
+/* RISK RADAR */
+.risk-radar-grid {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.risk-radar-grid::-webkit-scrollbar { display: none; }
+.risk-radar-day {
+  flex: 1;
+  min-width: 52px;
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--surface2);
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.risk-radar-day:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.risk-radar-day.rr-ok { border-bottom: 3px solid #27ae60; }
+.risk-radar-day.rr-warn { border-bottom: 3px solid #e67e22; background: rgba(230,126,34,0.03); }
+.risk-radar-day.rr-danger { border-bottom: 3px solid #cc4444; background: rgba(204,68,68,0.04); }
+.rr-day-name { font-size: 9px; font-weight: 600; color: var(--text3); text-transform: uppercase; }
+.rr-day-num { font-size: 14px; font-weight: 800; color: var(--text); margin: 2px 0; }
+.rr-day-shifts {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+  margin-top: 4px;
+}
+.rr-shift-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.rr-shift-dot.rrs-ok { background: #27ae60; }
+.rr-shift-dot.rrs-tight { background: #e67e22; }
+.rr-shift-dot.rrs-short { background: #cc4444; }
+.rr-alert-text {
+  font-size: 8px;
+  font-weight: 700;
+  margin-top: 3px;
+  line-height: 1.2;
+}
+.risk-radar-alerts {
+  margin-top: 10px;
+}
+.rr-alert-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rr-alert-item:hover { transform: translateX(2px); }
+.rr-alert-item.rra-danger {
+  background: rgba(204,68,68,0.06);
+  border-left: 3px solid #cc4444;
+  color: #993333;
+}
+.rr-alert-item.rra-warn {
+  background: rgba(230,126,34,0.06);
+  border-left: 3px solid #e67e22;
+  color: #8a5a1a;
+}
+.rr-alert-date {
+  font-weight: 700;
+  min-width: 50px;
+}
+.rr-alert-desc {
+  flex: 1;
+}
+.rr-alert-action {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* WHAT-IF MODE */
+.whatif-panel {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(154,106,191,0.05), rgba(74,157,212,0.05));
+  border: 1px solid rgba(154,106,191,0.2);
+  border-radius: 14px;
+}
+.whatif-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6a3d8a;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.whatif-scenario {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--surface2);
+  border-radius: 10px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.whatif-scenario:hover {
+  border-color: #9a6abf;
+  box-shadow: 0 2px 8px rgba(154,106,191,0.1);
+}
+.whatif-scenario .ws-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.whatif-scenario .ws-text {
+  flex: 1;
+  font-weight: 600;
+  color: var(--text);
+}
+.whatif-scenario .ws-result {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.whatif-scenario .ws-result.wr-ok { background: rgba(39,174,96,0.1); color: #27ae60; }
+.whatif-scenario .ws-result.wr-warn { background: rgba(230,126,34,0.1); color: #e67e22; }
+.whatif-scenario .ws-result.wr-bad { background: rgba(204,68,68,0.1); color: #cc4444; }
+
+/* CONFIDENCE RING ANIMATION */
+@keyframes ringFill {
+  from { stroke-dashoffset: 188.5; }
+}
+
 /* FEATURE 2: Drag & Drop */
 .shift-pill.dragging {
   opacity: 0.4;
@@ -6647,6 +6794,15 @@ html {
       <div class="divider"></div>
 
       <div class="roster-section">
+        <div class="section-title" style="display:flex;align-items:center;gap:8px;">Radar de Riesgo <span style="font-size:9px;font-weight:600;padding:2px 8px;border-radius:6px;background:rgba(230,126,34,0.1);color:#e67e22;">14 dias</span></div>
+        <div id="riskRadar">
+          <!-- Generated -->
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="roster-section">
         <div class="section-title">Resumen Semanal</div>
         <div id="weeklyDashboard">
           <!-- Generated -->
@@ -7693,6 +7849,9 @@ function renderDashboard() {
   // Render daily briefing panel
   renderDailyBriefing();
 
+  // Render risk radar
+  renderRiskRadar();
+
   // Render weekly dashboard
   renderWeeklyDashboard();
 }
@@ -7832,6 +7991,209 @@ function renderDailyBriefing() {
 
   html += '</div>';
   el.innerHTML = html;
+}
+
+// RISK RADAR: Scan next 14 days for coverage gaps
+function renderRiskRadar() {
+  const el = document.getElementById('riskRadar');
+  if (!el) return;
+
+  const now = new Date();
+  const dayNames = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+  const alerts = [];
+  let daysHtml = '';
+
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const dayIdx = d.getDate() - 1;
+    const sch = genSchedule(year, month);
+    const cov = getCoverageRules(year, month, d.getDate());
+
+    // Count coverage per shift
+    let mE=0,mT=0,tE=0,tT=0,nE=0,nT=0;
+    workers.forEach(w => {
+      const s = sch[w.id] ? (sch[w.id][dayIdx] || '').toString().trim() : '';
+      const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+      const isM = w.area === 'micro';
+      if (eff === 'M') { if (w.type === 'enf') mE++; else if (!isM) mT++; }
+      if (eff === 'T') { if (w.type === 'enf') tE++; else if (!isM) tT++; }
+      if (eff === 'N') { if (w.type === 'enf') nE++; else if (!isM) nT++; }
+    });
+
+    const mOk = mE >= cov.M.enf && mT >= cov.M.tec;
+    const tOk = tE >= cov.T.enf && tT >= cov.T.tec;
+    const nOk = nE >= cov.N.enf && nT >= cov.N.tec;
+
+    // Tight = meets minimum exactly
+    const mTight = (mE === cov.M.enf || mT === cov.M.tec) && mOk;
+    const tTight = (tE === cov.T.enf || tT === cov.T.tec) && tOk;
+    const nTight = (nE === cov.N.enf || nT === cov.N.tec) && nOk;
+
+    const mCls = !mOk ? 'rrs-short' : mTight ? 'rrs-tight' : 'rrs-ok';
+    const tCls = !tOk ? 'rrs-short' : tTight ? 'rrs-tight' : 'rrs-ok';
+    const nCls = !nOk ? 'rrs-short' : nTight ? 'rrs-tight' : 'rrs-ok';
+
+    const dayRisk = !mOk || !tOk || !nOk ? 'rr-danger' : (mTight || tTight || nTight) ? 'rr-warn' : 'rr-ok';
+    const isToday = i === 0;
+    const isWknd = d.getDay() === 0 || d.getDay() === 6;
+
+    daysHtml += `<div class="risk-radar-day ${dayRisk}" onclick="goToDay(${year},${month},${d.getDate()})" title="${dayNames[d.getDay()]} ${d.getDate()}: M ${mE+mT}/${cov.M.enf+cov.M.tec} · T ${tE+tT}/${cov.T.enf+cov.T.tec} · N ${nE+nT}/${cov.N.enf+cov.N.tec}">
+      <div class="rr-day-name" ${isWknd ? 'style="color:var(--danger);"' : ''}>${dayNames[d.getDay()]}</div>
+      <div class="rr-day-num" ${isToday ? 'style="color:var(--accent);"' : ''}>${d.getDate()}</div>
+      <div class="rr-day-shifts">
+        <div class="rr-shift-dot ${mCls}" title="M: ${mE}e+${mT}t/${cov.M.enf+cov.M.tec}"></div>
+        <div class="rr-shift-dot ${tCls}" title="T: ${tE}e+${tT}t/${cov.T.enf+cov.T.tec}"></div>
+        <div class="rr-shift-dot ${nCls}" title="N: ${nE}e+${nT}t/${cov.N.enf+cov.N.tec}"></div>
+      </div>
+    </div>`;
+
+    // Generate alerts for gaps
+    if (!mOk) {
+      const gap = w => w.type === 'enf' ? `enf ${mE}/${cov.M.enf}` : `tec ${mT}/${cov.M.tec}`;
+      alerts.push({
+        date: d, dayName: dayNames[d.getDay()], shift: 'M',
+        severity: 'danger',
+        desc: `Manana: ${mE < cov.M.enf ? 'enf ' + mE + '/' + cov.M.enf : ''} ${mT < cov.M.tec ? 'tec ' + mT + '/' + cov.M.tec : ''}`.trim()
+      });
+    }
+    if (!tOk) {
+      alerts.push({
+        date: d, dayName: dayNames[d.getDay()], shift: 'T',
+        severity: 'danger',
+        desc: `Tarde: ${tE < cov.T.enf ? 'enf ' + tE + '/' + cov.T.enf : ''} ${tT < cov.T.tec ? 'tec ' + tT + '/' + cov.T.tec : ''}`.trim()
+      });
+    }
+    if (!nOk) {
+      alerts.push({
+        date: d, dayName: dayNames[d.getDay()], shift: 'N',
+        severity: 'danger',
+        desc: `Noche: ${nE < cov.N.enf ? 'enf ' + nE + '/' + cov.N.enf : ''} ${nT < cov.N.tec ? 'tec ' + nT + '/' + cov.N.tec : ''}`.trim()
+      });
+    } else if (nTight && i > 0) {
+      alerts.push({
+        date: d, dayName: dayNames[d.getDay()], shift: 'N',
+        severity: 'warn',
+        desc: `Noche al minimo: ${nE}e+${nT}t — una baja deja sin cobertura`
+      });
+    }
+  }
+
+  let html = `<div class="risk-radar-grid">${daysHtml}</div>`;
+
+  // Show top alerts (max 5)
+  if (alerts.length > 0) {
+    html += `<div class="risk-radar-alerts">`;
+    alerts.slice(0, 5).forEach(a => {
+      const cls = a.severity === 'danger' ? 'rra-danger' : 'rra-warn';
+      html += `<div class="rr-alert-item ${cls}" onclick="goToDay(${a.date.getFullYear()},${a.date.getMonth()},${a.date.getDate()})">
+        <span class="rr-alert-date">${a.dayName} ${a.date.getDate()}</span>
+        <span class="rr-alert-desc">${a.desc}</span>
+        <span class="rr-alert-action">Ver →</span>
+      </div>`;
+    });
+    if (alerts.length > 5) {
+      html += `<div style="text-align:center;font-size:10px;color:var(--text3);padding:4px;">+${alerts.length - 5} alertas mas</div>`;
+    }
+    html += `</div>`;
+  } else {
+    html += `<div style="text-align:center;padding:12px;font-size:12px;color:#27ae60;font-weight:600;">Sin riesgos detectados en los proximos 14 dias</div>`;
+  }
+
+  // What-if panel
+  html += buildWhatIfPanel();
+
+  el.innerHTML = html;
+}
+
+// WHAT-IF SIMULATOR: Quick scenarios
+function buildWhatIfPanel() {
+  const now = new Date();
+  const sch = genSchedule(now.getFullYear(), now.getMonth());
+  const todayIdx = now.getDate() - 1;
+
+  // Find who's working each shift today/tomorrow
+  const shifts = ['M', 'T', 'N'];
+  const scenarios = [];
+
+  // Scenario 1: What if someone on tonight calls in sick?
+  const nightWorkers = workers.filter(w => {
+    const s = sch[w.id] ? (sch[w.id][todayIdx] || '').toString().trim() : '';
+    return s === 'N';
+  });
+  if (nightWorkers.length > 0) {
+    const cov = getCoverageRules(now.getFullYear(), now.getMonth(), now.getDate());
+    const nEnf = nightWorkers.filter(w => w.type === 'enf').length;
+    const nTec = nightWorkers.filter(w => w.type === 'tec' && w.area !== 'micro').length;
+    const afterEnf = nEnf - 1;
+    const afterTec = nTec > 0 ? nTec - 1 : nTec;
+    const wouldBeOk = afterEnf >= cov.N.enf && (nTec === 0 || afterTec >= cov.N.tec);
+    scenarios.push({
+      icon: '🌙',
+      text: 'Baja nocturna hoy',
+      result: wouldBeOk ? 'Cubierto' : 'Sin cobertura',
+      cls: wouldBeOk ? 'wr-ok' : 'wr-bad',
+      detail: `N: ${afterEnf}e/${cov.N.enf} · ${afterTec}t/${cov.N.tec}`
+    });
+  }
+
+  // Scenario 2: What if 2 people call sick tomorrow morning?
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const tmSch = genSchedule(tomorrow.getFullYear(), tomorrow.getMonth());
+  const tmIdx = tomorrow.getDate() - 1;
+  const tmMorning = workers.filter(w => {
+    const s = tmSch[w.id] ? (tmSch[w.id][tmIdx] || '').toString().trim() : '';
+    return ['M','MR','M7H','M6R','M55'].includes(s);
+  });
+  if (tmMorning.length > 0) {
+    const tmCov = getCoverageRules(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
+    const tmEnf = tmMorning.filter(w => w.type === 'enf').length;
+    const tmTec = tmMorning.filter(w => w.type === 'tec' && w.area !== 'micro').length;
+    const after2Enf = tmEnf - 2;
+    const wouldBeOk = after2Enf >= tmCov.M.enf;
+    scenarios.push({
+      icon: '🏥',
+      text: '2 bajas manana por la mañana',
+      result: wouldBeOk ? 'Ajustado' : 'Critico',
+      cls: wouldBeOk ? 'wr-warn' : 'wr-bad',
+      detail: `M: ${after2Enf}e/${tmCov.M.enf} enf`
+    });
+  }
+
+  // Scenario 3: Weekend coverage if 1 nurse calls sick
+  let nextWknd = new Date(now);
+  while (nextWknd.getDay() !== 6) nextWknd.setDate(nextWknd.getDate() + 1);
+  const wkSch = genSchedule(nextWknd.getFullYear(), nextWknd.getMonth());
+  const wkIdx = nextWknd.getDate() - 1;
+  const wkCov = getCoverageRules(nextWknd.getFullYear(), nextWknd.getMonth(), nextWknd.getDate());
+  let wkMEnf = 0;
+  workers.forEach(w => {
+    const s = wkSch[w.id] ? (wkSch[w.id][wkIdx] || '').toString().trim() : '';
+    if (['M','MR','M7H','M6R','M55'].includes(s) && w.type === 'enf') wkMEnf++;
+  });
+  const wkAfter = wkMEnf - 1;
+  scenarios.push({
+    icon: '📅',
+    text: 'Baja sabado manana',
+    result: wkAfter >= wkCov.M.enf ? 'OK' : wkAfter >= wkCov.M.enf - 1 ? 'Justo' : 'Critico',
+    cls: wkAfter >= wkCov.M.enf ? 'wr-ok' : wkAfter >= wkCov.M.enf - 1 ? 'wr-warn' : 'wr-bad',
+    detail: `Sab M: ${wkAfter}e/${wkCov.M.enf} enf`
+  });
+
+  if (scenarios.length === 0) return '';
+
+  let html = `<div class="whatif-panel">
+    <div class="whatif-title"><span style="font-size:16px;">🔮</span> Que pasaria si...</div>`;
+  scenarios.forEach(s => {
+    html += `<div class="whatif-scenario">
+      <span class="ws-icon">${s.icon}</span>
+      <span class="ws-text">${s.text}</span>
+      <span class="ws-result ${s.cls}">${s.result}</span>
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
 }
 
 // FEATURE 2: Drag & Drop Shift Swapping
@@ -13984,7 +14346,13 @@ function buildAICoverageAnalysis(w, days, action) {
         <div class="es-label">Sustitutos</div>
       </div>
       <div class="exec-stat ${confClass}">
-        <div class="es-val">${qualityScore}</div>
+        <div class="es-val" style="position:relative;width:48px;height:48px;margin:0 auto;">
+          <svg viewBox="0 0 66 66" style="width:48px;height:48px;transform:rotate(-90deg);">
+            <circle cx="33" cy="33" r="30" fill="none" stroke="var(--surface2)" stroke-width="4"/>
+            <circle cx="33" cy="33" r="30" fill="none" stroke="${bestPlan.confidence >= 80 ? '#27ae60' : bestPlan.confidence >= 50 ? '#e67e22' : '#cc4444'}" stroke-width="4" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="${188.5 - (188.5 * qualityScore / 100)}" style="animation:ringFill 1.2s ease-out;"/>
+          </svg>
+          <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;">${qualityScore}</span>
+        </div>
         <div class="es-label">Calidad ${confLabel}</div>
       </div>
       <div class="exec-stat ${violCount === 0 ? 'es-good' : 'es-bad'}">
