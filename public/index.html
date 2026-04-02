@@ -18086,7 +18086,6 @@ function exportHeatmapPDF() {
   const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const dayNames = ['D','L','M','X','J','V','S'];
 
-  // Colors matching planilla exactly
   function sColor(s) {
     if (!s || s === '' || s === 'D') return { bg: '#f5f0ee', fg: '#b0a0a0' };
     if (['M','MR','M7H','M6R','M55'].includes(s)) return { bg: '#d4ede8', fg: '#1a6b5a' };
@@ -18102,16 +18101,19 @@ function exportHeatmapPDF() {
     return { bg: '#f0f0f0', fg: '#666' };
   }
 
-  // Split into pages: Enfermería on page 1, Técnicos+Micro on page 2
+  // Normalize shift label for display: short codes
+  function sLabel(s) {
+    if (!s || s === '' || s === 'D') return '';
+    return s;
+  }
+
+  // Split: Enfermería page 1, Técnicos+Micro page 2
   const enfWorkers = workers.filter(w => w.type === 'enf');
   const tecWorkers = workers.filter(w => w.type === 'tec' && w.area !== 'micro');
   const microWorkers = workers.filter(w => w.area === 'micro');
 
   const pages = [];
-  if (enfWorkers.length > 0) {
-    pages.push({ title: 'ENFERMERÍA', workers: enfWorkers });
-  }
-  // Combine tec + micro on one page
+  if (enfWorkers.length > 0) pages.push({ title: 'ENFERMERÍA', workers: enfWorkers });
   const tecAll = [...tecWorkers, ...microWorkers];
   if (tecAll.length > 0) {
     const subgroups = [];
@@ -18120,59 +18122,106 @@ function exportHeatmapPDF() {
     pages.push({ title: 'TÉCNICOS', workers: tecAll, subgroups });
   }
 
-  // Calculate dynamic font sizes based on worker count per page
-  function getFontSizes(workerCount) {
-    if (workerCount <= 8) return { name: 12, shift: 11, dayNum: 12, dayName: 9, header: 10, row: 26 };
-    if (workerCount <= 12) return { name: 11, shift: 10, dayNum: 11, dayName: 8, header: 9, row: 24 };
-    if (workerCount <= 16) return { name: 10, shift: 9, dayNum: 10, dayName: 7, header: 9, row: 22 };
-    if (workerCount <= 20) return { name: 9, shift: 9, dayNum: 10, dayName: 7, header: 8, row: 20 };
-    return { name: 8, shift: 8, dayNum: 9, dayName: 6, header: 8, row: 18 };
-  }
-
   const pw = window.open('', '_blank');
-  // Calculate optimal name column width based on longest name
-  const allNames = workers.map(w => w.name);
-  const maxNameLen = Math.max(...allNames.map(n => n.length));
-  const nameColWidth = Math.min(160, Math.max(100, maxNameLen * 7 + 16));
 
-  pw.document.write(`<!DOCTYPE html><html><head><title>Shiftia — Planilla ${monthNames[month]} ${year}</title>
+  pw.document.write(`<!DOCTYPE html><html><head><title>Planilla ${monthNames[month]} ${year} — Shiftia</title>
 <style>
-@page { size: landscape; margin: 6mm 5mm; }
+@page { size: A4 landscape; margin: 4mm; }
 @media print {
+  html, body { width: 100%; height: 100%; }
   body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   .page-break { page-break-before: always; }
-  .page { height: calc(100vh - 12mm); display: flex; flex-direction: column; }
-  table { flex: 1; }
+  .page { page-break-inside: avoid; }
 }
-* { margin:0; padding:0; box-sizing:border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #2c2c2c; background: white; }
-.page { padding: 8px 6px; }
-.header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 2.5px solid #2e8b7a; }
-.header-left h1 { font-size: 17px; font-weight: 800; color: #1a1a2e; letter-spacing: -0.5px; }
-.header-left .subtitle { font-size: 9px; color: #888; font-weight: 500; margin-top: 1px; }
+
+/* Each page fills entire landscape A4 */
+.page {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 4px 4px;
+  overflow: hidden;
+}
+
+/* Compact header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 4px 4px;
+  border-bottom: 2px solid #2e8b7a;
+  margin-bottom: 3px;
+  flex-shrink: 0;
+}
+.header-left h1 { font-size: 13px; font-weight: 800; color: #1a1a2e; letter-spacing: -0.3px; }
+.header-left .subtitle { font-size: 7px; color: #999; margin-top: 0; }
 .header-right { text-align: right; }
-.header-right .group-title { font-size: 13px; font-weight: 700; color: #2e8b7a; text-transform: uppercase; letter-spacing: 0.08em; }
-.header-right .page-info { font-size: 8px; color: #aaa; margin-top: 1px; }
-.legend { display: flex; gap: 10px; font-size: 8px; color: #666; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
-.legend-item { display: flex; align-items: center; gap: 3px; }
-.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-th, td { text-align: center; border: 0.5px solid #ddd; }
-th { background: #f5f5f2; font-weight: 700; color: #555; }
-th.name-col { text-align: left; padding-left: 6px; width: ${nameColWidth}px; }
-td.name-cell { text-align: left; padding-left: 6px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #fafaf8; border-right: 2px solid #ccc; }
-td.shift-cell { font-weight: 800; letter-spacing: 0.02em; }
-.subgroup-row td { background: #eef2f0; font-weight: 800; color: #5c7a6f; text-transform: uppercase; letter-spacing: 0.1em; text-align: left; padding-left: 6px; }
-.wknd { background: #fdf8ee !important; }
-th.wknd-head { color: #b8860b; background: #fdf8ee; }
-th.today-head { color: #2e8b7a; font-weight: 900; }
-.sum-col { background: #f5f5f2; font-weight: 800; color: #333; }
-.footer { margin-top: 4px; font-size: 7px; color: #bbb; display: flex; justify-content: space-between; padding-top: 3px; border-top: 1px solid #eee; }
+.header-right .group-title { font-size: 12px; font-weight: 700; color: #2e8b7a; text-transform: uppercase; letter-spacing: 0.08em; }
+.header-right .page-info { font-size: 7px; color: #aaa; }
+
+/* Inline legend */
+.legend { display: flex; gap: 8px; font-size: 7px; color: #777; align-items: center; margin-bottom: 2px; flex-shrink: 0; }
+.legend-item { display: flex; align-items: center; gap: 2px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* Table fills remaining space */
+.table-wrap { flex: 1; overflow: hidden; }
+table { width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed; }
+th, td { text-align: center; border: 0.5px solid #d8d8d8; vertical-align: middle; overflow: hidden; }
+thead th { background: #f0f0ed; color: #555; position: relative; }
+th.name-col { text-align: left; padding-left: 5px; width: 110px; min-width: 110px; }
+td.name-cell {
+  text-align: left;
+  padding-left: 5px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: #fcfcfa;
+  border-right: 1.5px solid #bbb;
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
+}
+td.shift-cell { font-weight: 800; letter-spacing: 0.01em; }
+.subgroup-row td {
+  background: #eaf0ed;
+  font-weight: 800;
+  color: #5c7a6f;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: left;
+  padding-left: 5px;
+  border-bottom: 1px solid #c0d0c8;
+}
+.wknd-bg { background: #fdf8ee !important; }
+th.wknd-head { color: #b8860b; background: #faf5e8; }
+th.today-head { color: white; background: #2e8b7a; font-weight: 900; }
+.sum-col { background: #f5f5f2; font-weight: 800; color: #333; width: 28px; min-width: 28px; }
+.coverage-row td { background: #f8f8f5; border-top: 2px solid #2e8b7a; }
+.footer { font-size: 6px; color: #ccc; display: flex; justify-content: space-between; padding-top: 2px; flex-shrink: 0; }
 </style></head><body>`);
 
   pages.forEach((page, pageIdx) => {
     const wCount = page.workers.length;
-    const fs = getFontSizes(wCount);
+    const subgroupCount = page.subgroups ? page.subgroups.length : 0;
+    // Total rows = workers + subgroup headers + coverage + header row
+    const totalRows = wCount + subgroupCount + 2;
+    // Available height: ~190mm landscape A4 minus header/legend/footer ≈ ~175mm usable
+    // Calculate row height to fill page: aim for rows that maximize space
+    const availableH = 175; // mm approx
+    const rowH = Math.max(5.5, Math.min(9, availableH / totalRows));
+    const rowHpx = Math.round(rowH * 3.78); // mm to px approx at 96dpi
+
+    // Font sizes: scale with row height
+    const fShift = Math.max(8, Math.min(12, Math.round(rowH * 1.3)));
+    const fName = Math.max(7, Math.min(11, Math.round(rowH * 1.2)));
+    const fDay = Math.max(8, Math.min(13, Math.round(rowH * 1.4)));
+    const fDayName = Math.max(6, Math.min(9, Math.round(rowH * 0.85)));
+    const fHead = Math.max(7, Math.min(10, Math.round(rowH * 1.0)));
 
     if (pageIdx > 0) pw.document.write('<div class="page-break"></div>');
     pw.document.write(`<div class="page">`);
@@ -18180,84 +18229,90 @@ th.today-head { color: #2e8b7a; font-weight: 900; }
     // Header
     pw.document.write(`<div class="header">
       <div class="header-left">
-        <h1>Planilla de Turnos — ${monthNames[month]} ${year}</h1>
-        <div class="subtitle">Hospital de Jove · Generado ${new Date().toLocaleDateString('es-ES')}</div>
+        <h1>${monthNames[month]} ${year}</h1>
+        <div class="subtitle">Hospital de Jove · ${new Date().toLocaleDateString('es-ES')}</div>
       </div>
       <div class="header-right">
         <div class="group-title">${page.title}</div>
-        <div class="page-info">${wCount} trabajadores · Página ${pageIdx + 1} de ${pages.length}</div>
+        <div class="page-info">${wCount} trabajadores · Pág ${pageIdx + 1}/${pages.length}</div>
       </div>
     </div>`);
 
     // Legend
     pw.document.write(`<div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#d4ede8;border:1px solid #2e8b7a;"></div>Mañana</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#d6eaf8;border:1px solid #4a9dd4;"></div>Tarde</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#f5eecc;border:1px solid #c5a832;"></div>Noche</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#d4ede8;border:1px solid #2e8b7a;"></div>M</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#d6eaf8;border:1px solid #4a9dd4;"></div>T</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f5eecc;border:1px solid #c5a832;"></div>N</div>
       <div class="legend-item"><div class="legend-dot" style="background:#f0d4d4;border:1px solid #8b2020;"></div>VAC</div>
       <div class="legend-item"><div class="legend-dot" style="background:#f0d0d6;border:1px solid #b04050;"></div>BAJ</div>
       <div class="legend-item"><div class="legend-dot" style="background:#d4e4f0;border:1px solid #3a6a9f;"></div>LD</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#f5f0ee;border:1px solid #ccc;"></div>Descanso</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f5f0ee;border:1px solid #ddd;"></div>D</div>
     </div>`);
 
-    // Table — auto-scaled to fill page
-    pw.document.write(`<table><thead><tr><th class="name-col" style="font-size:${fs.header}px;padding:4px 6px;">Trabajador</th>`);
+    // Table
+    pw.document.write(`<div class="table-wrap"><table><thead><tr>`);
+    pw.document.write(`<th class="name-col" style="font-size:${fHead}px;height:${rowHpx}px;padding:2px 5px;">Nombre</th>`);
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(year, month, d);
       const dow = date.getDay();
       const isWknd = dow === 0 || dow === 6;
       const isToday = date.toDateString() === new Date().toDateString();
       const thCls = isToday ? 'today-head' : isWknd ? 'wknd-head' : '';
-      pw.document.write(`<th class="${thCls}" style="padding:4px 1px;"><div style="font-size:${fs.dayNum}px;font-weight:800;line-height:1.2;">${d}</div><div style="font-size:${fs.dayName}px;font-weight:600;color:#999;line-height:1;">${dayNames[dow]}</div></th>`);
+      pw.document.write(`<th class="${thCls}" style="height:${rowHpx}px;padding:1px 0;"><div style="font-size:${fDay}px;font-weight:800;line-height:1.1;">${d}</div><div style="font-size:${fDayName}px;font-weight:600;${isToday ? 'color:#d4ede8;' : 'color:#999;'}line-height:1;">${dayNames[dow]}</div></th>`);
     }
-    pw.document.write(`<th style="font-size:${fs.header}px;padding:3px 2px;width:26px;">N</th><th style="font-size:${fs.header}px;padding:3px 2px;width:30px;">Hrs</th></tr></thead><tbody>`);
+    pw.document.write(`<th class="sum-col" style="font-size:${fHead}px;height:${rowHpx}px;">N</th>`);
+    pw.document.write(`<th class="sum-col" style="font-size:${fHead}px;height:${rowHpx}px;">H</th>`);
+    pw.document.write(`</tr></thead><tbody>`);
 
-    // Workers - with optional subgroups
-    const renderWorkers = (workerList) => {
+    // Render worker rows
+    const renderW = (workerList) => {
       workerList.forEach(wk => {
         const ws = sch[wk.id] || [];
         const nights = ws.filter(s => (s||'').toString().trim() === 'N').length;
         const hours = ws.reduce((a, s) => a + (RULES.SHIFT_HOURS[s] || 0), 0);
-        pw.document.write(`<tr><td class="name-cell" style="font-size:${fs.name}px;padding:${Math.floor(fs.row * 0.12)}px 6px;height:${fs.row}px;max-width:${nameColWidth}px;">${wk.name}</td>`);
+        pw.document.write(`<tr>`);
+        pw.document.write(`<td class="name-cell" style="font-size:${fName}px;height:${rowHpx}px;padding:1px 5px;">${wk.name}</td>`);
         for (let d = 0; d < daysInMonth; d++) {
           const s = (ws[d] || '').toString().trim();
           const c = sColor(s);
           const date = new Date(year, month, d + 1);
           const isWknd = date.getDay() === 0 || date.getDay() === 6;
-          const label = (!s || s === 'D') ? '' : s;
-          pw.document.write(`<td class="shift-cell ${isWknd && !label ? 'wknd' : ''}" style="background:${c.bg};color:${c.fg};font-size:${fs.shift}px;padding:${Math.floor(fs.row * 0.08)}px 0;height:${fs.row}px;">${label}</td>`);
+          const label = sLabel(s);
+          const wkndBg = isWknd && !label ? ' wknd-bg' : '';
+          pw.document.write(`<td class="shift-cell${wkndBg}" style="background:${c.bg};color:${c.fg};font-size:${fShift}px;height:${rowHpx}px;padding:0;">${label}</td>`);
         }
-        pw.document.write(`<td class="sum-col" style="font-size:${fs.name - 1}px;padding:3px 2px;">${nights}</td>`);
-        pw.document.write(`<td class="sum-col" style="font-size:${fs.name - 1}px;padding:3px 2px;">${hours}</td></tr>`);
+        pw.document.write(`<td class="sum-col" style="font-size:${fName}px;height:${rowHpx}px;color:${nights > 0 ? '#7a6518' : '#ccc'};">${nights}</td>`);
+        pw.document.write(`<td class="sum-col" style="font-size:${fName}px;height:${rowHpx}px;">${hours}</td>`);
+        pw.document.write(`</tr>`);
       });
     };
 
     if (page.subgroups) {
       page.subgroups.forEach(sg => {
-        pw.document.write(`<tr class="subgroup-row"><td colspan="${daysInMonth + 3}" style="font-size:${fs.header}px;padding:5px 8px;">${sg.label} (${sg.workers.length})</td></tr>`);
-        renderWorkers(sg.workers);
+        pw.document.write(`<tr class="subgroup-row"><td colspan="${daysInMonth + 3}" style="font-size:${fHead}px;height:${Math.round(rowHpx * 0.7)}px;padding:1px 5px;">${sg.label} (${sg.workers.length})</td></tr>`);
+        renderW(sg.workers);
       });
     } else {
-      renderWorkers(page.workers);
+      renderW(page.workers);
     }
 
     // Coverage summary row
-    pw.document.write(`<tr style="border-top:2px solid #2e8b7a;"><td class="name-cell" style="font-size:${fs.header}px;font-weight:800;color:#2e8b7a;padding:3px 6px;">COBERTURA</td>`);
+    pw.document.write(`<tr class="coverage-row"><td class="name-cell" style="font-size:${fHead}px;height:${rowHpx}px;font-weight:800;color:#2e8b7a;padding:1px 5px;background:#f8f8f5;">M/T/N</td>`);
     for (let d = 0; d < daysInMonth; d++) {
-      let mCount = 0, tCount = 0, nCount = 0;
+      let mC = 0, tC = 0, nC = 0;
       page.workers.forEach(wk => {
         const s = (sch[wk.id] ? (sch[wk.id][d] || '') : '').toString().trim();
         const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
-        if (eff === 'M') mCount++;
-        if (eff === 'T') tCount++;
-        if (eff === 'N') nCount++;
+        if (eff === 'M') mC++;
+        if (eff === 'T') tC++;
+        if (eff === 'N') nC++;
       });
-      pw.document.write(`<td style="font-size:${Math.max(6, fs.shift - 2)}px;padding:2px 0;background:#f8f8f5;line-height:1.2;"><span style="color:#1a6b5a;">${mCount}</span>/<span style="color:#2a6f9a;">${tCount}</span>/<span style="color:#7a6518;">${nCount}</span></td>`);
+      pw.document.write(`<td style="font-size:${Math.max(6, fShift - 2)}px;height:${rowHpx}px;padding:0;background:#f8f8f5;line-height:1.15;"><span style="color:#1a6b5a;font-weight:700;">${mC}</span><span style="color:#ccc;">/</span><span style="color:#2a6f9a;font-weight:700;">${tC}</span><span style="color:#ccc;">/</span><span style="color:#7a6518;font-weight:700;">${nC}</span></td>`);
     }
-    pw.document.write(`<td class="sum-col" style="font-size:${fs.header}px;">—</td><td class="sum-col" style="font-size:${fs.header}px;">—</td></tr>`);
+    pw.document.write(`<td class="sum-col" style="height:${rowHpx}px;">—</td><td class="sum-col" style="height:${rowHpx}px;">—</td></tr>`);
 
-    pw.document.write(`</tbody></table>`);
-    pw.document.write(`<div class="footer"><span>Shiftia v6.0 — Highkey Labs</span><span>Página ${pageIdx + 1} de ${pages.length} · Cobertura: M/T/N por dia</span></div>`);
+    pw.document.write(`</tbody></table></div>`);
+    pw.document.write(`<div class="footer"><span>Shiftia — Highkey Labs</span><span>Pág ${pageIdx + 1}/${pages.length}</span></div>`);
     pw.document.write(`</div>`);
   });
 
