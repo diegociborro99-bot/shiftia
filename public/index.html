@@ -3073,10 +3073,10 @@ table.schedule th.month-total-header {
 /* === GESTOR 2.0: AI Reasoning Panel === */
 .gestor-ai-thinking {
   margin-top: 20px;
-  padding: 20px;
+  padding: 0;
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(230,126,34,0.04), rgba(92,122,111,0.04));
-  border: 2px solid var(--surface2);
+  background: transparent;
+  border: none;
 }
 
 .gestor-ai-header {
@@ -3147,7 +3147,152 @@ table.schedule th.month-total-header {
   font-weight: 500;
 }
 
-/* AI Reasoning Steps */
+/* === EXECUTIVE SUMMARY BAR === */
+.gestor-exec-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+  animation: fadeUp 0.4s ease;
+}
+.exec-stat {
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--surface);
+  border: 1px solid var(--surface2);
+  border-radius: 12px;
+}
+.exec-stat .es-val {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.exec-stat .es-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text3);
+  margin-top: 3px;
+  font-weight: 600;
+}
+.exec-stat.es-good .es-val { color: #27ae60; }
+.exec-stat.es-warn .es-val { color: #e67e22; }
+.exec-stat.es-bad .es-val { color: #cc4444; }
+.exec-stat.es-neutral .es-val { color: var(--text); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* === HERO PLAN ASSIGNMENT ROW === */
+.hero-assign-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--surface2);
+  border-radius: 12px;
+  margin-bottom: 6px;
+  transition: all 0.15s ease;
+  animation: fadeUp 0.35s ease both;
+}
+.hero-assign-row:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.hero-assign-date {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  min-width: 90px;
+  white-space: nowrap;
+}
+.hero-assign-shift {
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+.hero-assign-arrow {
+  color: var(--text3);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.hero-assign-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--accent);
+  flex: 1;
+}
+.hero-assign-badge {
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.hero-assign-badge.hab-ok { background: rgba(39,174,96,0.1); color: #27ae60; }
+.hero-assign-badge.hab-warn { background: rgba(230,126,34,0.1); color: #e67e22; }
+.hero-assign-badge.hab-crit { background: rgba(204,68,68,0.1); color: #cc4444; }
+.hero-assign-uncovered {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(204,68,68,0.05);
+  border: 1px dashed rgba(204,68,68,0.3);
+  border-radius: 12px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #cc4444;
+}
+
+/* === RISK ALERTS SECTION === */
+.gestor-risks {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: rgba(230,126,34,0.04);
+  border: 1px solid rgba(230,126,34,0.15);
+  border-radius: 12px;
+}
+.gestor-risks-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #b5651d;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.risk-item {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(230,126,34,0.1);
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.4;
+}
+.risk-item:last-child { border-bottom: none; }
+.risk-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.risk-icon.ri-warn { background: rgba(230,126,34,0.12); color: #e67e22; }
+.risk-icon.ri-alert { background: rgba(204,68,68,0.12); color: #cc4444; }
+
+/* AI Reasoning Steps — collapsed by default */
 .gestor-ai-steps {
   margin: 16px 0;
 }
@@ -3199,6 +3344,60 @@ table.schedule th.month-total-header {
   color: var(--text2);
   margin-top: 2px;
   line-height: 1.4;
+}
+
+/* === ALTERNATIVE PLANS — compact === */
+.alt-plan-card {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--surface2);
+  margin-top: 8px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.alt-plan-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.alt-plan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+.alt-plan-header .aph-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.alt-plan-header .aph-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.alt-plan-header .aph-strat {
+  font-size: 10px;
+  color: var(--text3);
+}
+.alt-plan-mini-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text2);
+}
+.alt-plan-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.alt-plan-body.expanded {
+  max-height: 800px;
 }
 
 /* Coverage Plan Card */
@@ -3832,17 +4031,17 @@ table.schedule th.month-total-header {
 .hm-shift:hover { transform: scale(1.15); z-index: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
 /* Shift colors — soft, rounded, professional */
-.hm-shift.s-M, .hm-shift.s-MR, .hm-shift.s-M7H, .hm-shift.s-M6R, .hm-shift.s-M55 { background: #dbeafe; color: #1e40af; }
-.hm-shift.s-T { background: #ffedd5; color: #9a3412; }
-.hm-shift.s-N { background: #ede9fe; color: #5b21b6; }
-.hm-shift.s-D { background: var(--surface2); color: var(--text3); font-weight: 500; opacity: 0.6; }
+.hm-shift.s-M, .hm-shift.s-MR, .hm-shift.s-M7H, .hm-shift.s-M6R, .hm-shift.s-M55 { background: rgba(46,139,122,0.18); color: #1a6b5a; }
+.hm-shift.s-T { background: rgba(74,157,212,0.18); color: #2a6f9a; }
+.hm-shift.s-N { background: rgba(197,168,50,0.22); color: #8a7520; }
+.hm-shift.s-D { background: rgba(204,68,68,0.12); color: #a03333; font-weight: 500; opacity: 0.6; }
 .hm-shift.s-empty { background: transparent; color: transparent; }
-.hm-shift.s-VAC, .hm-shift.s-VAA, .hm-shift.s-VAN { background: #d1fae5; color: #065f46; }
-.hm-shift.s-BAJ { background: #fecaca; color: #991b1b; }
-.hm-shift.s-LD, .hm-shift.s-LAC { background: #fef3c7; color: #92400e; }
-.hm-shift.s-CJ, .hm-shift.s-FN { background: #e0f2fe; color: #075985; }
-.hm-shift.s-INT, .hm-shift.s-FOR, .hm-shift.s-HS, .hm-shift.s-HF { background: #f3e8ff; color: #6b21a8; }
-.hm-shift.s-other { background: #f1f5f9; color: #475569; }
+.hm-shift.s-VAC, .hm-shift.s-VAA, .hm-shift.s-VAN { background: rgba(139,32,32,0.12); color: #8b2020; }
+.hm-shift.s-BAJ { background: rgba(176,64,80,0.12); color: #903040; }
+.hm-shift.s-LD, .hm-shift.s-LAC { background: rgba(90,138,191,0.15); color: #3a6a9f; }
+.hm-shift.s-CJ, .hm-shift.s-FN { background: rgba(74,157,212,0.10); color: #2a6f9a; }
+.hm-shift.s-INT, .hm-shift.s-FOR, .hm-shift.s-HS, .hm-shift.s-HF { background: rgba(208,112,160,0.12); color: #a05080; }
+.hm-shift.s-other { background: rgba(150,150,150,0.12); color: #666; }
 
 /* Summary column */
 .hm-summary { font-size: 10px; color: var(--text3); font-weight: 500; padding: 4px 6px; text-align: center; border-bottom: 1px solid var(--surface2); }
@@ -5089,6 +5288,1209 @@ html {
   table.schedule td.name-cell { width: 80px; min-width: 80px; max-width: 80px; }
   table.schedule th.name-col { min-width: 80px; }
 }
+
+/* ============================================================
+   MOBILE MEGA-OPTIMIZATION v2.0
+   Priority: fluidity, touch, visuals, performance
+   ============================================================ */
+
+/* --- GPU acceleration for all animated elements --- */
+@media (max-width: 768px) {
+  .topbar, .nav-tab, .shift-pill, .stat-pill, .worker-card, .conflict-card,
+  .gestor-modal, .chat-panel, .shift-editor, .briefing-card,
+  .gestor-fab, .chat-bubble, .toast, .plan-preview-content {
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+
+  /* --- Smooth momentum scrolling everywhere --- */
+  .content, .gestor-body, .chat-messages, .schedule-table-wrap,
+  .mx-table-wrap, .preview-schedule-wrap {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* --- TOPBAR: glass morphism sticky header --- */
+  .topbar {
+    padding: 10px 16px !important;
+    margin-bottom: 0 !important;
+    position: sticky !important;
+    top: 0;
+    z-index: 100 !important;
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    background: rgba(255,255,255,0.82) !important;
+    border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+    box-shadow: 0 1px 12px rgba(0,0,0,0.04) !important;
+    flex-wrap: nowrap !important;
+    gap: 0 !important;
+    transition: background 0.3s, box-shadow 0.3s, transform 0.3s;
+  }
+
+  [data-theme="dark"] .topbar {
+    background: rgba(26,26,30,0.85) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+  }
+
+  .topbar-left {
+    position: static !important;
+    left: auto !important;
+    gap: 12px !important;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    font-size: 0 !important;
+    gap: 0 !important;
+  }
+  .logo span { display: none !important; }
+  .logo svg { width: 28px !important; height: 28px !important; }
+
+  .topbar-right {
+    position: static !important;
+    right: auto !important;
+    margin-left: auto;
+    gap: 6px !important;
+    flex-shrink: 0;
+  }
+
+  .user-display { display: none !important; }
+
+  .theme-btn {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 16px;
+    border-radius: 10px !important;
+  }
+
+  /* --- BOTTOM NAV: native app feel --- */
+  .nav-tabs {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: var(--surface) !important;
+    border-top: 1px solid var(--border) !important;
+    z-index: 150 !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0 !important;
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px)) !important;
+    margin: 0 !important;
+    order: unset !important;
+    width: 100% !important;
+    overflow: visible !important;
+    box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
+    backdrop-filter: blur(20px) saturate(1.6);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  }
+
+  [data-theme="dark"] .nav-tabs {
+    background: rgba(26,26,30,0.92) !important;
+    border-top-color: rgba(255,255,255,0.06) !important;
+  }
+
+  .nav-tab {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    font-size: 9px !important;
+    font-weight: 500 !important;
+    padding: 6px 2px !important;
+    min-height: 44px !important;
+    white-space: nowrap !important;
+    border-radius: 10px !important;
+    transition: all 0.2s ease !important;
+    position: relative !important;
+    letter-spacing: 0 !important;
+    color: var(--text3) !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .nav-tab .tab-icon {
+    font-size: 18px !important;
+    line-height: 1 !important;
+    display: block !important;
+    margin-bottom: 1px;
+  }
+
+  .nav-tab.active {
+    color: var(--accent) !important;
+    background: rgba(92,122,111,0.08) !important;
+  }
+
+  .nav-tab.active::after {
+    display: none !important;
+  }
+
+  .nav-tab:active {
+    transform: scale(0.92) !important;
+    background: rgba(92,122,111,0.12) !important;
+  }
+
+  /* Show 3 main tabs + "Más" button on mobile */
+  .nav-tab:nth-child(n+4) {
+    display: none !important;
+  }
+
+  /* Mobile "More" button injected via JS */
+  .nav-tab-more {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    font-size: 9px !important;
+    font-weight: 500 !important;
+    padding: 6px 2px !important;
+    min-height: 44px !important;
+    border-radius: 10px !important;
+    border: none;
+    background: none;
+    color: var(--text3) !important;
+    cursor: pointer;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.2s ease;
+  }
+
+  .nav-tab-more .tab-icon { font-size: 18px !important; }
+  .nav-tab-more:active { transform: scale(0.92); background: rgba(92,122,111,0.12); }
+  .nav-tab-more.has-active { color: var(--accent) !important; }
+
+  /* Mobile More Menu Overlay */
+  .mobile-more-menu {
+    position: fixed !important;
+    inset: 0;
+    z-index: 500 !important;
+  }
+
+  .mobile-more-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+  }
+
+  .mobile-more-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.12);
+    animation: moreSheetUp 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  @keyframes moreSheetUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .mobile-more-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--text3);
+    border-radius: 4px;
+    opacity: 0.3;
+    margin: 0 auto 14px;
+  }
+
+  .mobile-more-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .mobile-more-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 14px 8px;
+    border-radius: 14px;
+    border: none;
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 10px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 60px;
+  }
+
+  .mobile-more-item .more-icon { font-size: 20px; }
+  .mobile-more-item:active { transform: scale(0.93); }
+  .mobile-more-item.active { background: rgba(92,122,111,0.12); color: var(--accent); font-weight: 600; }
+
+  /* --- CONTENT AREA: adapt for bottom nav --- */
+  .content {
+    padding: 12px 14px calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+    min-height: calc(100vh - 52px);
+  }
+
+  /* --- DASHBOARD: card-based mobile layout --- */
+  .daily-briefing {
+    border-radius: 14px !important;
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .briefing-header {
+    margin-bottom: 12px !important;
+  }
+
+  .briefing-greeting {
+    font-size: 17px !important;
+  }
+
+  .briefing-date {
+    font-size: 11px !important;
+  }
+
+  .briefing-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .briefing-card {
+    padding: 12px !important;
+    border-radius: 10px !important;
+  }
+
+  .briefing-card-value {
+    font-size: 20px !important;
+  }
+
+  .briefing-card-label {
+    font-size: 9px !important;
+  }
+
+  .dashboard-title {
+    font-size: 22px !important;
+    margin-bottom: 4px !important;
+    letter-spacing: -0.5px;
+  }
+
+  .dashboard-subtitle {
+    font-size: 12px !important;
+    margin-bottom: 16px !important;
+    opacity: 0.7;
+  }
+
+  /* --- STAT PILLS: compact but punchy --- */
+  .stat-pills {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .stat-pill {
+    min-width: auto !important;
+    padding: 14px 10px !important;
+    border-radius: 14px !important;
+    text-align: center !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  }
+
+  .stat-pill:active {
+    transform: scale(0.96);
+  }
+
+  .stat-pill-value {
+    font-size: 24px !important;
+    letter-spacing: -1px;
+    line-height: 1.1;
+  }
+
+  .stat-pill-label {
+    font-size: 8px !important;
+    letter-spacing: 0.4px !important;
+    margin-top: 4px;
+  }
+
+  /* --- ROSTER CARDS: swipeable feel --- */
+  .roster-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .shift-card {
+    padding: 14px 16px !important;
+    border-radius: 14px !important;
+    transition: transform 0.2s ease !important;
+  }
+
+  .shift-card:active {
+    transform: scale(0.985);
+  }
+
+  /* --- WEEK STRIP: larger tap targets --- */
+  .week-strip {
+    grid-template-columns: repeat(7, 1fr) !important;
+    gap: 5px !important;
+  }
+
+  .week-day {
+    padding: 10px 4px !important;
+    border-radius: 10px !important;
+    min-height: 52px;
+    transition: transform 0.15s ease;
+  }
+
+  .week-day:active {
+    transform: scale(0.93);
+  }
+
+  .week-day-num { font-size: 15px !important; font-weight: 700; }
+  .week-day-letter { font-size: 8px !important; }
+
+  /* --- SCHEDULE TABLE: fluid horizontal scroll --- */
+  .schedule-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .month-nav {
+    justify-content: center !important;
+  }
+
+  .month-name {
+    font-size: 17px !important;
+    font-weight: 700;
+    min-width: 150px !important;
+  }
+
+  .nav-btn {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 12px !important;
+  }
+
+  .nav-btn:active {
+    transform: scale(0.9);
+  }
+
+  .search-box {
+    width: 100% !important;
+    border-radius: 12px !important;
+    font-size: 14px !important;
+    padding: 10px 14px !important;
+  }
+
+  .schedule-table-wrap {
+    border-radius: 12px !important;
+    margin: 0 -14px !important;
+    width: calc(100% + 28px) !important;
+    position: relative;
+    scroll-snap-type: x proximity !important;
+    scroll-behavior: smooth;
+  }
+
+  /* Fade gradient on right edge */
+  .schedule-table-wrap::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 24px !important;
+    background: linear-gradient(to left, var(--surface), transparent) !important;
+    pointer-events: none !important;
+    z-index: 2 !important;
+    border-radius: 0 12px 12px 0;
+  }
+
+  table.schedule {
+    font-size: 10px !important;
+    min-width: 780px !important;
+  }
+
+  table.schedule th {
+    padding: 8px 2px !important;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    backdrop-filter: blur(8px);
+  }
+
+  table.schedule th.name-col {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 5 !important;
+    background: var(--surface) !important;
+    min-width: 95px !important;
+    padding-left: 10px !important;
+    font-size: 9px !important;
+  }
+
+  table.schedule td.name-cell {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 2 !important;
+    background: var(--surface) !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+    min-width: 95px !important;
+    max-width: 95px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+  }
+
+  [data-theme="dark"] table.schedule td.name-cell,
+  [data-theme="dark"] table.schedule th.name-col {
+    background: var(--surface) !important;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+  }
+
+  table.schedule th.day-header {
+    min-width: 36px !important;
+    padding: 6px 1px !important;
+  }
+
+  table.schedule th.day-header .day-name {
+    font-size: 7px !important;
+    margin-bottom: 2px;
+  }
+
+  table.schedule th.day-header .day-num {
+    font-size: 12px !important;
+    font-weight: 700;
+  }
+
+  /* --- SHIFT PILLS: touch-friendly --- */
+  .shift-pill {
+    width: 30px !important;
+    height: 24px !important;
+    border-radius: 6px !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    transition: transform 0.15s ease !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .shift-pill:active {
+    transform: scale(1.15) !important;
+  }
+
+  .shift-pill:hover {
+    transform: none !important;
+  }
+
+  .month-total-cell {
+    font-size: 8px !important;
+    padding: 4px 3px !important;
+    min-width: 46px !important;
+  }
+
+  .coverage-row td {
+    font-size: 8px !important;
+  }
+
+  /* --- SCHEDULE FILTERS: horizontal scroll chips --- */
+  .schedule-filters,
+  .filter-row {
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px !important;
+    padding-bottom: 4px;
+  }
+
+  .schedule-filters::-webkit-scrollbar,
+  .filter-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .schedule-filter-btn {
+    padding: 8px 14px !important;
+    font-size: 11px !important;
+    min-height: 36px !important;
+    border-radius: 18px !important;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .schedule-mode-toggle {
+    border-radius: 10px !important;
+  }
+
+  .schedule-mode-btn {
+    padding: 6px 10px !important;
+    font-size: 10px !important;
+    min-height: 32px;
+  }
+
+  /* --- WORKER CARDS: clean mobile grid --- */
+  .workers-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .worker-card {
+    padding: 14px !important;
+    border-radius: 14px !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  }
+
+  .worker-card:active {
+    transform: scale(0.985);
+  }
+
+  .worker-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 14px !important;
+    border-radius: 10px !important;
+  }
+
+  .worker-name {
+    font-size: 14px !important;
+    font-weight: 600;
+  }
+
+  /* --- CONFLICT CARDS --- */
+  .conflict-card {
+    padding: 14px !important;
+    border-radius: 14px !important;
+    transition: transform 0.2s ease !important;
+  }
+
+  .conflict-card:active {
+    transform: scale(0.985);
+  }
+
+  /* --- SHIFT EDITOR: bottom sheet UX --- */
+  .shift-editor-overlay {
+    align-items: flex-end !important;
+  }
+
+  .shift-editor {
+    width: 100% !important;
+    max-height: 88vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    animation: shiftEditorSlideUp 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) !important;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.15) !important;
+  }
+
+  @keyframes shiftEditorSlideUp {
+    from { opacity: 0; transform: translateY(100%); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .se-shifts-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .se-shift-btn {
+    padding: 10px 6px !important;
+    border-radius: 10px !important;
+    min-height: 48px !important;
+    transition: transform 0.15s ease !important;
+  }
+
+  .se-shift-btn:active {
+    transform: scale(0.93);
+  }
+
+  .se-shift-btn .se-code {
+    font-size: 14px !important;
+    font-weight: 700;
+  }
+
+  .se-btn {
+    min-height: 50px !important;
+    font-size: 15px !important;
+    border-radius: 14px !important;
+    font-weight: 700;
+  }
+
+  /* --- GESTOR AI MODAL: full-screen bottom sheet --- */
+  .gestor-fab {
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+    left: 16px !important;
+    height: 44px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+    border-radius: 14px !important;
+    box-shadow: 0 4px 16px rgba(41,128,185,0.3) !important;
+  }
+
+  .gestor-fab .fab-text { display: none !important; }
+
+  .gestor-overlay {
+    align-items: flex-end !important;
+  }
+
+  .gestor-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 94vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    animation: gestorMobileSlideUp 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) !important;
+  }
+
+  @keyframes gestorMobileSlideUp {
+    from { opacity: 0; transform: translateY(100%); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .gestor-modal::before {
+    border-radius: 20px 20px 0 0 !important;
+  }
+
+  /* Drag handle indicator */
+  .gestor-modal::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    background: var(--text3);
+    border-radius: 4px;
+    opacity: 0.3;
+    z-index: 10;
+  }
+
+  .gestor-header {
+    padding: 20px 18px 12px !important;
+  }
+
+  .gestor-header h2 {
+    font-size: 16px !important;
+    gap: 8px !important;
+  }
+
+  .gestor-body {
+    padding: 14px 16px !important;
+    max-height: calc(94vh - 70px) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+
+  .gestor-actions-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .gestor-quick-btn {
+    min-height: 44px !important;
+    padding: 10px 10px !important;
+    font-size: 11px !important;
+    border-radius: 12px !important;
+    flex: 1 1 calc(50% - 4px) !important;
+  }
+
+  .gestor-quick-btn:active {
+    transform: scale(0.95);
+  }
+
+  /* --- EXECUTIVE SUMMARY: 2x2 grid on mobile --- */
+  .gestor-exec-summary {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+  .exec-stat {
+    padding: 10px 6px !important;
+    border-radius: 10px !important;
+  }
+  .exec-stat .es-val {
+    font-size: 20px !important;
+  }
+
+  /* --- HERO ASSIGNMENT ROWS: stack on mobile --- */
+  .hero-assign-row {
+    flex-wrap: wrap !important;
+    padding: 10px 12px !important;
+    gap: 6px !important;
+  }
+  .hero-assign-date {
+    font-size: 12px !important;
+    min-width: unset !important;
+  }
+  .hero-assign-name {
+    font-size: 13px !important;
+    flex-basis: 100% !important;
+    order: 5;
+  }
+  .hero-assign-badge {
+    order: 6;
+  }
+
+  /* --- RISK ALERTS --- */
+  .gestor-risks {
+    padding: 10px 12px !important;
+  }
+  .risk-item {
+    font-size: 10px !important;
+  }
+
+  /* --- ALT PLAN CARDS --- */
+  .alt-plan-card {
+    padding: 10px 12px !important;
+  }
+  .alt-plan-mini-stats {
+    font-size: 10px !important;
+    gap: 8px !important;
+  }
+
+  /* --- PLAN CARDS: clean, scannable --- */
+  .gestor-plan-card {
+    border-radius: 14px !important;
+    padding: 14px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .plan-summary {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  .plan-day-row {
+    padding: 8px 0 !important;
+    gap: 8px;
+  }
+
+  .gestor-candidate {
+    padding: 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .gestor-candidate-name {
+    font-size: 13px !important;
+    font-weight: 600;
+  }
+
+  .gestor-candidate-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  /* --- GESTOR TIMELINE: compact for mobile --- */
+  .gestor-timeline {
+    gap: 3px !important;
+  }
+
+  .gestor-timeline-day {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 9px !important;
+    border-radius: 6px !important;
+  }
+
+  .gestor-metric-bar {
+    gap: 6px !important;
+  }
+
+  .gestor-metric-label {
+    font-size: 9px !important;
+    min-width: 50px;
+  }
+
+  .gestor-metric-value {
+    font-size: 10px !important;
+    font-weight: 700;
+  }
+
+  /* --- AI REASONING: collapsible on mobile --- */
+  .ai-reasoning-content.expanded {
+    max-height: 300px !important;
+  }
+
+  .ai-reasoning-text {
+    font-size: 11px !important;
+    padding: 10px !important;
+    border-radius: 10px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* --- CHAT: full-screen on mobile --- */
+  .chat-bubble {
+    width: 46px !important;
+    height: 46px !important;
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+    right: 16px !important;
+    border-radius: 14px !important;
+    font-size: 20px !important;
+    box-shadow: 0 4px 16px rgba(92,122,111,0.3) !important;
+  }
+
+  .chat-panel {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    z-index: 300 !important;
+  }
+
+  .chat-header {
+    padding: 12px 16px !important;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  }
+
+  .chat-input-bar {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .chat-input {
+    font-size: 16px !important;
+    min-height: 44px !important;
+    border-radius: 12px !important;
+  }
+
+  .chat-send {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+  }
+
+  /* --- PLAN PREVIEW MODAL: full-screen --- */
+  .plan-preview-modal {
+    padding: 0 !important;
+  }
+
+  .plan-preview-content {
+    padding: 16px !important;
+    max-width: 100% !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    height: 100%;
+  }
+
+  .preview-btn-apply, .preview-btn-cancel {
+    min-height: 48px !important;
+    font-size: 14px !important;
+    border-radius: 12px !important;
+    flex: 1;
+  }
+
+  /* --- METRICS: compact on mobile --- */
+  .mx-kpis {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .mx-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .mx-card {
+    border-radius: 14px !important;
+    padding: 14px !important;
+  }
+
+  .mx-equity {
+    flex-direction: column !important;
+    gap: 12px !important;
+    text-align: center;
+  }
+
+  .mx-ring {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
+  .mx-table { font-size: 11px !important; }
+
+  /* --- WEEKLY DASHBOARD --- */
+  .weekly-dashboard {
+    grid-template-columns: repeat(7, 1fr) !important;
+    gap: 4px !important;
+  }
+
+  .weekly-day-card {
+    padding: 6px 2px !important;
+    font-size: 9px !important;
+    border-radius: 8px !important;
+  }
+
+  /* --- TOAST: mobile-safe position --- */
+  .toast {
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+    left: 16px !important;
+    right: 16px !important;
+    max-width: none !important;
+    border-radius: 14px !important;
+    font-size: 13px !important;
+    padding: 12px 18px !important;
+    text-align: center;
+  }
+
+  /* --- SAVE INDICATOR --- */
+  .save-indicator {
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+    right: 16px !important;
+    border-radius: 12px !important;
+  }
+
+  /* --- ONBOARDING: mobile friendly --- */
+  .onboarding-tooltip {
+    max-width: 280px !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+  }
+
+  .onboarding-title { font-size: 16px !important; }
+  .onboarding-text { font-size: 13px !important; }
+
+  /* --- LOGIN: full-screen mobile --- */
+  .login-card {
+    width: 92% !important;
+    max-width: 380px !important;
+    padding: 28px 22px !important;
+    border-radius: 20px !important;
+  }
+
+  .login-field input {
+    padding: 14px 16px !important;
+    font-size: 16px !important;
+    border-radius: 12px !important;
+    min-height: 48px;
+  }
+
+  .login-btn {
+    padding: 14px !important;
+    font-size: 16px !important;
+    min-height: 50px !important;
+    border-radius: 14px !important;
+  }
+
+  /* --- SKELETON: mobile optimized --- */
+  .skeleton-container { padding: 60px 16px 0 !important; }
+  .skeleton-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .skeleton-card { height: 66px !important; border-radius: 12px !important; }
+  .skeleton-header { height: 28px !important; width: 200px !important; }
+  .skeleton-table { height: 200px !important; border-radius: 12px !important; }
+
+  /* --- PLAN D EMERGENCY: mobile --- */
+  .plan-d-warning {
+    border-radius: 12px !important;
+    padding: 14px !important;
+  }
+
+  .plan-d-header { font-size: 13px !important; }
+  .plan-d-violations { font-size: 11px !important; }
+
+  .violation-badge {
+    font-size: 9px !important;
+    padding: 2px 7px !important;
+  }
+
+  /* --- DIVIDERS, SECTIONS --- */
+  .divider { margin: 18px 0 !important; }
+  .section-title { font-size: 10px !important; margin-bottom: 12px !important; }
+
+  /* --- RECENT ACTIVITY --- */
+  .recent-activity {
+    padding: 14px !important;
+    border-radius: 14px !important;
+  }
+
+  /* --- TIMELINE --- */
+  .timeline { padding: 14px !important; border-radius: 14px !important; }
+  .timeline-item {
+    grid-template-columns: 50px 1fr !important;
+    gap: 10px !important;
+    padding: 12px 0 !important;
+  }
+
+  /* --- PDF BTN --- */
+  .pdf-btn {
+    padding: 10px 14px !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+    min-height: 40px;
+  }
+}
+
+/* ========== Small phones 380px ========== */
+@media (max-width: 380px) {
+  .stat-pills {
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 6px !important;
+  }
+
+  .stat-pill-value { font-size: 20px !important; }
+  .stat-pill-label { font-size: 7px !important; }
+
+  .shift-pill {
+    width: 26px !important;
+    height: 22px !important;
+    font-size: 8px !important;
+    border-radius: 5px !important;
+  }
+
+  table.schedule {
+    min-width: 720px !important;
+    font-size: 9px !important;
+  }
+
+  table.schedule td.name-cell {
+    min-width: 80px !important;
+    max-width: 80px !important;
+    font-size: 10px !important;
+  }
+
+  table.schedule th.name-col {
+    min-width: 80px !important;
+  }
+
+  .se-shifts-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  .briefing-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .gestor-actions-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .plan-summary {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .weekly-dashboard {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
+/* ========== Tiny phones 320px ========== */
+@media (max-width: 320px) {
+  .dashboard-title { font-size: 19px !important; }
+  .content { padding: 10px 10px calc(76px + env(safe-area-inset-bottom, 0px)) !important; }
+  .gestor-body { padding: 12px !important; }
+  .gestor-plan-card { padding: 10px !important; }
+  .weekly-dashboard { grid-template-columns: repeat(3, 1fr) !important; }
+  .stat-pills { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* ========== Tablet 769px-1024px ========== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .content {
+    max-width: 100% !important;
+    padding: 0 24px 40px !important;
+  }
+
+  .roster-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .workers-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+  }
+
+  .stat-pills {
+    gap: 10px !important;
+  }
+
+  .shift-editor {
+    width: 380px !important;
+  }
+
+  .briefing-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* ========== TOUCH ENHANCEMENTS ========== */
+@media (pointer: coarse) {
+  /* Larger touch targets */
+  .nav-btn, .theme-btn, .gestor-close, .se-shift-btn,
+  .schedule-filter-btn, .schedule-mode-btn {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  /* Disable hover transforms (only active) */
+  .shift-pill:hover,
+  .worker-card:hover,
+  .shift-card:hover,
+  .stat-pill:hover {
+    transform: none !important;
+    box-shadow: inherit !important;
+  }
+
+  /* Fast taps */
+  button, a, .nav-tab, .shift-pill, .se-shift-btn, .gestor-quick-btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Remove 300ms tap delay hint */
+  html {
+    touch-action: manipulation;
+  }
+}
+
+/* ========== LANDSCAPE MOBILE ========== */
+@media (max-width: 768px) and (orientation: landscape) {
+  .nav-tabs {
+    grid-template-columns: repeat(4, 1fr) !important;
+    padding: 2px 4px 2px !important;
+  }
+
+  .gestor-modal {
+    max-height: 96vh !important;
+  }
+
+  .shift-editor {
+    max-height: 92vh !important;
+  }
+
+  .chat-panel {
+    max-height: 100vh !important;
+  }
+}
+
+/* ========== REDUCE MOTION ========== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========== DARK MODE GLASS MORPHISM ========== */
+@media (max-width: 768px) {
+  [data-theme="dark"] .nav-tabs {
+    box-shadow: 0 -2px 16px rgba(0,0,0,0.2) !important;
+  }
+
+  [data-theme="dark"] .gestor-modal::after {
+    background: rgba(255,255,255,0.15);
+  }
+
+  [data-theme="dark"] .schedule-table-wrap::after {
+    background: linear-gradient(to left, var(--surface), transparent) !important;
+  }
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -5187,6 +6589,14 @@ html {
       <button class="nav-tab" data-view="metrics"><span class="tab-icon">📊</span> Métricas</button>
       <button class="nav-tab" data-view="import"><span class="tab-icon">↑</span> Importar</button>
     </nav>
+    <!-- Mobile More Menu -->
+    <div class="mobile-more-menu" id="mobileMoreMenu" style="display:none;">
+      <div class="mobile-more-backdrop" onclick="closeMobileMore()"></div>
+      <div class="mobile-more-sheet">
+        <div class="mobile-more-handle"></div>
+        <div class="mobile-more-grid" id="mobileMoreGrid"></div>
+      </div>
+    </div>
     <div class="topbar-right">
       <span class="user-display" id="userDisplay" style="font-size:12px;color:var(--text3);margin-right:8px;"></span>
       <button class="theme-btn" id="themeToggle">🌙</button>
@@ -5804,28 +7214,37 @@ function canAssignShift(wId, day, shift, schedule) {
   if (['VAC','LD','FOR','CAA','AE','EX','BAJ','D','LAC','MTC','INT','HF','HS','VAA','DLA','CJ','FN','VAN','IQF','PM'].includes(shift)) return true;
   if (w.rules && w.rules.noNights && shift === 'N') return false;
   if (w.rules.maxNightsPerMonth !== null && shift === 'N') {
-    const monthNights = schedule[wId].filter(s => s === 'N').length;
+    const monthNights = schedule[wId].filter(s => (s || '').toString().trim() === 'N').length;
     if (monthNights >= w.rules.maxNightsPerMonth) return false;
   }
   if (shift === 'N') {
     let consec = 1;
     for (let i = day - 1; i >= 0; i--) {
-      if (schedule[wId][i] === 'N') consec++; else break;
+      if ((schedule[wId][i] || '').toString().trim() === 'N') consec++; else break;
     }
     if (consec > RULES.MAX_CONSECUTIVE_NIGHTS) return false;
   }
   if (day > 0) {
-    const prev = schedule[wId][day - 1];
+    const prev = (schedule[wId][day - 1] || '').toString().trim();
     const isMorning = ['M','MR','M7H','M6R','M55'].includes(shift);
-    // Tras Noche solo puedes hacer otra Noche o descansar
     if (prev === 'N' && (isMorning || shift === 'T')) return false;
   }
-  // Also check NEXT day: if assigning N today, tomorrow can't be M or T
-  if (shift === 'N' && schedule[wId] && day < schedule[wId].length - 1) {
-    const next = schedule[wId][day + 1];
-    if (next && next !== '' && next !== 'D' && next !== 'N') {
-      const nextIsMorning = ['M','MR','M7H','M6R','M55'].includes(next);
-      if (nextIsMorning || next === 'T') return false;
+  // Also check NEXT day: if assigning N today, day after must be in WHITELIST
+  const ALLOWED_POST_N = ['', 'D', 'N', 'VAC','VAA','VAN','BAJ','LD','LAC','FOR','CAA','AE','EX','MTC','INT','HF','HS','DLA','CJ','FN','IQF','PM'];
+  if (shift === 'N' && schedule[wId]) {
+    // Check immediate next day (trim for PDF whitespace)
+    if (day < schedule[wId].length - 1) {
+      const next = (schedule[wId][day + 1] || '').toString().trim();
+      if (next && !ALLOWED_POST_N.includes(next)) return false;
+    }
+    // Find end of N block and check day after entire block
+    let endN = day;
+    for (let i = day + 1; i < schedule[wId].length; i++) {
+      if ((schedule[wId][i] || '').toString().trim() === 'N') endN = i; else break;
+    }
+    if (endN + 1 < schedule[wId].length) {
+      const afterBlock = (schedule[wId][endN + 1] || '').toString().trim();
+      if (afterBlock && !ALLOWED_POST_N.includes(afterBlock)) return false;
     }
   }
   return true;
@@ -5844,18 +7263,20 @@ function detectForbiddenCombinations(wId, dayIdx, shiftToAssign, month, year) {
   const isMorning = s => ['M','MR','M7H','M6R','M55'].includes(s);
   const dn = dayIdx + 1; // 1-indexed day number for messages
 
+  const ALLOWED_POST_NIGHT = ['', 'D', 'N', 'VAC','VAA','VAN','BAJ','LD','LAC','FOR','CAA','AE','EX','MTC','INT','HF','HS','DLA','CJ','FN','IQF','PM'];
+
   // Check: prev day was N → assigning M/T today is forbidden
   if (dayIdx > 0) {
-    const prev = sch[wId][dayIdx - 1];
+    const prev = (sch[wId][dayIdx - 1] || '').toString().trim();
     if (prev === 'N' && (isMorning(shiftToAssign) || shiftToAssign === 'T')) {
       warnings.push({ type: 'forbidden', desc: `${w.name} tiene Noche el dia ${dn - 1} → no puede hacer ${shiftToAssign} el dia ${dn} (descanso obligatorio tras N)` });
     }
   }
 
-  // Check: assigning N today → next day has M/T
+  // Check: assigning N today → next day has M/T (WHITELIST approach)
   if (shiftToAssign === 'N' && dayIdx < days - 1) {
-    const next = sch[wId][dayIdx + 1];
-    if (next && next !== '' && next !== 'D' && next !== 'N' && !['VAC','BAJ','LD','FOR','CAA','AE','EX','INT','MTC','LAC','HF','HS'].includes(next)) {
+    const next = (sch[wId][dayIdx + 1] || '').toString().trim();
+    if (next && !ALLOWED_POST_NIGHT.includes(next)) {
       warnings.push({ type: 'forbidden', desc: `${w.name} tiene ${next} el dia ${dn + 1} → asignar Noche el dia ${dn} crearia N→${next} (prohibido)` });
     }
   }
@@ -5863,8 +7284,8 @@ function detectForbiddenCombinations(wId, dayIdx, shiftToAssign, month, year) {
   // Check: max consecutive nights exceeded
   if (shiftToAssign === 'N') {
     let consec = 1;
-    for (let i = dayIdx - 1; i >= 0; i--) { if (sch[wId][i] === 'N') consec++; else break; }
-    for (let i = dayIdx + 1; i < days; i++) { if (sch[wId][i] === 'N') consec++; else break; }
+    for (let i = dayIdx - 1; i >= 0; i--) { if ((sch[wId][i] || '').toString().trim() === 'N') consec++; else break; }
+    for (let i = dayIdx + 1; i < days; i++) { if ((sch[wId][i] || '').toString().trim() === 'N') consec++; else break; }
     if (consec > RULES.MAX_CONSECUTIVE_NIGHTS) {
       warnings.push({ type: 'forbidden', desc: `${w.name} tendria ${consec} noches consecutivas (max ${RULES.MAX_CONSECUTIVE_NIGHTS})` });
     }
@@ -7765,6 +9186,81 @@ document.getElementById('themeToggle').addEventListener('click', toggleTheme);
 document.querySelectorAll('.nav-tab').forEach(tab => {
   tab.addEventListener('click', () => switchView(tab.dataset.view));
 });
+
+// ========== MOBILE BOTTOM NAV "MORE" MENU ==========
+(function initMobileMoreMenu() {
+  const isMobile = () => window.innerWidth <= 768;
+  const navTabs = document.querySelector('.nav-tabs');
+  if (!navTabs) return;
+
+  // Create "More" button
+  const moreBtn = document.createElement('button');
+  moreBtn.className = 'nav-tab-more';
+  moreBtn.innerHTML = '<span class="tab-icon">⋯</span> Más';
+  moreBtn.style.display = 'none';
+  moreBtn.addEventListener('click', openMobileMore);
+  navTabs.appendChild(moreBtn);
+
+  // Hidden tabs config (4th tab onward, 0-indexed: index 3+)
+  const allTabs = Array.from(document.querySelectorAll('.nav-tab[data-view]'));
+  const hiddenTabs = allTabs.slice(3); // tabs hidden on mobile
+
+  function openMobileMore() {
+    const menu = document.getElementById('mobileMoreMenu');
+    const grid = document.getElementById('mobileMoreGrid');
+    if (!menu || !grid) return;
+
+    grid.innerHTML = '';
+    const icons = { heatmap: '🗓️', incidents: '☰', conflicts: '△', metrics: '📊', import: '↑' };
+    const labels = { heatmap: 'Mapa', incidents: 'Historial', conflicts: 'Conflictos', metrics: 'Métricas', import: 'Importar' };
+
+    hiddenTabs.forEach(tab => {
+      const view = tab.dataset.view;
+      const isActive = tab.classList.contains('active');
+      const btn = document.createElement('button');
+      btn.className = 'mobile-more-item' + (isActive ? ' active' : '');
+      btn.innerHTML = `<span class="more-icon">${icons[view] || '◎'}</span>${labels[view] || view}`;
+      btn.addEventListener('click', () => {
+        closeMobileMore();
+        switchView(view);
+        updateMoreBtnState();
+      });
+      grid.appendChild(btn);
+    });
+
+    menu.style.display = 'block';
+  }
+
+  window.closeMobileMore = function() {
+    const menu = document.getElementById('mobileMoreMenu');
+    if (menu) menu.style.display = 'none';
+  };
+
+  function updateMoreBtnState() {
+    const anyHiddenActive = hiddenTabs.some(t => t.classList.contains('active'));
+    moreBtn.classList.toggle('has-active', anyHiddenActive);
+  }
+
+  function handleResize() {
+    if (isMobile()) {
+      moreBtn.style.display = '';
+    } else {
+      moreBtn.style.display = 'none';
+      closeMobileMore();
+    }
+  }
+
+  // Patch switchView to update more btn state
+  const origSwitchView = window.switchView;
+  window.switchView = function(view) {
+    origSwitchView(view);
+    updateMoreBtnState();
+  };
+
+  window.addEventListener('resize', handleResize);
+  handleResize();
+  updateMoreBtnState();
+})();
 
 document.getElementById('prevMonth').addEventListener('click', () => {
   const m = appState.currentMonth;
@@ -10366,11 +11862,11 @@ function getConsecutiveNights(wId, day, month, year) {
   let count = 0;
   // Count backwards
   for (let i = day - 1; i >= 0; i--) {
-    if (sch[wId][i] === 'N') count++; else break;
+    if ((sch[wId][i] || '').toString().trim() === 'N') count++; else break;
   }
   // Count forwards
   for (let i = day + 1; i < sch[wId].length; i++) {
-    if (sch[wId][i] === 'N') count++; else break;
+    if ((sch[wId][i] || '').toString().trim() === 'N') count++; else break;
   }
   return count; // Does NOT include the target day
 }
@@ -10621,7 +12117,7 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
     }
 
     // HARD FILTER: If worker had N the day before, they can ONLY be offered N shifts
-    if (day > 0 && sch[w.id][day - 1] === 'N') {
+    if (day > 0 && (sch[w.id][day - 1] || '').toString().trim() === 'N') {
       if (shiftNeeded !== 'N') {
         return;
       }
@@ -12187,7 +13683,8 @@ function buildAICoverageAnalysis(w, days, action) {
       covKey, covNow, needEnf, needTec, haveEnf, haveTec,
       covStillOk, needsSub, isCritical,
       candidates: sameTypeCandidates,
-      isOff: !workerShift || workerShift === 'D' || workerShift === ''
+      isOff: !workerShift || !['M','MR','M7H','M6R','M55','T','N'].includes((workerShift || '').toString().trim()),
+      rawShift: workerShift || '∅'
     });
   });
 
@@ -12456,204 +13953,227 @@ function buildAICoverageAnalysis(w, days, action) {
     }
   }
 
-  // ===== PHASE 5: Build HTML output =====
+  // ===== PHASE 5: Build HTML output — EXECUTIVE LAYOUT v4.0 =====
+  // Structure: Executive Summary → Plan Hero → Risks → Alternatives → Reasoning (collapsed)
   let html = `<div class="gestor-ai-thinking">`;
 
-  // AI Header
-  html += `<div class="gestor-ai-header">
-    <div class="ai-brain-icon">🧠</div>
-    <div>
-      <div class="ai-title">Motor de Razonamiento IA</div>
-      <div class="ai-subtitle">${actionLabels[action]} — ${w.name} — ${days.length} dia${days.length > 1 ? 's' : ''}</div>
-    </div>
-  </div>`;
+  // Collect risk warnings from reasoning steps
+  const riskSteps = reasoningSteps.filter(s => s.icon === 'alert' || s.icon === 'warn');
+  const infoSteps = reasoningSteps.filter(s => s.icon === 'info' || s.icon === 'check');
 
-  // Reasoning steps
-  html += `<div class="gestor-ai-steps">`;
-  reasoningSteps.forEach((step, i) => {
-    const icons = { check: '✓', warn: '⚠', info: 'i', alert: '!' };
-    html += `<div class="ai-step" style="animation-delay:${i * 0.1}s">
-      <div class="ai-step-icon ${step.icon}">${icons[step.icon]}</div>
-      <div class="ai-step-content">
-        <div class="ai-step-title">${step.title}</div>
-        <div class="ai-step-detail">${step.detail}</div>
+  if (plans.length > 0) {
+    const bestPlan = plans[0];
+    const coveredH = bestPlan.assignments.filter(a => a.candidate).length;
+    const totalH = bestPlan.assignments.length;
+    const coveragePct = totalH > 0 ? Math.round((coveredH / totalH) * 100) : 0;
+    const rawScore = Math.max(0, Math.min(100, bestPlan.score || 0));
+    const qualityScore = totalH > 0 ? Math.round(coveragePct * 0.6 + rawScore * 0.4) : 0;
+    const uniqueWorkers = new Set(bestPlan.assignments.filter(a => a.candidate).map(a => a.candidate.w.id)).size;
+    const violCount = bestPlan.violations ? bestPlan.violations.length : 0;
+    const confLabel = bestPlan.confidence >= 80 ? 'Alta' : bestPlan.confidence >= 50 ? 'Media' : 'Baja';
+    const confClass = bestPlan.confidence >= 80 ? 'es-good' : bestPlan.confidence >= 50 ? 'es-warn' : 'es-bad';
+
+    // ── SECTION 1: Executive Summary Bar ──
+    html += `<div class="gestor-exec-summary">
+      <div class="exec-stat ${coveredH === totalH ? 'es-good' : coveredH > 0 ? 'es-warn' : 'es-bad'}">
+        <div class="es-val">${coveredH}/${totalH}</div>
+        <div class="es-label">Dias cubiertos</div>
+      </div>
+      <div class="exec-stat es-neutral">
+        <div class="es-val">${uniqueWorkers}</div>
+        <div class="es-label">Sustitutos</div>
+      </div>
+      <div class="exec-stat ${confClass}">
+        <div class="es-val">${qualityScore}</div>
+        <div class="es-label">Calidad ${confLabel}</div>
+      </div>
+      <div class="exec-stat ${violCount === 0 ? 'es-good' : 'es-bad'}">
+        <div class="es-val">${violCount === 0 ? '0' : violCount}</div>
+        <div class="es-label">${violCount === 0 ? 'Sin conflictos' : 'Conflictos'}</div>
       </div>
     </div>`;
-  });
-  html += `</div>`;
 
-  // Days that are already off
-  if (offDays.length > 0) {
-    html += `<div style="padding:10px 14px;background:var(--surface2);border-radius:10px;font-size:11px;color:var(--text3);margin-bottom:12px;">
-      ${offDays.map(d => d.dayName + ' ' + d.dayDate.getDate() + '/' + (d.month + 1)).join(', ')}: ${w.name} ya tiene descanso. No requieren sustitucion.
+    // Days already off — compact inline
+    if (offDays.length > 0) {
+      html += `<div style="padding:8px 12px;background:var(--surface2);border-radius:8px;font-size:10px;color:var(--text3);margin-bottom:12px;">
+        ${offDays.map(d => '<strong>' + d.dayName + ' ' + d.dayDate.getDate() + '</strong>').join(', ')}: ya descanso — no requiere cobertura.
+      </div>`;
+    }
+
+    // ── SECTION 2: PLAN HERO — Main plan assignments ──
+    const stratNames = { multiday: 'Min. disrupcion', balance: 'Equilibrio', impact: 'Min. impacto', basic: 'Basico', emergencia: 'Emergencia', 'chain-swap': 'Cadena cambios' };
+
+    html += `<div style="margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:14px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px;">
+        Plan recomendado
+        <span style="font-size:9px;font-weight:600;padding:3px 8px;border-radius:6px;background:rgba(39,174,96,0.1);color:#27ae60;">${stratNames[bestPlan.strategy] || 'IA'}</span>
+      </div>
     </div>`;
-  }
 
-  // Coverage plans
-  if (plans.length > 0) {
-    plans.forEach((plan, pIdx) => {
-      const isBest = pIdx === 0;
-      html += `<div class="gestor-plan-card ${isBest ? 'plan-best' : ''}">`;
-
-      // Plan header with v3.0 confidence badge
-      const confPct = plan.confidence || 0;
-      const confLabel = confPct >= 80 ? 'Alta' : confPct >= 50 ? 'Media' : 'Baja';
-      const confClr = confPct >= 80 ? '#27ae60' : confPct >= 50 ? '#e67e22' : '#cc4444';
-      const stratNames = { multiday: 'Min. disrupcion', balance: 'Equilibrio', impact: 'Min. impacto', basic: 'Basico' };
-      html += `<div class="plan-card-header" style="display:flex;align-items:center;gap:12px;justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span class="plan-card-badge ${isBest ? 'badge-best' : 'badge-alt'}">${isBest ? 'Plan Optimo' : 'Alternativa ' + pIdx}</span>
-          <span style="font-size:9px;color:var(--text3);background:var(--surface2);padding:2px 6px;border-radius:6px;">${stratNames[plan.strategy] || plan.strategy}</span>
-          <span class="plan-card-score"><strong>${plan.score.toFixed(0)}</strong> pts</span>
-        </div>
-        ${renderConfidenceGauge(confPct)}
-      </div>`;
-
-      // Day-by-day assignments — grouped by consecutive same-candidate
-      const grouped = [];
-      plan.assignments.forEach(a => {
-        const candId = a.candidate ? a.candidate.w.id : null;
-        const last = grouped[grouped.length - 1];
-        if (last && last.candId === candId && candId !== null) {
-          last.items.push(a);
-        } else {
-          grouped.push({ candId, items: [a] });
-        }
-      });
-
-      grouped.forEach(group => {
-        const first = group.items[0];
-        const da = first.dayAnalysis;
-        const shiftColor = da.effShift === 'M' ? '#2e8b7a' : da.effShift === 'T' ? '#4a9dd4' : da.effShift === 'N' ? '#c5a832' : 'var(--text3)';
-
-        if (!first.candidate) {
-          // Uncovered days — show each
-          group.items.forEach(a => {
-            const d = a.dayAnalysis;
-            const dl = d.dayName + ' ' + d.dayDate.getDate() + '/' + (d.month + 1);
-            html += `<div class="plan-day-row">
-              <span class="plan-day-date">${dl}</span>
-              <span class="plan-day-arrow">—</span>
-              <span class="plan-day-candidate" style="color:var(--text3);">Sin candidatos disponibles</span>
-              <span class="plan-day-status status-crit">Sin cubrir</span>
-            </div>`;
-          });
-        } else {
-          // Grouped covered days — single row per candidate
-          const dayLabels = group.items.map(a => {
-            const d = a.dayAnalysis;
-            return d.dayName.substring(0, 2) + ' ' + d.dayDate.getDate() + '/' + (d.month + 1);
-          });
-          const dayStr = dayLabels.length === 1 ? dayLabels[0] : dayLabels[0] + ' → ' + dayLabels[dayLabels.length - 1] + ' (' + dayLabels.length + 'd)';
-          const anyCritical = group.items.some(a => a.dayAnalysis.isCritical);
-          const allOk = group.items.every(a => a.dayAnalysis.covStillOk);
-          const statusClass = anyCritical ? 'status-crit' : (allOk ? 'status-ok' : 'status-warn');
-          const statusText = anyCritical ? 'Critico' : (allOk ? 'Recomendado' : 'Necesario');
-
-          html += `<div class="plan-day-row">
-            <span class="plan-day-date">${dayStr}</span>
-            <span class="plan-day-shift" style="background:${shiftColor}15;color:${shiftColor};">${da.workerShift}</span>
-            <span class="plan-day-arrow">→</span>
-            <span class="plan-day-candidate">${first.candidate.w.name}${dayLabels.length > 1 ? ' <span style="font-size:10px;color:var(--accent);font-weight:500;">×' + dayLabels.length + ' días</span>' : ''}</span>
-            <span class="plan-day-status ${statusClass}">${statusText}</span>
-          </div>`;
-
-          // Warnings only for first item (avoid repetition)
-          const assignForbidden = detectForbiddenCombinations(first.candidate.w.id, da.dayIdx, da.workerShift, da.month, da.year);
-          const assignCascade = detectCascadeNeeds(first.candidate.w.id, da.dayIdx, da.workerShift, w.id, da.month, da.year);
-
-          if (assignForbidden.length > 0) {
-            html += `<div style="margin:-4px 0 6px 24px;padding:6px 10px;background:rgba(204,68,68,0.08);border-left:3px solid var(--danger);border-radius:0 6px 6px 0;font-size:10px;color:#cc4444;">
-              <strong>⚠ Combinacion prohibida:</strong> ${assignForbidden.map(f => f.desc).join('; ')}
-            </div>`;
-          }
-          if (assignCascade.needsCascade) {
-            assignCascade.cascadeDetails.forEach(c => {
-              const candNames = c.candidates.length > 0 ? c.candidates.map(x => x.w.name + ' (score ' + x.score.toFixed(0) + ')').join(', ') : '<em>sin candidatos</em>';
-              html += `<div style="margin:-4px 0 6px 24px;padding:6px 10px;background:rgba(230,126,34,0.08);border-left:3px solid #e67e22;border-radius:0 6px 6px 0;font-size:10px;color:#b5651d;">
-                <strong>🔄 Cascada:</strong> ${first.candidate.w.name} deja turno <strong>${c.gapShift}</strong> → ${c.gapWorker.type === 'enf' ? 'enfermeria' : 'tecnicos'} queda ${c.have}/${c.needed}. Sugerencias: ${candNames}
-              </div>`;
-            });
-          }
-        }
-      });
-
-      // Plan summary stats
-      const covered = plan.assignments.filter(a => a.candidate).length;
-      const total = plan.assignments.length;
-      const uniqueWorkers = new Set(plan.assignments.filter(a => a.candidate).map(a => a.candidate.w.id)).size;
-
-      html += `<div class="plan-summary">
-        <div class="plan-summary-stat">
-          <div class="ps-val">${covered}/${total}</div>
-          <div class="ps-label">Dias cubiertos</div>
-        </div>
-        <div class="plan-summary-stat">
-          <div class="ps-val">${uniqueWorkers}</div>
-          <div class="ps-label">Trabajadores</div>
-        </div>
-        <div class="plan-summary-stat">
-          <div class="ps-val">${plan.score.toFixed(0)}</div>
-          <div class="ps-label">Puntuacion</div>
-        </div>
-      </div>`;
-
-      // Expandable reasoning
-      const planId = 'plan_' + pIdx;
-      html += `<button class="ai-reasoning-toggle" onclick="toggleAIReasoning('${planId}')">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-        Ver razonamiento detallado
-      </button>`;
-      html += `<div class="ai-reasoning-content" id="${planId}">
-        <div class="ai-reasoning-text">${plan.reasoning}</div>
-      </div>`;
-
-      // Apply all button
-      if (covered > 0) {
-        const planDataStr = btoa(encodeURIComponent(JSON.stringify({
-          absentId: w.id,
-          shiftToAssign,
-          assignments: plan.assignments.filter(a => a.candidate).map(a => ({
-            year: a.dayAnalysis.year,
-            month: a.dayAnalysis.month,
-            dayIdx: a.dayAnalysis.dayIdx,
-            originalShift: a.dayAnalysis.workerShift,
-            replacementId: a.candidate.w.id,
-            replacementName: a.candidate.w.name
-          }))
-        })));
-
-        html += `<button class="gestor-apply-all-btn" onclick="showPlanPreview('${planDataStr}', this)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          Aplicar plan completo (${covered} dia${covered > 1 ? 's' : ''})
-        </button>`;
+    // Group assignments by consecutive same-candidate
+    const grouped = [];
+    bestPlan.assignments.forEach(a => {
+      const candId = a.candidate ? a.candidate.w.id : null;
+      const last = grouped[grouped.length - 1];
+      if (last && last.candId === candId && candId !== null) {
+        last.items.push(a);
+      } else {
+        grouped.push({ candId, items: [a] });
       }
-
-      // Export and notification buttons
-      html += `<div style="display:flex;gap:8px;margin-top:8px;">
-        <button onclick="exportCoveragePlanToPDF(${JSON.stringify(plan).replace(/"/g, '&quot;')}, '${w.name}')"
-                style="flex:1;padding:8px 12px;background:#f8f9fa;border:1px solid var(--surface2);border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.2s;">
-          📥 Exportar PDF
-        </button>
-        <button onclick="notifyPlan(${pIdx})"
-                style="flex:1;padding:8px 12px;background:#f8f9fa;border:1px solid var(--surface2);border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.2s;">
-          📧 Notificar
-        </button>
-      </div>`;
-
-      html += `</div>`;
     });
 
-    // Individual day details (expandable)
-    html += `<button class="ai-reasoning-toggle" style="margin-top:16px;" onclick="toggleAIReasoning('gestorDayDetails')">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-      Ver analisis detallado por dia (${daysNeedingCoverage.length} dias)
-    </button>`;
-    html += `<div class="ai-reasoning-content" id="gestorDayDetails">`;
-    html += buildDetailedDayAnalysis(w, dayAnalyses, shiftToAssign, avgN, avgH, avgWknd);
-    html += `</div>`;
+    // Render hero assignment rows
+    grouped.forEach((group, gi) => {
+      const first = group.items[0];
+      const da = first.dayAnalysis;
+      const shiftColor = da.effShift === 'M' ? '#2e8b7a' : da.effShift === 'T' ? '#4a9dd4' : da.effShift === 'N' ? '#c5a832' : 'var(--text3)';
 
-    // === Intercambios voluntarios (Swap Suggestions) ===
+      if (!first.candidate) {
+        group.items.forEach(a => {
+          const d = a.dayAnalysis;
+          html += `<div class="hero-assign-uncovered" style="animation-delay:${gi * 0.05}s">
+            <span style="font-weight:700;">${d.dayName} ${d.dayDate.getDate()}/${d.month + 1}</span>
+            <span>— Sin candidatos disponibles</span>
+          </div>`;
+        });
+      } else {
+        const dayLabels = group.items.map(a => {
+          const d = a.dayAnalysis;
+          return d.dayName.substring(0, 3) + ' ' + d.dayDate.getDate();
+        });
+        const dayStr = dayLabels.length === 1 ? dayLabels[0] + '/' + (da.month + 1) : dayLabels[0] + ' → ' + dayLabels[dayLabels.length - 1] + '/' + (da.month + 1);
+        const anyCritical = group.items.some(a => a.dayAnalysis.isCritical);
+        const allOk = group.items.every(a => a.dayAnalysis.covStillOk);
+        const badgeCls = anyCritical ? 'hab-crit' : allOk ? 'hab-ok' : 'hab-warn';
+        const badgeText = anyCritical ? 'Critico' : allOk ? 'OK' : 'Necesario';
+
+        html += `<div class="hero-assign-row" style="animation-delay:${gi * 0.05}s">
+          <span class="hero-assign-date">${dayStr}${dayLabels.length > 1 ? ' <span style="font-size:10px;color:var(--text3);">(' + dayLabels.length + 'd)</span>' : ''}</span>
+          <span class="hero-assign-shift" style="background:${shiftColor}15;color:${shiftColor};">${da.workerShift}</span>
+          <span class="hero-assign-arrow">→</span>
+          <span class="hero-assign-name">${first.candidate.w.name}</span>
+          <span class="hero-assign-badge ${badgeCls}">${badgeText}</span>
+        </div>`;
+
+        // Inline warnings for forbidden combinations
+        const assignForbidden = detectForbiddenCombinations(first.candidate.w.id, da.dayIdx, da.workerShift, da.month, da.year);
+        if (assignForbidden.length > 0) {
+          html += `<div style="margin:-4px 0 6px 16px;padding:5px 10px;background:rgba(204,68,68,0.06);border-left:3px solid #cc4444;border-radius:0 8px 8px 0;font-size:10px;color:#cc4444;">
+            ${assignForbidden.map(f => f.desc).join('; ')}
+          </div>`;
+        }
+        // Cascade warnings
+        const assignCascade = detectCascadeNeeds(first.candidate.w.id, da.dayIdx, da.workerShift, w.id, da.month, da.year);
+        if (assignCascade.needsCascade) {
+          assignCascade.cascadeDetails.forEach(c => {
+            const candNames = c.candidates.length > 0 ? c.candidates.slice(0, 2).map(x => x.w.name).join(', ') : 'sin candidatos';
+            html += `<div style="margin:-4px 0 6px 16px;padding:5px 10px;background:rgba(230,126,34,0.06);border-left:3px solid #e67e22;border-radius:0 8px 8px 0;font-size:10px;color:#b5651d;">
+              Cascada: ${first.candidate.w.name} deja ${c.gapShift} → cubrir con ${candNames}
+            </div>`;
+          });
+        }
+      }
+    });
+
+    // Apply button — prominent
+    const coveredBest = bestPlan.assignments.filter(a => a.candidate).length;
+    if (coveredBest > 0) {
+      const planDataStr = btoa(encodeURIComponent(JSON.stringify({
+        absentId: w.id,
+        shiftToAssign,
+        assignments: bestPlan.assignments.filter(a => a.candidate).map(a => ({
+          year: a.dayAnalysis.year,
+          month: a.dayAnalysis.month,
+          dayIdx: a.dayAnalysis.dayIdx,
+          originalShift: a.dayAnalysis.workerShift,
+          replacementId: a.candidate.w.id,
+          replacementName: a.candidate.w.name
+        }))
+      })));
+
+      html += `<button class="gestor-apply-all-btn" onclick="showPlanPreview('${planDataStr}', this)" style="margin-top:14px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Aplicar plan (${coveredBest} dia${coveredBest > 1 ? 's' : ''})
+      </button>`;
+    }
+
+    // ── SECTION 3: RISKS & WARNINGS ──
+    if (riskSteps.length > 0) {
+      html += `<div class="gestor-risks" style="margin-top:16px;">
+        <div class="gestor-risks-title"><span style="font-size:14px;">⚠</span> Riesgos y alertas (${riskSteps.length})</div>`;
+      riskSteps.forEach(step => {
+        const cls = step.icon === 'alert' ? 'ri-alert' : 'ri-warn';
+        html += `<div class="risk-item">
+          <div class="risk-icon ${cls}">${step.icon === 'alert' ? '!' : '⚠'}</div>
+          <div><strong>${step.title}</strong><br>${step.detail}</div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    // ── SECTION 4: ALTERNATIVE PLANS ──
+    if (plans.length > 1) {
+      html += `<div style="margin-top:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;">Planes alternativos (${plans.length - 1})</div>`;
+
+      plans.slice(1).forEach((plan, pIdx) => {
+        const altCovered = plan.assignments.filter(a => a.candidate).length;
+        const altTotal = plan.assignments.length;
+        const altViol = plan.violations ? plan.violations.length : 0;
+        const altId = 'alt_plan_' + pIdx;
+
+        html += `<div class="alt-plan-card" onclick="toggleAIReasoning('${altId}')">
+          <div class="alt-plan-header">
+            <div class="aph-left">
+              <span class="aph-badge">Alt ${pIdx + 1}</span>
+              <span class="aph-strat">${stratNames[plan.strategy] || plan.strategy || 'IA'}</span>
+            </div>
+            <div class="alt-plan-mini-stats">
+              <span>${altCovered}/${altTotal} dias</span>
+              <span style="color:${altViol > 0 ? '#cc4444' : '#27ae60'};">${altViol > 0 ? altViol + ' conflictos' : 'Sin conflictos'}</span>
+            </div>
+          </div>
+          <div class="alt-plan-body" id="${altId}">
+            <div style="padding-top:10px;">`;
+
+        // Compact assignment list for alternatives
+        plan.assignments.forEach(a => {
+          if (!a.candidate) return;
+          const d = a.dayAnalysis;
+          html += `<div style="display:flex;gap:8px;align-items:center;padding:4px 0;font-size:11px;border-bottom:1px solid var(--surface2);">
+            <span style="font-weight:600;min-width:60px;">${d.dayName} ${d.dayDate.getDate()}</span>
+            <span style="color:var(--text3);">→</span>
+            <span style="font-weight:600;color:var(--accent);">${a.candidate.w.name}</span>
+          </div>`;
+        });
+
+        // Apply button for alternative
+        if (altCovered > 0) {
+          const altPlanData = btoa(encodeURIComponent(JSON.stringify({
+            absentId: w.id,
+            shiftToAssign,
+            assignments: plan.assignments.filter(a => a.candidate).map(a => ({
+              year: a.dayAnalysis.year,
+              month: a.dayAnalysis.month,
+              dayIdx: a.dayAnalysis.dayIdx,
+              originalShift: a.dayAnalysis.workerShift,
+              replacementId: a.candidate.w.id,
+              replacementName: a.candidate.w.name
+            }))
+          })));
+
+          html += `<button class="gestor-apply-all-btn" style="margin-top:8px;font-size:12px;padding:10px;" onclick="event.stopPropagation();showPlanPreview('${altPlanData}', this)">
+            Aplicar alternativa ${pIdx + 1} (${altCovered} dias)
+          </button>`;
+        }
+
+        html += `</div></div></div>`;
+      });
+
+      html += `</div>`;
+    }
+
+    // ── SECTION 5: Swap suggestions (compact) ──
     if (daysNeedingCoverage.length > 0) {
       const swapSuggestions = [];
       dayAnalyses.forEach(da => {
@@ -12665,64 +14185,86 @@ function buildAICoverageAnalysis(w, days, action) {
       });
 
       if (swapSuggestions.length > 0) {
-        html += `<div style="margin-top:16px;padding:14px 16px;background:linear-gradient(135deg,#f0e6f6,#e8f4f8);border:1px solid #d4a5e8;border-radius:12px;">`;
-        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <span style="font-size:20px;">🔀</span>
-          <span style="font-size:13px;font-weight:700;color:#6a3d8a;">Intercambios voluntarios sugeridos</span>
-        </div>`;
-        html += `<div style="font-size:11px;color:#6a4a7a;line-height:1.6;">`;
+        const swapId = 'swap_sugg_' + Math.random().toString(36).substring(7);
+        html += `<button class="ai-reasoning-toggle" style="margin-top:14px;" onclick="toggleAIReasoning('${swapId}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          Intercambios voluntarios sugeridos (${swapSuggestions.length})
+        </button>`;
+        html += `<div class="ai-reasoning-content" id="${swapId}">
+          <div style="padding:12px;font-size:11px;color:var(--text2);line-height:1.6;">`;
         swapSuggestions.forEach(s => {
           s.swaps.forEach(sw => {
-            const benefit = sw.benefitScore ? sw.benefitScore.toFixed(0) : '?';
-            const desc = sw.description || 'Intercambio de turno';
-            html += `<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);">
+            html += `<div style="padding:4px 0;border-bottom:1px solid var(--surface2);">
               <strong>${s.day.dayName} ${s.day.dayDate.getDate()}</strong>:
               ${sw.workerA ? sw.workerA.name : '?'} ⇄ ${sw.workerB ? sw.workerB.name : '?'}
-              <span style="color:#9a6abf;font-weight:600;">(beneficio: ${benefit})</span><br>
-              <span style="font-size:10px;color:var(--text3);">${desc}</span>
+              <span style="color:var(--accent);font-weight:600;">(+${sw.benefitScore ? sw.benefitScore.toFixed(0) : '?'})</span>
             </div>`;
           });
         });
-        html += `</div>`;
-        html += `</div>`;
+        html += `</div></div>`;
       }
     }
 
-    // === Cross-reinforcement suggestions (v3.1) ===
+    // ── SECTION 6: Cross-reinforcement (collapsed) ──
     const reinforceDays = sectionAlerts.filter(s => s.canReinforce);
     if (reinforceDays.length > 0) {
-      html += `<div style="margin-top:16px;padding:14px 16px;background:linear-gradient(135deg,#e8f4f8,#f0f7ee);border:1px solid #b8d4e3;border-radius:12px;">`;
-      html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <span style="font-size:20px;">🔄</span>
-        <span style="font-size:13px;font-weight:700;color:#2c5f7c;">Sugerencia: Refuerzo enfermeria → Laboratorio</span>
-      </div>`;
-      html += `<div style="font-size:11px;color:#4a6a7a;line-height:1.6;">`;
+      const refId = 'reinforce_' + Math.random().toString(36).substring(7);
+      html += `<button class="ai-reasoning-toggle" style="margin-top:6px;" onclick="toggleAIReasoning('${refId}')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        Refuerzo enfermeria → Lab sugerido (${reinforceDays.length} dias)
+      </button>`;
+      html += `<div class="ai-reasoning-content" id="${refId}">
+        <div style="padding:12px;font-size:11px;color:var(--text2);line-height:1.6;">`;
       reinforceDays.forEach(s => {
         const enf = s.reinforcementSuggestion;
-        html += `<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);">
-          <strong>${s.dayName} ${s.dayDate.getDate()}</strong>: Lab tiene ${s.labTecM}/${s.needLabTec} tecnicos de mañana.
-          Hay <strong>${s.labEnfAvailable} enfermeras</strong> de mañana (sin Sara, >4 necesarias).
-          ${enf ? '<br>→ <strong>Sugerencia</strong>: <span style="color:#2e7d32;font-weight:600;">' + enf.w.name + '</span> puede reforzar Lab (noches: ' + enf.stats.n + ', horas: ' + enf.stats.h + ', extras recientes: ' + enf.extras + ')' : ''}
+        html += `<div style="padding:4px 0;border-bottom:1px solid var(--surface2);">
+          <strong>${s.dayName} ${s.dayDate.getDate()}</strong>: Lab ${s.labTecM}/${s.needLabTec} tec.
+          ${enf ? '→ <span style="color:#2e7d32;font-weight:600;">' + enf.w.name + '</span> puede reforzar' : 'Sin sugerencia concreta'}
         </div>`;
       });
-      html += `</div>`;
-      html += `<div style="font-size:10px;color:#7a9aaa;margin-top:8px;font-style:italic;">
-        Nota: Enfermeria solo puede reforzar Lab, nunca Micro. Personal de Micro es fijo e independiente.
-      </div>`;
-      html += `</div>`;
+      html += `<div style="font-size:9px;color:var(--text3);margin-top:6px;">Enfermeria solo puede reforzar Lab, nunca Micro.</div>`;
+      html += `</div></div>`;
     }
 
+    // ── SECTION 7: DETAILED REASONING (collapsed by default) ──
+    html += `<button class="ai-reasoning-toggle" style="margin-top:14px;" onclick="toggleAIReasoning('gestorFullReasoning')">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      Justificacion y razonamiento IA (${reasoningSteps.length} pasos)
+    </button>`;
+    html += `<div class="ai-reasoning-content" id="gestorFullReasoning">
+      <div class="gestor-ai-steps">`;
+    reasoningSteps.forEach((step, i) => {
+      const icons = { check: '✓', warn: '⚠', info: 'i', alert: '!' };
+      html += `<div class="ai-step" style="animation-delay:${i * 0.05}s">
+        <div class="ai-step-icon ${step.icon}">${icons[step.icon]}</div>
+        <div class="ai-step-content">
+          <div class="ai-step-title">${step.title}</div>
+          <div class="ai-step-detail">${step.detail}</div>
+        </div>
+      </div>`;
+    });
+    html += `</div></div>`;
+
+    // ── SECTION 8: Detailed day analysis (collapsed) ──
+    html += `<button class="ai-reasoning-toggle" style="margin-top:6px;" onclick="toggleAIReasoning('gestorDayDetails')">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      Detalle por dia (${daysNeedingCoverage.length} dias)
+    </button>`;
+    html += `<div class="ai-reasoning-content" id="gestorDayDetails">`;
+    html += buildDetailedDayAnalysis(w, dayAnalyses, shiftToAssign, avgN, avgH, avgWknd);
+    html += `</div>`;
+
   } else if (daysNeedingCoverage.length === 0) {
-    html += `<div style="padding:20px;text-align:center;color:var(--text3);">
-      <div style="font-size:32px;margin-bottom:8px;">✨</div>
-      <div style="font-size:14px;font-weight:600;color:var(--text2);">Sin necesidad de sustitucion</div>
+    html += `<div style="padding:24px;text-align:center;color:var(--text3);">
+      <div style="font-size:28px;margin-bottom:8px;">✓</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text2);">Sin necesidad de sustitucion</div>
       <div style="font-size:12px;margin-top:4px;">${w.name} ya tiene descanso en todos los dias seleccionados.</div>
     </div>`;
   } else {
-    html += `<div class="gestor-no-candidates">
-      <div class="no-icon">😔</div>
-      <div class="no-text">No se encontraron candidatos para ningun dia</div>
-      <div class="no-detail">Todos los ${w.type === 'enf' ? 'enfermeros' : 'tecnicos'} ya tienen turnos asignados o no cumplen las reglas de descanso en las fechas seleccionadas.</div>
+    html += `<div style="padding:24px;text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;color:var(--text3);">—</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text2);">No se encontraron candidatos</div>
+      <div style="font-size:12px;margin-top:4px;color:var(--text3);">Todos los ${w.type === 'enf' ? 'enfermeros' : 'tecnicos'} tienen turnos asignados o no cumplen reglas de descanso.</div>
     </div>`;
   }
 
@@ -12924,7 +14466,12 @@ function generateCoveragePlans(daysNeedingCoverage, candidates, absentWorker, sh
     planD.label = 'Plan de Emergencia ⚠️';
     planD.planLabel = 'Último recurso';
     planD.planColor = '#e67e22';
+    planD.strategy = 'emergencia';
     planD.confidence = Math.max(0, 50 - (planD.violations.length * 10));
+    const covD = planD.assignments.filter(a => a.candidate).length;
+    const violD = planD.violations.length;
+    planD.reasoning = '<strong>Plan de emergencia.</strong> ' + (covD > 0 ? covD + ' día(s) cubiertos rompiendo ' + violD + ' regla(s) de convenio. ' : 'Sin opciones viables. ') + (violD > 0 ? 'Violaciones: ' + planD.violations.join(', ') + '.' : '');
+    planD.score = Math.max(0, 50 - violD * 15);
     plans.push(planD);
   }
 
@@ -12952,79 +14499,157 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWor
     return virtualSchedules[key];
   }
 
-  // Check if candidate can legally work this shift considering ALL prior plan assignments
-  function canWorkInPlan(wId, dayIdx, shift, year, month) {
-    const vSch = getVSch(year, month);
-    if (!vSch[wId]) return false;
+  // === HELPER: shifts allowed AFTER a night block (WHITELIST — rejects everything not listed) ===
+  const ALLOWED_AFTER_NIGHT = ['', 'D', 'N', 'VAC','VAA','VAN','BAJ','LD','LAC','FOR','CAA','AE','EX','MTC','INT','HF','HS','DLA','CJ','FN','IQF','PM'];
 
+  // === HELPER: Check if shift is a morning variant ===
+  function isMorningShift(shift) {
+    return ['M','MR','M7H','M6R','M55'].includes(shift);
+  }
+
+  // === HELPER: Build schedule context string for diagnostics ===
+  function buildScheduleContext(wId, dayIdx, vSch, shift) {
+    const arr = vSch[wId];
+    if (!arr) return '?';
+    const parts = [];
+    for (let i = Math.max(0, dayIdx - 3); i <= Math.min(arr.length - 1, dayIdx + 4); i++) {
+      const val = (arr[i] || '∅').toString().trim() || '∅';
+      if (i === dayIdx) parts.push('[→' + shift + '←]');
+      else parts.push('D' + (i+1) + ':' + val);
+    }
+    return parts.join(' ');
+  }
+
+  // === HELPER: Get shift from adjacent month for cross-month checks ===
+  function getCrossMonthShift(wId, year, month, direction) {
+    let adjYear = year, adjMonth = month + direction;
+    if (adjMonth < 0) { adjMonth = 11; adjYear--; }
+    if (adjMonth > 11) { adjMonth = 0; adjYear++; }
+    const adjKey = adjYear + '-' + adjMonth;
+    const adjSch = scheduleData[adjKey];
+    if (!adjSch || !adjSch[wId]) return '';
+    if (direction === -1) {
+      const lastIdx = adjSch[wId].length - 1;
+      return (adjSch[wId][lastIdx] || '').toString().trim();
+    }
+    return (adjSch[wId][0] || '').toString().trim();
+  }
+
+  // === CORE: Comprehensive legal assignment check (v4.0 — whitelist + cross-month) ===
+  function isLegalAssignment(wId, dayIdx, shift, vSch, year, month) {
     const w = workers.find(x => x.id === wId);
-    if (!w) return false;
+    if (!w) return { legal: false, reason: 'Trabajador no encontrado' };
+    if (!vSch[wId]) return { legal: false, reason: 'Sin historial de turnos' };
+    const ctx = () => buildScheduleContext(wId, dayIdx, vSch, shift);
 
     // 1. Worker restrictions
-    if (w.rules && w.rules.noNights && shift === 'N') return false;
-    if (w.rules && w.rules.noSwap) return false;
-    if (w.rules && w.rules.noCover) return false;
+    if (w.rules && w.rules.noNights && shift === 'N')
+      return { legal: false, reason: 'No puede hacer noches (noNights)', scheduleContext: ctx() };
+    if (w.rules && w.rules.noSwap)
+      return { legal: false, reason: 'No puede hacer sustituciones (noSwap)', scheduleContext: ctx() };
+    if (w.rules && w.rules.noCover)
+      return { legal: false, reason: 'No puede hacer coberturas (noCover)', scheduleContext: ctx() };
 
-    // 2. Must be on rest/off in the virtual schedule (not already working)
-    const currentInPlan = vSch[wId][dayIdx] || '';
+    // 2. Must be available — trim to handle PDF whitespace
+    const current = (vSch[wId][dayIdx] || '').toString().trim();
     const unavailable = ['VAC','VAA','VAN','BAJ','LD','LAC','FOR','CAA','AE','EX','MTC','INT','HF','HS','DLA','CJ','FN','IQF','PM'];
-    if (unavailable.includes(currentInPlan)) return false;
-    const isWorking = currentInPlan && currentInPlan !== '' && currentInPlan !== 'D';
-    if (isWorking) return false; // Already assigned (by real schedule or by prior plan step)
+    if (unavailable.includes(current))
+      return { legal: false, reason: 'No disponible (' + current + ')', scheduleContext: ctx() };
+    if (current && current !== '' && current !== 'D')
+      return { legal: false, reason: 'Ya asignado para ese día (' + current + ')', scheduleContext: ctx() };
 
-    // 3. Night consecutive limit (max 2) — count BOTH directions
+    // 3. Night consecutive limit: max 2 (BIDIRECTIONAL + CROSS-MONTH)
     if (shift === 'N') {
-      let consecBefore = 0, consecAfter = 0;
-      for (let i = dayIdx - 1; i >= 0; i--) { if (vSch[wId][i] === 'N') consecBefore++; else break; }
-      for (let i = dayIdx + 1; i < vSch[wId].length; i++) { if (vSch[wId][i] === 'N') consecAfter++; else break; }
-      const totalConsec = consecBefore + 1 + consecAfter; // including this assignment
-      if (totalConsec > RULES.MAX_CONSECUTIVE_NIGHTS) return false;
-    }
-
-    // 4. Post-night rest: if yesterday was N in virtual schedule, only N or D allowed
-    if (dayIdx > 0) {
-      const prevInPlan = vSch[wId][dayIdx - 1];
-      const isMorning = ['M','MR','M7H','M6R','M55'].includes(shift);
-      if (prevInPlan === 'N' && (isMorning || shift === 'T')) return false;
-    }
-
-    // 5. Pre-night check: if assigning N today, tomorrow in virtual schedule can't be M/T
-    if (shift === 'N' && dayIdx < vSch[wId].length - 1) {
-      const nextInPlan = vSch[wId][dayIdx + 1];
-      if (nextInPlan && nextInPlan !== '' && nextInPlan !== 'D' && nextInPlan !== 'N') {
-        const nextIsMorning = ['M','MR','M7H','M6R','M55'].includes(nextInPlan);
-        if (nextIsMorning || nextInPlan === 'T') return false;
+      let before = 0, after = 0;
+      for (let i = dayIdx - 1; i >= 0; i--) {
+        if ((vSch[wId][i] || '').toString().trim() === 'N') before++; else break;
       }
-    }
-
-    // 5b. Pre-assignment check: if today would be N, can't follow M/T from yesterday
-    if (shift !== 'N' && dayIdx > 0) {
-      // If yesterday in plan is N and today isn't N, must be D or off
-      // Already covered by check 4, but double-check
-    }
-
-    // 5c. CRITICAL: if assigning N, check that AFTER consecutive N block, next real shift is compatible
-    if (shift === 'N') {
-      // Find the end of the consecutive N block (including this assignment)
-      let endIdx = dayIdx;
-      for (let i = dayIdx + 1; i < vSch[wId].length; i++) { if (vSch[wId][i] === 'N') endIdx = i; else break; }
-      // Check what's after the block
-      if (endIdx + 1 < vSch[wId].length) {
-        const afterBlock = vSch[wId][endIdx + 1];
-        if (afterBlock && afterBlock !== '' && afterBlock !== 'D' && afterBlock !== 'N') {
-          const afterIsM = ['M','MR','M7H','M6R','M55'].includes(afterBlock);
-          if (afterIsM || afterBlock === 'T') return false; // Block would end with N→M/T which is illegal
+      if (dayIdx === 0) {
+        const prevM = getCrossMonthShift(wId, year, month, -1);
+        if (prevM === 'N') {
+          before++;
+          // Check 2 days back in prev month
+          let adjM = month - 1, adjY = year;
+          if (adjM < 0) { adjM = 11; adjY--; }
+          const adjSch = scheduleData[adjY + '-' + adjM];
+          if (adjSch && adjSch[wId]) {
+            const li = adjSch[wId].length - 2;
+            if (li >= 0 && (adjSch[wId][li] || '').toString().trim() === 'N') before++;
+          }
         }
       }
+      for (let i = dayIdx + 1; i < vSch[wId].length; i++) {
+        if ((vSch[wId][i] || '').toString().trim() === 'N') after++; else break;
+      }
+      if (dayIdx === vSch[wId].length - 1) {
+        if (getCrossMonthShift(wId, year, month, +1) === 'N') after++;
+      }
+      if (before + 1 + after > RULES.MAX_CONSECUTIVE_NIGHTS)
+        return { legal: false, reason: 'Superaría ' + RULES.MAX_CONSECUTIVE_NIGHTS + ' noches consecutivas (' + before + '+1+' + after + ')', scheduleContext: ctx() };
     }
 
-    // 6. Max nights per month
-    if (w.rules.maxNightsPerMonth !== null && w.rules.maxNightsPerMonth !== undefined && shift === 'N') {
+    // 4. Post-night rest: if previous day is N, only allowed shifts after N
+    if (dayIdx > 0) {
+      const prev = (vSch[wId][dayIdx - 1] || '').toString().trim();
+      if (prev === 'N' && (isMorningShift(shift) || shift === 'T'))
+        return { legal: false, reason: 'Día anterior es N → ' + shift + ' prohibido (descanso obligatorio)', scheduleContext: ctx() };
+    }
+    if (dayIdx === 0 && shift !== 'N') {
+      const prevM = getCrossMonthShift(wId, year, month, -1);
+      if (prevM === 'N' && (isMorningShift(shift) || shift === 'T'))
+        return { legal: false, reason: 'Último día mes anterior es N → ' + shift + ' prohibido (cross-month)', scheduleContext: ctx() };
+    }
+
+    // 5. CRITICAL: Pre-night WHITELIST check
+    if (shift === 'N') {
+      // Find end of consecutive N block
+      let endIdx = dayIdx;
+      for (let i = dayIdx + 1; i < vSch[wId].length; i++) {
+        if ((vSch[wId][i] || '').toString().trim() === 'N') endIdx = i; else break;
+      }
+      // Check what comes after the N block — WHITELIST approach
+      if (endIdx + 1 < vSch[wId].length) {
+        const afterRaw = vSch[wId][endIdx + 1];
+        const afterBlock = (afterRaw === null || afterRaw === undefined) ? '' : afterRaw.toString().trim();
+        if (afterBlock && !ALLOWED_AFTER_NIGHT.includes(afterBlock))
+          return { legal: false, reason: 'N no puede ir seguido de ' + afterBlock + ' (día ' + (endIdx + 2) + '): descanso obligatorio', scheduleContext: ctx() };
+      }
+      // Cross-month: N block ends on last day
+      if (endIdx === vSch[wId].length - 1) {
+        const nextM = getCrossMonthShift(wId, year, month, +1);
+        if (nextM && !ALLOWED_AFTER_NIGHT.includes(nextM))
+          return { legal: false, reason: 'N fin de mes seguido de ' + nextM + ' en siguiente mes: descanso obligatorio', scheduleContext: ctx() };
+      }
+      // EXTRA: Also check immediate next day individually
+      if (dayIdx + 1 < vSch[wId].length) {
+        const immNext = (vSch[wId][dayIdx + 1] || '').toString().trim();
+        if (immNext && immNext !== 'N' && !ALLOWED_AFTER_NIGHT.includes(immNext))
+          return { legal: false, reason: 'Día siguiente tiene ' + immNext + ' → N crearía N→' + immNext + ' (prohibido)', scheduleContext: ctx() };
+      }
+    }
+
+    // 6. Non-N after N
+    if (shift !== 'N' && dayIdx > 0) {
+      const prev = (vSch[wId][dayIdx - 1] || '').toString().trim();
+      if (prev === 'N' && !ALLOWED_AFTER_NIGHT.includes(shift))
+        return { legal: false, reason: 'No se puede asignar ' + shift + ' después de noche', scheduleContext: ctx() };
+    }
+
+    // 7. Max nights per month
+    if (w.rules && w.rules.maxNightsPerMonth !== null && w.rules.maxNightsPerMonth !== undefined && shift === 'N') {
       const monthNights = vSch[wId].filter(s => s === 'N').length;
-      if (monthNights >= w.rules.maxNightsPerMonth) return false;
+      if (monthNights >= w.rules.maxNightsPerMonth)
+        return { legal: false, reason: 'Máximo noches/mes alcanzado (' + monthNights + '/' + w.rules.maxNightsPerMonth + ')', scheduleContext: ctx() };
     }
 
-    return true;
+    return { legal: true, reason: 'Cumple todas las reglas', scheduleContext: ctx() };
+  }
+
+  // Backwards-compatible wrapper for old call sites
+  function canWorkInPlan(wId, dayIdx, shift, year, month) {
+    const vSch = getVSch(year, month);
+    const result = isLegalAssignment(wId, dayIdx, shift, vSch, year, month);
+    return result.legal;
   }
 
   // === PROCESS DAYS IN CHRONOLOGICAL ORDER (critical for virtual schedule) ===
@@ -13040,18 +14665,22 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWor
     const absentArea = absentWorkerParam ? (absentWorkerParam.area || 'lab') : 'lab';
     const absentType = absentWorkerParam ? absentWorkerParam.type : 'enf';
 
-    // Get fresh candidates from virtual schedule
+    // Get fresh candidates from virtual schedule with full rejection logging
     const available = [];
+    const rejectionLog = [];
+    const vSch = getVSch(da.year, da.month);
     workers.forEach(w => {
       if (w.id === absentId) return;
       // === Category enforcement: enf covers enf, tec covers tec ===
-      if (w.type !== absentType) return;
+      if (w.type !== absentType) { rejectionLog.push({ worker: w.name, reason: 'Tipo diferente (enf/tec)' }); return; }
       // Section boundary enforcement
-      if (w.rules && w.rules.noLab && absentArea !== 'micro') return;
-      if (w.type === 'enf' && absentArea === 'micro') return;
-      if (w.area === 'micro' && absentArea !== 'micro') return;
+      if (w.rules && w.rules.noLab && absentArea !== 'micro') { rejectionLog.push({ worker: w.name, reason: 'No puede trabajar en lab' }); return; }
+      if (w.type === 'enf' && absentArea === 'micro') { rejectionLog.push({ worker: w.name, reason: 'Enfermería no cubre micro' }); return; }
+      if (w.area === 'micro' && absentArea !== 'micro') { rejectionLog.push({ worker: w.name, reason: 'Micro no cubre otros turnos' }); return; }
 
-      if (!canWorkInPlan(w.id, da.dayIdx, shiftNeeded, da.year, da.month)) return;
+      // Full legal check with schedule context
+      const legal = isLegalAssignment(w.id, da.dayIdx, shiftNeeded, vSch, da.year, da.month);
+      if (!legal.legal) { rejectionLog.push({ worker: w.name, reason: legal.reason, scheduleContext: legal.scheduleContext || '' }); return; }
 
       // Get stats from pre-computed candidates if available, else compute
       const preComputed = da.candidates.find(c => c.w.id === w.id);
@@ -13066,13 +14695,120 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWor
 
       available.push({
         w, stats, score, consecutiveDays: consecDays, extrasCoverage: extras,
-        futureImpact, wkndVsAvg, scoreBreakdown, multiInfo
+        futureImpact, wkndVsAvg, scoreBreakdown, multiInfo,
+        scheduleContext: legal.scheduleContext || ''
       });
     });
 
+    // === SMART REASSIGNMENT: If no free workers, check shift surplus ===
     if (available.length === 0) {
-      assignments.push({ dayAnalysis: da, candidate: null, reason: 'Sin candidatos válidos (convenio)' });
-      return;
+      const COV = getCoverageRules(da.year, da.month, da.dayDate.getDate());
+      const WORK_SHIFTS_CHECK = ['M', 'T'];  // Only check M and T as source shifts for reassignment
+
+      // Count current coverage per shift for this worker type (excluding absent)
+      const covCount = {};
+      WORK_SHIFTS_CHECK.forEach(s => { covCount[s] = 0; });
+      workers.forEach(wx => {
+        if (wx.id === absentId) return;
+        if (wx.type !== absentType) return;
+        if (wx.area === 'micro') return;
+        const cs = vSch[wx.id] ? (vSch[wx.id][da.dayIdx] || '').toString().trim() : '';
+        const eff = ['MR','M7H','M6R','M55'].includes(cs) ? 'M' : cs;
+        if (covCount[eff] !== undefined) covCount[eff]++;
+      });
+
+      // Find shifts with surplus workers
+      const reassignCandidates = [];
+      WORK_SHIFTS_CHECK.forEach(srcShift => {
+        const need = COV[srcShift] ? (absentType === 'enf' ? COV[srcShift].enf : COV[srcShift].tec) : 0;
+        const have = covCount[srcShift] || 0;
+        const surplus = have - need;
+        if (surplus <= 0) return; // No surplus on this shift
+
+        // Find workers on this shift who could legally do the needed shift
+        workers.forEach(wx => {
+          if (wx.id === absentId) return;
+          if (wx.type !== absentType) return;
+          if (wx.area === 'micro') return;
+          if (wx.rules && wx.rules.noSwap) return;
+          if (wx.rules && wx.rules.noCover) return;
+          const cs = vSch[wx.id] ? (vSch[wx.id][da.dayIdx] || '').toString().trim() : '';
+          const eff = ['MR','M7H','M6R','M55'].includes(cs) ? 'M' : cs;
+          if (eff !== srcShift) return;
+
+          // Temporarily free this worker, check if target shift is legal
+          const origShift = vSch[wx.id][da.dayIdx];
+          vSch[wx.id][da.dayIdx] = '';
+          const legal = isLegalAssignment(wx.id, da.dayIdx, shiftNeeded, vSch, da.year, da.month);
+          vSch[wx.id][da.dayIdx] = origShift; // restore
+
+          if (legal.legal) {
+            const stats = getWorkerStats(wx.id);
+            reassignCandidates.push({
+              w: wx, stats,
+              fromShift: srcShift,
+              originalShift: origShift,
+              surplus,
+              have, need,
+              scheduleContext: legal.scheduleContext || '',
+              reassignReason: 'Reasignado desde ' + srcShift + ' (' + have + '/' + need + ' ' + (absentType === 'enf' ? 'enfermeras' : 'técnicos') + ', margen ' + surplus + ')'
+            });
+          } else {
+            rejectionLog.push({ worker: wx.name, reason: 'Reasignación ' + srcShift + '→' + shiftNeeded + ' ilegal: ' + legal.reason, scheduleContext: legal.scheduleContext || '' });
+          }
+        });
+      });
+
+      if (reassignCandidates.length === 0) {
+        assignments.push({ dayAnalysis: da, candidate: null, reason: 'Sin candidatos libres ni reasignables (convenio)', rejectionLog, alternates: [] });
+        return;
+      }
+
+      // Score reassignment candidates: prefer more surplus, fewer nights
+      reassignCandidates.forEach(rc => {
+        let score = 0;
+        score -= rc.surplus * 5;  // More surplus = better (lower score)
+        const nightsThisMonth = vSch[rc.w.id] ? vSch[rc.w.id].filter(s => s === 'N').length : 0;
+        score += nightsThisMonth * 3;
+        if (rc.w.rules && rc.w.rules.conciliacion) score += 5;
+        rc.finalScore = score;
+      });
+      reassignCandidates.sort((a, b) => a.finalScore - b.finalScore);
+
+      const chosen = reassignCandidates[0];
+      // Update virtual schedule: worker moves from their shift to the needed shift
+      vSch[chosen.w.id][da.dayIdx] = shiftNeeded;
+
+      const alternates = reassignCandidates.slice(1, 3).map(rc => ({
+        name: rc.w.name,
+        score: rc.finalScore,
+        viable: true,
+        scheduleContext: rc.scheduleContext
+      }));
+
+      assignments.push({
+        dayAnalysis: da,
+        candidate: {
+          w: chosen.w, stats: chosen.stats,
+          coversMultiple: false, coverageCount: 1,
+          scoreBreakdown: [], consecutiveDays: 0,
+          extrasCoverage: 0,
+          futureImpact: { impactScore: 0, details: [] },
+          wkndVsAvg: '0',
+          scheduleContext: chosen.scheduleContext,
+          isReassignment: true,
+          fromShift: chosen.fromShift,
+          originalShift: chosen.originalShift,
+          surplus: chosen.surplus,
+          surplusHave: chosen.have,
+          surplusNeed: chosen.need
+        },
+        reason: chosen.reassignReason,
+        rejectionLog,
+        alternates
+      });
+      usedWorkerDays.set(chosen.w.id, (usedWorkerDays.get(chosen.w.id) || 0) + 1);
+      return;  // Skip to next day
     }
 
     // Score candidates
@@ -13139,47 +14875,31 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWor
     if (chosen.consecutiveDays === 0) chosenReason += ', viene de descanso';
     if (chosen.extrasCoverage === 0) chosenReason += ', sin extras previas';
 
-    // === FINAL SAFETY CHECK — absolute guard against illegal assignments ===
+    // === FINAL SAFETY CHECK v4.0 — re-verify with isLegalAssignment ===
     const vSchFinal = getVSch(da.year, da.month);
-    if (shiftNeeded === 'N' && vSchFinal[chosen.w.id]) {
-      // Check: would this create >2 consecutive nights?
-      let cBefore = 0, cAfter = 0;
-      for (let i = da.dayIdx - 1; i >= 0; i--) { if (vSchFinal[chosen.w.id][i] === 'N') cBefore++; else break; }
-      for (let i = da.dayIdx + 1; i < vSchFinal[chosen.w.id].length; i++) { if (vSchFinal[chosen.w.id][i] === 'N') cAfter++; else break; }
-      if (cBefore + 1 + cAfter > RULES.MAX_CONSECUTIVE_NIGHTS) {
-        // Illegal! Skip this worker, try next
-        console.warn(`[Gestor] BLOCKED ${chosen.w.name} for day ${da.dayIdx+1}: would create ${cBefore+1+cAfter} consecutive nights`);
-        const fallback = available.find(a => a.w.id !== chosen.w.id);
-        if (fallback) chosen = fallback;
-        else { assignments.push({ dayAnalysis: da, candidate: null, reason: `Bloqueado: ${chosen.w.name} superaría ${RULES.MAX_CONSECUTIVE_NIGHTS}N consecutivas` }); return; }
-      }
-      // Check: next day is M/T? → illegal N→M or N→T
-      const nextDay = vSchFinal[chosen.w.id][da.dayIdx + 1];
-      if (nextDay) {
-        const nextIsM = ['M','MR','M7H','M6R','M55'].includes(nextDay);
-        if (nextIsM || nextDay === 'T') {
-          console.warn(`[Gestor] BLOCKED ${chosen.w.name} for day ${da.dayIdx+1}: N→${nextDay} next day is illegal`);
-          const fallback = available.find(a => a.w.id !== chosen.w.id);
-          if (fallback) chosen = fallback;
-          else { assignments.push({ dayAnalysis: da, candidate: null, reason: `Bloqueado: ${chosen.w.name} tiene ${nextDay} el día siguiente (N→${nextDay} prohibido)` }); return; }
-        }
-      }
-      // Check: prev day is N and we'd create 3+ consecutive
-      if (da.dayIdx > 0 && vSchFinal[chosen.w.id][da.dayIdx - 1] === 'N' && cBefore >= RULES.MAX_CONSECUTIVE_NIGHTS) {
-        console.warn(`[Gestor] BLOCKED ${chosen.w.name} for day ${da.dayIdx+1}: already at max consecutive nights`);
-        const fallback = available.find(a => a.w.id !== chosen.w.id);
-        if (fallback) chosen = fallback;
-        else { assignments.push({ dayAnalysis: da, candidate: null, reason: `Bloqueado: ${chosen.w.name} ya lleva ${cBefore}N consecutivas` }); return; }
-      }
+    const finalCheck = isLegalAssignment(chosen.w.id, da.dayIdx, shiftNeeded, vSchFinal, da.year, da.month);
+    if (!finalCheck.legal) {
+      console.warn('[Gestor] FINAL CHECK BLOCKED ' + chosen.w.name + ': ' + finalCheck.reason);
+      // Try fallback
+      const fallback = available.find(a => a.w.id !== chosen.w.id);
+      if (fallback) {
+        const fbCheck = isLegalAssignment(fallback.w.id, da.dayIdx, shiftNeeded, vSchFinal, da.year, da.month);
+        if (fbCheck.legal) { chosen = fallback; chosenReason = 'Fallback: ' + finalCheck.reason; }
+        else { assignments.push({ dayAnalysis: da, candidate: null, reason: 'Bloqueado: ' + chosen.w.name + ' - ' + finalCheck.reason, rejectionLog, alternates: [] }); return; }
+      } else { assignments.push({ dayAnalysis: da, candidate: null, reason: 'Bloqueado: ' + chosen.w.name + ' - ' + finalCheck.reason, rejectionLog, alternates: [] }); return; }
     }
 
     // === UPDATE VIRTUAL SCHEDULE with this assignment ===
-    const vSch = getVSch(da.year, da.month);
-    if (vSch[chosen.w.id]) {
-      vSch[chosen.w.id][da.dayIdx] = shiftNeeded;
+    if (vSchFinal[chosen.w.id]) {
+      vSchFinal[chosen.w.id][da.dayIdx] = shiftNeeded;
     }
 
-    const alternates = available.slice(1, 3).map(a => a.w.name);
+    const alternates = available.slice(1, 3).map(a => ({
+      name: a.w.name,
+      score: a.stratScore,
+      viable: true,
+      scheduleContext: a.scheduleContext || ''
+    }));
 
     assignments.push({
       dayAnalysis: da,
@@ -13191,9 +14911,11 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWor
         consecutiveDays: chosen.consecutiveDays || 0,
         extrasCoverage: chosen.extrasCoverage || 0,
         futureImpact: chosen.futureImpact || { impactScore: 0, details: [] },
-        wkndVsAvg: chosen.wkndVsAvg || '0'
+        wkndVsAvg: chosen.wkndVsAvg || '0',
+        scheduleContext: chosen.scheduleContext || ''
       },
       reason: chosenReason,
+      rejectionLog,
       alternates
     });
     usedWorkerDays.set(chosen.w.id, (usedWorkerDays.get(chosen.w.id) || 0) + 1);
@@ -13635,14 +15357,15 @@ function get7DayTimeline(workerId, targetYear, targetMonth, targetDay) {
     const dayIdx = d.getDate() - 1;
     const shift = sch[workerId] && sch[workerId][dayIdx] ? sch[workerId][dayIdx] : '';
 
+    const trimShift = (shift || '').toString().trim();
     let shiftKey = 'empty';
-    if (shift === 'D' || shift === '') shiftKey = 'D';
-    else if (['MR','M7H','M6R','M55'].includes(shift)) shiftKey = 'M';
-    else if (['TR','T7H','T6R','T55'].includes(shift)) shiftKey = 'T';
-    else if (['NR','N7H','N6R','N55'].includes(shift)) shiftKey = 'N';
-    else if (['BAJ','VAC','IT'].includes(shift)) shiftKey = 'D';
+    if (trimShift === 'D' || trimShift === '') shiftKey = 'D';
+    else if (['M','MR','M7H','M6R','M55'].includes(trimShift)) shiftKey = 'M';
+    else if (['T','TR','T7H','T6R','T55'].includes(trimShift)) shiftKey = 'T';
+    else if (['N','NR','N7H','N6R','N55'].includes(trimShift)) shiftKey = 'N';
+    else if (['BAJ','VAC','VAA','VAN','IT','LD','LAC','FOR','CAA','AE','EX','MTC','INT','HF','HS','DLA','CJ','FN','IQF','PM'].includes(trimShift)) shiftKey = 'D';
 
-    const label = shiftKey === 'M' ? 'M' : shiftKey === 'T' ? 'T' : shiftKey === 'N' ? 'N' : '—';
+    const label = shiftKey === 'M' ? 'M' : shiftKey === 'T' ? 'T' : shiftKey === 'N' ? 'N' : shiftKey === 'D' ? (trimShift && trimShift !== 'D' ? trimShift : '—') : '—';
     const isTarget = offset === 0;
 
     timeline.push({ label, shiftKey, isTarget });
@@ -13995,6 +15718,19 @@ function showAuthError(formId, message) {
   setTimeout(() => card.classList.remove('login-shake'), 600);
 }
 
+// Offline credentials fallback (same as server seed)
+const OFFLINE_USERS = {
+  'sav': { password: 'vinicius1', user: { id: 1, email: 'sara@shiftia.es', name: 'Sara — Supervisora', company: 'Hospital de Jove', plan: 'enterprise', plan_status: 'active', workers_limit: 1000 } },
+  'sara@shiftia.es': { password: 'vinicius1', user: { id: 1, email: 'sara@shiftia.es', name: 'Sara — Supervisora', company: 'Hospital de Jove', plan: 'enterprise', plan_status: 'active', workers_limit: 1000 } }
+};
+
+function offlineLogin(username, password) {
+  const entry = OFFLINE_USERS[username.toLowerCase()];
+  if (!entry) return null;
+  if (entry.password !== password) return null;
+  return entry.user;
+}
+
 async function handleLogin(e) {
   e.preventDefault();
   const user = document.getElementById('loginUser').value.trim();
@@ -14008,34 +15744,58 @@ async function handleLogin(e) {
   btn.disabled = true;
   btn.textContent = 'Accediendo...';
 
+  // Try server login first
+  let serverOk = false;
   try {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: user, password: pass })
     });
-    const data = await res.json();
 
-    if (!res.ok) {
+    // Handle non-JSON responses (e.g. 404 HTML page)
+    let data = null;
+    try { data = await res.json(); } catch(jsonErr) { data = null; }
+
+    if (res.ok && data && data.token) {
+      // Server login success
+      setAuthToken(data.token);
+      currentUser = data.user;
+      isAuthenticated = true;
+      try { localStorage.setItem('shiftia_sara_user', JSON.stringify(data.user)); } catch(e) {}
+      await loadFromStorage();
+      renderDashboard();
+      showAuthSuccess(btn, data.user.name.split(' ')[0]);
+      serverOk = true;
+    } else if (res.status === 401 && data) {
+      // Server says wrong credentials — don't try offline
       showAuthError('loginForm', data.error || 'Credenciales incorrectas');
       btn.disabled = false;
       btn.textContent = 'Acceder';
       return false;
+    } else {
+      // 404, 500, or non-JSON response — fall through to offline login
+      console.warn('[Shiftia] Server auth endpoint returned', res.status, '— trying offline login');
     }
+  } catch (err) {
+    console.warn('[Shiftia] Server unreachable, trying offline login...');
+  }
 
-    // Success
-    setAuthToken(data.token);
-    currentUser = data.user;
+  if (serverOk) return false;
+
+  // Fallback: offline login
+  const offlineUser = offlineLogin(user, pass);
+  if (offlineUser) {
+    console.log('[Shiftia] Offline login successful for', offlineUser.name);
+    setAuthToken('offline-token-' + Date.now());
+    currentUser = offlineUser;
     isAuthenticated = true;
-    try { localStorage.setItem('shiftia_sara_user', JSON.stringify(data.user)); } catch(e) {}
-
-    // Reload data from server with auth
+    try { localStorage.setItem('shiftia_sara_user', JSON.stringify(offlineUser)); } catch(e) {}
     await loadFromStorage();
     renderDashboard();
-
-    showAuthSuccess(btn, data.user.name.split(' ')[0]);
-  } catch (err) {
-    showAuthError('loginForm', 'Error de conexión. Inténtalo de nuevo.');
+    showAuthSuccess(btn, offlineUser.name.split(' ')[0]);
+  } else {
+    showAuthError('loginForm', 'Credenciales incorrectas. Servidor no disponible — solo acceso offline.');
     btn.disabled = false;
     btn.textContent = 'Acceder';
   }
@@ -14186,11 +15946,11 @@ function renderHeatmap() {
     </div>
     <div style="display:flex;align-items:center;gap:16px;">
       <div class="hm-legend">
-        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#dbeafe;border:1px solid #93c5fd;"></div>Mañana</div>
-        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#ffedd5;border:1px solid #fdba74;"></div>Tarde</div>
-        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#ede9fe;border:1px solid #c4b5fd;"></div>Noche</div>
-        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#d1fae5;border:1px solid #6ee7b7;"></div>Vacaciones</div>
-        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:#fecaca;border:1px solid #fca5a5;"></div>Baja</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:rgba(46,139,122,0.25);border:1px solid #2e8b7a;"></div>Mañana</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:rgba(74,157,212,0.25);border:1px solid #4a9dd4;"></div>Tarde</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:rgba(197,168,50,0.28);border:1px solid #c5a832;"></div>Noche</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:rgba(139,32,32,0.15);border:1px solid #8b2020;"></div>Vacaciones</div>
+        <div class="hm-legend-item"><div class="hm-legend-dot" style="background:rgba(176,64,80,0.15);border:1px solid #b04050;"></div>Baja</div>
       </div>
       <button onclick="exportHeatmapPDF()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid var(--surface2);background:var(--bg);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:inherit;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='var(--bg)'">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -14444,7 +16204,7 @@ function renderMetrics() {
   container.innerHTML = html;
 }
 
-// ============= EXPORT HEATMAP TO PDF (landscape) =============
+// ============= EXPORT HEATMAP TO PDF (landscape, split by type) =============
 function exportHeatmapPDF() {
   const year = appState.currentMonth.getFullYear();
   const month = appState.currentMonth.getMonth();
@@ -14454,96 +16214,184 @@ function exportHeatmapPDF() {
   const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const dayNames = ['D','L','M','X','J','V','S'];
 
-  const groups = [
-    { label: 'ENFERMERÍA', workers: workers.filter(w => w.type === 'enf') },
-    { label: 'TÉCNICOS LAB', workers: workers.filter(w => w.type === 'tec' && w.area !== 'micro') },
-    { label: 'MICROBIOLOGÍA', workers: workers.filter(w => w.area === 'micro') }
-  ].filter(g => g.workers.length > 0);
-
+  // Colors matching planilla exactly
   function sColor(s) {
-    if (!s || s === '' || s === 'D') return { bg: '#f8f9fa', fg: '#adb5bd' };
-    if (['M','MR','M7H','M6R','M55'].includes(s)) return { bg: '#dbeafe', fg: '#1e40af' };
-    if (s === 'T') return { bg: '#ffedd5', fg: '#9a3412' };
-    if (s === 'N') return { bg: '#ede9fe', fg: '#5b21b6' };
-    if (['VAC','VAA','VAN'].includes(s)) return { bg: '#d1fae5', fg: '#065f46' };
-    if (s === 'BAJ') return { bg: '#fecaca', fg: '#991b1b' };
-    if (['LD','LAC'].includes(s)) return { bg: '#fef3c7', fg: '#92400e' };
-    if (['CJ','FN'].includes(s)) return { bg: '#e0f2fe', fg: '#075985' };
-    if (s === 'INT') return { bg: '#f3e8ff', fg: '#6b21a8' };
-    return { bg: '#f1f5f9', fg: '#475569' };
+    if (!s || s === '' || s === 'D') return { bg: '#f5f0ee', fg: '#b0a0a0' };
+    if (['M','MR','M7H','M6R','M55'].includes(s)) return { bg: '#d4ede8', fg: '#1a6b5a' };
+    if (s === 'T') return { bg: '#d6eaf8', fg: '#2a6f9a' };
+    if (s === 'N') return { bg: '#f5eecc', fg: '#7a6518' };
+    if (['VAC','VAA','VAN'].includes(s)) return { bg: '#f0d4d4', fg: '#8b2020' };
+    if (s === 'BAJ') return { bg: '#f0d0d6', fg: '#903040' };
+    if (['LD','LAC'].includes(s)) return { bg: '#d4e4f0', fg: '#3a6a9f' };
+    if (['CJ','FN'].includes(s)) return { bg: '#d6eaf8', fg: '#2a6f9a' };
+    if (['FOR','HS','HF'].includes(s)) return { bg: '#f0e0ee', fg: '#a05080' };
+    if (s === 'INT') return { bg: '#f0e0ee', fg: '#a05080' };
+    if (['CAA','AE','EX','MTC'].includes(s)) return { bg: '#e8e8e0', fg: '#666650' };
+    return { bg: '#f0f0f0', fg: '#666' };
   }
 
-  const w = window.open('', '_blank');
-  w.document.write(`<!DOCTYPE html><html><head><title>Shiftia — Mapa ${monthNames[month]} ${year}</title>
+  // Split into pages: Enfermería on page 1, Técnicos+Micro on page 2
+  const enfWorkers = workers.filter(w => w.type === 'enf');
+  const tecWorkers = workers.filter(w => w.type === 'tec' && w.area !== 'micro');
+  const microWorkers = workers.filter(w => w.area === 'micro');
+
+  const pages = [];
+  if (enfWorkers.length > 0) {
+    pages.push({ title: 'ENFERMERÍA', workers: enfWorkers });
+  }
+  // Combine tec + micro on one page
+  const tecAll = [...tecWorkers, ...microWorkers];
+  if (tecAll.length > 0) {
+    const subgroups = [];
+    if (tecWorkers.length > 0) subgroups.push({ label: 'TÉCNICOS LAB', workers: tecWorkers });
+    if (microWorkers.length > 0) subgroups.push({ label: 'MICROBIOLOGÍA', workers: microWorkers });
+    pages.push({ title: 'TÉCNICOS', workers: tecAll, subgroups });
+  }
+
+  // Calculate dynamic font sizes based on worker count per page
+  function getFontSizes(workerCount) {
+    if (workerCount <= 8) return { name: 12, shift: 11, dayNum: 12, dayName: 9, header: 10, row: 26 };
+    if (workerCount <= 12) return { name: 11, shift: 10, dayNum: 11, dayName: 8, header: 9, row: 24 };
+    if (workerCount <= 16) return { name: 10, shift: 9, dayNum: 10, dayName: 7, header: 9, row: 22 };
+    if (workerCount <= 20) return { name: 9, shift: 9, dayNum: 10, dayName: 7, header: 8, row: 20 };
+    return { name: 8, shift: 8, dayNum: 9, dayName: 6, header: 8, row: 18 };
+  }
+
+  const pw = window.open('', '_blank');
+  // Calculate optimal name column width based on longest name
+  const allNames = workers.map(w => w.name);
+  const maxNameLen = Math.max(...allNames.map(n => n.length));
+  const nameColWidth = Math.min(160, Math.max(100, maxNameLen * 7 + 16));
+
+  pw.document.write(`<!DOCTYPE html><html><head><title>Shiftia — Planilla ${monthNames[month]} ${year}</title>
 <style>
-@page { size: landscape; margin: 10mm; }
-@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
+@page { size: landscape; margin: 6mm 5mm; }
+@media print {
+  body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  .page-break { page-break-before: always; }
+  .page { height: calc(100vh - 12mm); display: flex; flex-direction: column; }
+  table { flex: 1; }
+}
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 8px; color: #1a1a2e; background: white; padding: 12px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
-.header h1 { font-size: 16px; font-weight: 700; color: #1a1a2e; }
-.header .sub { font-size: 10px; color: #64748b; }
-.legend { display: flex; gap: 10px; font-size: 8px; color: #64748b; align-items: center; }
-.legend-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; vertical-align: middle; margin-right: 3px; }
+body { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #2c2c2c; background: white; }
+.page { padding: 8px 6px; }
+.header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 2.5px solid #2e8b7a; }
+.header-left h1 { font-size: 17px; font-weight: 800; color: #1a1a2e; letter-spacing: -0.5px; }
+.header-left .subtitle { font-size: 9px; color: #888; font-weight: 500; margin-top: 1px; }
+.header-right { text-align: right; }
+.header-right .group-title { font-size: 13px; font-weight: 700; color: #2e8b7a; text-transform: uppercase; letter-spacing: 0.08em; }
+.header-right .page-info { font-size: 8px; color: #aaa; margin-top: 1px; }
+.legend { display: flex; gap: 10px; font-size: 8px; color: #666; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 3px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-th, td { padding: 3px 1px; text-align: center; border: 0.5px solid #e2e8f0; }
-th { background: #f8fafc; font-weight: 700; font-size: 7px; color: #475569; }
-th.name-col { width: 110px; text-align: left; padding-left: 6px; font-size: 8px; }
-td.name-cell { text-align: left; padding-left: 6px; font-weight: 600; font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #fafbfc; }
-td.shift-cell { font-weight: 700; font-size: 7px; letter-spacing: -0.02em; }
-.group-row td { background: #f1f5f9; font-weight: 800; font-size: 7px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; text-align: left; padding: 4px 6px; }
-.wknd { background: #fffbeb !important; }
-th.day-num { font-size: 9px; font-weight: 800; }
-th.day-name { font-size: 6px; font-weight: 600; color: #94a3b8; }
-th.wknd-head { color: #d97706; }
-.sum-col { background: #f8fafc; font-weight: 700; font-size: 8px; color: #1e293b; }
-.footer { margin-top: 8px; font-size: 7px; color: #94a3b8; display: flex; justify-content: space-between; }
+th, td { text-align: center; border: 0.5px solid #ddd; }
+th { background: #f5f5f2; font-weight: 700; color: #555; }
+th.name-col { text-align: left; padding-left: 6px; width: ${nameColWidth}px; }
+td.name-cell { text-align: left; padding-left: 6px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #fafaf8; border-right: 2px solid #ccc; }
+td.shift-cell { font-weight: 800; letter-spacing: 0.02em; }
+.subgroup-row td { background: #eef2f0; font-weight: 800; color: #5c7a6f; text-transform: uppercase; letter-spacing: 0.1em; text-align: left; padding-left: 6px; }
+.wknd { background: #fdf8ee !important; }
+th.wknd-head { color: #b8860b; background: #fdf8ee; }
+th.today-head { color: #2e8b7a; font-weight: 900; }
+.sum-col { background: #f5f5f2; font-weight: 800; color: #333; }
+.footer { margin-top: 4px; font-size: 7px; color: #bbb; display: flex; justify-content: space-between; padding-top: 3px; border-top: 1px solid #eee; }
 </style></head><body>`);
 
-  w.document.write(`<div class="header">
-    <div><h1>Mapa de Turnos — ${monthNames[month]} ${year}</h1><div class="sub">Hospital de Jove · Generado ${new Date().toLocaleDateString('es-ES')}</div></div>
-    <div class="legend">
-      <span><span class="legend-dot" style="background:#dbeafe"></span>Mañana</span>
-      <span><span class="legend-dot" style="background:#ffedd5"></span>Tarde</span>
-      <span><span class="legend-dot" style="background:#ede9fe"></span>Noche</span>
-      <span><span class="legend-dot" style="background:#d1fae5"></span>Vacaciones</span>
-      <span><span class="legend-dot" style="background:#fecaca"></span>Baja</span>
-    </div>
-  </div>`);
+  pages.forEach((page, pageIdx) => {
+    const wCount = page.workers.length;
+    const fs = getFontSizes(wCount);
 
-  w.document.write(`<table><thead><tr><th class="name-col">Trabajador</th>`);
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = new Date(year, month, d);
-    const dow = date.getDay();
-    const isWknd = dow === 0 || dow === 6;
-    w.document.write(`<th class="${isWknd ? 'wknd-head' : ''}"><div class="day-num">${d}</div><div class="day-name">${dayNames[dow]}</div></th>`);
-  }
-  w.document.write(`<th>N</th><th>H</th></tr></thead><tbody>`);
+    if (pageIdx > 0) pw.document.write('<div class="page-break"></div>');
+    pw.document.write(`<div class="page">`);
 
-  groups.forEach(group => {
-    w.document.write(`<tr class="group-row"><td colspan="${daysInMonth + 3}">${group.label} (${group.workers.length})</td></tr>`);
-    group.workers.forEach(wk => {
-      const ws = sch[wk.id] || [];
-      const nights = ws.filter(s => s === 'N').length;
-      const hours = ws.reduce((a, s) => a + (RULES.SHIFT_HOURS[s] || 0), 0);
-      w.document.write(`<tr><td class="name-cell">${wk.name}</td>`);
-      for (let d = 0; d < daysInMonth; d++) {
-        const s = ws[d] || '';
-        const c = sColor(s);
-        const date = new Date(year, month, d + 1);
-        const isWknd = date.getDay() === 0 || date.getDay() === 6;
-        const label = (!s || s === 'D') ? '' : s;
-        w.document.write(`<td class="shift-cell ${isWknd ? 'wknd' : ''}" style="background:${c.bg};color:${c.fg}">${label}</td>`);
-      }
-      w.document.write(`<td class="sum-col">${nights}</td><td class="sum-col">${hours}</td></tr>`);
-    });
+    // Header
+    pw.document.write(`<div class="header">
+      <div class="header-left">
+        <h1>Planilla de Turnos — ${monthNames[month]} ${year}</h1>
+        <div class="subtitle">Hospital de Jove · Generado ${new Date().toLocaleDateString('es-ES')}</div>
+      </div>
+      <div class="header-right">
+        <div class="group-title">${page.title}</div>
+        <div class="page-info">${wCount} trabajadores · Página ${pageIdx + 1} de ${pages.length}</div>
+      </div>
+    </div>`);
+
+    // Legend
+    pw.document.write(`<div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#d4ede8;border:1px solid #2e8b7a;"></div>Mañana</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#d6eaf8;border:1px solid #4a9dd4;"></div>Tarde</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f5eecc;border:1px solid #c5a832;"></div>Noche</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f0d4d4;border:1px solid #8b2020;"></div>VAC</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f0d0d6;border:1px solid #b04050;"></div>BAJ</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#d4e4f0;border:1px solid #3a6a9f;"></div>LD</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f5f0ee;border:1px solid #ccc;"></div>Descanso</div>
+    </div>`);
+
+    // Table — auto-scaled to fill page
+    pw.document.write(`<table><thead><tr><th class="name-col" style="font-size:${fs.header}px;padding:4px 6px;">Trabajador</th>`);
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, month, d);
+      const dow = date.getDay();
+      const isWknd = dow === 0 || dow === 6;
+      const isToday = date.toDateString() === new Date().toDateString();
+      const thCls = isToday ? 'today-head' : isWknd ? 'wknd-head' : '';
+      pw.document.write(`<th class="${thCls}" style="padding:4px 1px;"><div style="font-size:${fs.dayNum}px;font-weight:800;line-height:1.2;">${d}</div><div style="font-size:${fs.dayName}px;font-weight:600;color:#999;line-height:1;">${dayNames[dow]}</div></th>`);
+    }
+    pw.document.write(`<th style="font-size:${fs.header}px;padding:3px 2px;width:26px;">N</th><th style="font-size:${fs.header}px;padding:3px 2px;width:30px;">Hrs</th></tr></thead><tbody>`);
+
+    // Workers - with optional subgroups
+    const renderWorkers = (workerList) => {
+      workerList.forEach(wk => {
+        const ws = sch[wk.id] || [];
+        const nights = ws.filter(s => (s||'').toString().trim() === 'N').length;
+        const hours = ws.reduce((a, s) => a + (RULES.SHIFT_HOURS[s] || 0), 0);
+        pw.document.write(`<tr><td class="name-cell" style="font-size:${fs.name}px;padding:${Math.floor(fs.row * 0.12)}px 6px;height:${fs.row}px;max-width:${nameColWidth}px;">${wk.name}</td>`);
+        for (let d = 0; d < daysInMonth; d++) {
+          const s = (ws[d] || '').toString().trim();
+          const c = sColor(s);
+          const date = new Date(year, month, d + 1);
+          const isWknd = date.getDay() === 0 || date.getDay() === 6;
+          const label = (!s || s === 'D') ? '' : s;
+          pw.document.write(`<td class="shift-cell ${isWknd && !label ? 'wknd' : ''}" style="background:${c.bg};color:${c.fg};font-size:${fs.shift}px;padding:${Math.floor(fs.row * 0.08)}px 0;height:${fs.row}px;">${label}</td>`);
+        }
+        pw.document.write(`<td class="sum-col" style="font-size:${fs.name - 1}px;padding:3px 2px;">${nights}</td>`);
+        pw.document.write(`<td class="sum-col" style="font-size:${fs.name - 1}px;padding:3px 2px;">${hours}</td></tr>`);
+      });
+    };
+
+    if (page.subgroups) {
+      page.subgroups.forEach(sg => {
+        pw.document.write(`<tr class="subgroup-row"><td colspan="${daysInMonth + 3}" style="font-size:${fs.header}px;padding:5px 8px;">${sg.label} (${sg.workers.length})</td></tr>`);
+        renderWorkers(sg.workers);
+      });
+    } else {
+      renderWorkers(page.workers);
+    }
+
+    // Coverage summary row
+    pw.document.write(`<tr style="border-top:2px solid #2e8b7a;"><td class="name-cell" style="font-size:${fs.header}px;font-weight:800;color:#2e8b7a;padding:3px 6px;">COBERTURA</td>`);
+    for (let d = 0; d < daysInMonth; d++) {
+      let mCount = 0, tCount = 0, nCount = 0;
+      page.workers.forEach(wk => {
+        const s = (sch[wk.id] ? (sch[wk.id][d] || '') : '').toString().trim();
+        const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+        if (eff === 'M') mCount++;
+        if (eff === 'T') tCount++;
+        if (eff === 'N') nCount++;
+      });
+      pw.document.write(`<td style="font-size:${Math.max(6, fs.shift - 2)}px;padding:2px 0;background:#f8f8f5;line-height:1.2;"><span style="color:#1a6b5a;">${mCount}</span>/<span style="color:#2a6f9a;">${tCount}</span>/<span style="color:#7a6518;">${nCount}</span></td>`);
+    }
+    pw.document.write(`<td class="sum-col" style="font-size:${fs.header}px;">—</td><td class="sum-col" style="font-size:${fs.header}px;">—</td></tr>`);
+
+    pw.document.write(`</tbody></table>`);
+    pw.document.write(`<div class="footer"><span>Shiftia v6.0 — Highkey Labs</span><span>Página ${pageIdx + 1} de ${pages.length} · Cobertura: M/T/N por dia</span></div>`);
+    pw.document.write(`</div>`);
   });
 
-  w.document.write(`</tbody></table>`);
-  w.document.write(`<div class="footer"><span>Shiftia v5.3 — Highkey Labs</span><span>Página 1</span></div>`);
-  w.document.write(`</body></html>`);
-  w.document.close();
-  setTimeout(() => w.print(), 300);
+  pw.document.write(`</body></html>`);
+  pw.document.close();
+  setTimeout(() => pw.print(), 400);
 }
 
 // ============= FEATURE 3: COVERAGE HISTORY HELPER =============
@@ -14682,14 +16530,14 @@ function calculateViolations(wId, dayIdx, shift, year, month) {
   if (shift === 'N') {
     let consec = 1;
     for (let i = dayIdx - 1; i >= 0; i--) {
-      if (sch[wId][i] === 'N') consec++; else break;
+      if ((sch[wId][i] || '').toString().trim() === 'N') consec++; else break;
     }
     if (consec > RULES.MAX_CONSECUTIVE_NIGHTS) {
       violations.push('3ª noche consecutiva');
     }
   }
 
-  if (dayIdx > 0 && sch[wId][dayIdx - 1] === 'N') {
+  if (dayIdx > 0 && (sch[wId][dayIdx - 1] || '').toString().trim() === 'N') {
     const isMorning = ['M','MR','M7H','M6R','M55'].includes(shift);
     if (isMorning || shift === 'T') {
       violations.push('Sin descanso post-noche');
@@ -14839,6 +16687,38 @@ function notifyPlan(planIdx) {
   showToast('Notificaciones enviadas a los trabajadores asignados', 'success', 2000);
   logAuditEvent('coverage_notify', `Notificaciones enviadas para plan ${planIdx}`);
 }
+
+// ========== MOBILE: Auto-hide topbar on scroll ==========
+(function initMobileScrollBehavior() {
+  let lastScrollY = 0;
+  let ticking = false;
+  const topbar = document.querySelector('.topbar');
+  if (!topbar) return;
+
+  function onScroll() {
+    if (window.innerWidth > 768) return;
+    const currentY = window.scrollY;
+    const delta = currentY - lastScrollY;
+
+    if (delta > 8 && currentY > 60) {
+      // Scrolling down — hide topbar
+      topbar.style.transform = 'translateY(-100%)';
+      topbar.style.transition = 'transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1)';
+    } else if (delta < -5) {
+      // Scrolling up — show topbar
+      topbar.style.transform = 'translateY(0)';
+    }
+    lastScrollY = currentY;
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(onScroll);
+      ticking = true;
+    }
+  }, { passive: true });
+})();
 
 // Initialize (loadFromStorage is async — handle gracefully)
 (async function init() {
