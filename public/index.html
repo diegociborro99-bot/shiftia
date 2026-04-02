@@ -267,15 +267,16 @@ body {
 /* Navigation */
 .topbar {
   background: var(--surface);
-  padding: 18px 40px;
+  padding: 14px 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow);
-  margin-bottom: 28px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  margin-bottom: 24px;
   transition: background 0.3s ease, box-shadow 0.3s ease;
-  border-bottom: 1px solid var(--surface2);
+  border-bottom: 1px solid var(--border);
   position: relative;
+  backdrop-filter: blur(12px);
 }
 
 .topbar-left {
@@ -304,15 +305,15 @@ body {
 .nav-tab {
   background: none;
   border: none;
-  color: var(--text2);
+  color: var(--text3);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  padding: 6px 2px;
+  padding: 8px 4px;
   position: relative;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 .nav-tab:active {
@@ -325,17 +326,18 @@ body {
 
 .nav-tab.active {
   color: var(--accent);
+  font-weight: 600;
 }
 
 .nav-tab.active::after {
   content: '';
   position: absolute;
-  bottom: -8px;
-  left: 0;
-  right: 0;
-  height: 2px;
+  bottom: -6px;
+  left: 10%;
+  right: 10%;
+  height: 2.5px;
   background: var(--accent);
-  border-radius: 1px;
+  border-radius: 2px;
 }
 
 .topbar-right {
@@ -662,55 +664,63 @@ button:active, .nav-btn:active, .btn:active {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px;
+  background: var(--surface);
+  padding: 16px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .month-nav {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .nav-btn {
-  background: var(--surface);
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  color: var(--text);
-  box-shadow: var(--shadow);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--text2);
 }
 
 .nav-btn:hover {
   background: var(--accent);
   color: white;
+  border-color: var(--accent);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-hover);
+  box-shadow: 0 4px 12px rgba(92,122,111,0.2);
 }
 .nav-btn:active {
-  transform: scale(0.92);
+  transform: scale(0.95);
   transition: transform 0.1s;
 }
 #todayBtn {
   width: auto;
-  padding: 0 14px;
+  padding: 0 16px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.3px;
-  background: linear-gradient(135deg, var(--morning), var(--accent));
+  letter-spacing: 0.5px;
+  background: var(--accent);
   color: white;
-  border: none;
+  border: 1px solid var(--accent);
+  text-transform: uppercase;
 }
 #todayBtn:hover {
-  box-shadow: 0 4px 12px rgba(46,139,122,0.3);
+  background: var(--accent2);
+  box-shadow: 0 4px 12px rgba(92,122,111,0.25);
+  transform: translateY(-1px);
 }
 
 .month-name {
@@ -722,15 +732,26 @@ button:active, .nav-btn:active, .btn:active {
 }
 
 .search-box {
-  background: var(--surface);
-  border: none;
-  padding: 10px 16px;
-  border-radius: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 9px 16px 9px 36px;
+  border-radius: 10px;
   width: 200px;
   font-size: 13px;
   color: var(--text);
-  box-shadow: var(--shadow);
   font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23b0b0b0' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 12px center;
+  background-size: 14px;
+}
+
+.search-box:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(92,122,111,0.1);
+  background-color: var(--surface);
 }
 
 .search-box::placeholder {
@@ -770,85 +791,100 @@ table.schedule td.name-cell:hover {
 
 .schedule-table-wrap {
   background: var(--surface);
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1px solid var(--border);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02);
   overflow-x: auto;
   position: relative;
   margin-bottom: 24px;
   scroll-behavior: smooth;
   scrollbar-width: thin;
-  scrollbar-color: var(--accent) transparent;
+  scrollbar-color: rgba(92,122,111,0.3) transparent;
 }
-.schedule-table-wrap::-webkit-scrollbar { height: 6px; }
+.schedule-table-wrap::-webkit-scrollbar { height: 5px; }
 .schedule-table-wrap::-webkit-scrollbar-track { background: transparent; }
-.schedule-table-wrap::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; opacity: 0.5; }
+.schedule-table-wrap::-webkit-scrollbar-thumb { background: rgba(92,122,111,0.3); border-radius: 3px; }
+.schedule-table-wrap::-webkit-scrollbar-thumb:hover { background: rgba(92,122,111,0.5); }
 
 table.schedule {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 13px;
   min-width: 1100px;
 }
 
 table.schedule th {
-  background: var(--bg);
-  padding: 14px 6px;
+  background: var(--surface2);
+  padding: 12px 6px;
   text-align: center;
   font-weight: 600;
-  border-bottom: 2px solid var(--border);
+  border-bottom: 1px solid var(--border);
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
   color: var(--text3);
 }
 
 table.schedule th.day-header {
   min-width: 50px;
-  padding: 14px 2px;
+  padding: 10px 2px 12px;
+  position: relative;
 }
 
 table.schedule th.day-header .day-name {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--text3);
-  font-weight: 500;
+  font-weight: 600;
   display: block;
-  margin-bottom: 4px;
-  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 table.schedule th.day-header .day-num {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   color: var(--text);
+  line-height: 1.2;
 }
 
 table.schedule th.name-col {
   text-align: left;
   padding-left: 16px;
-  width: 150px;
-  min-width: 150px;
-  max-width: 150px;
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
   position: sticky;
   left: 0;
   z-index: 2;
-  background: var(--bg);
+  background: var(--surface2);
   border-right: 1px solid var(--border);
+  font-size: 10px;
+  letter-spacing: 1px;
 }
 
 table.schedule td {
-  padding: 6px 3px;
+  padding: 5px 2px;
   text-align: center;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+
+table.schedule tbody tr {
+  transition: background 0.15s ease;
 }
 
 table.schedule tbody tr:hover {
   background: rgba(92, 122, 111, 0.04);
 }
 
+table.schedule tbody tr:hover td.name-cell {
+  background: var(--surface3);
+}
+
 table.schedule td.name-cell {
   text-align: left;
-  padding: 10px 12px;
+  padding: 8px 12px 8px 14px;
   font-weight: 500;
   font-size: 13px;
   position: sticky;
@@ -858,38 +894,43 @@ table.schedule td.name-cell {
   cursor: pointer;
   border-right: 1px solid var(--border);
   border-left: 3px solid transparent;
-  width: 150px;
-  min-width: 150px;
-  max-width: 150px;
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  letter-spacing: -0.01em;
 }
 
 table.schedule td.name-cell:hover {
   background: var(--surface3);
+  border-left-color: var(--accent);
 }
 
 .shift-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 28px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 11px;
+  width: 38px;
+  height: 26px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 10.5px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
   letter-spacing: 0.3px;
+  border: 1px solid transparent;
 }
 
 .shift-pill:hover {
-  transform: scale(1.12);
-  box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+  transform: scale(1.15) translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
   z-index: 2;
   position: relative;
+  border-color: rgba(0,0,0,0.08);
 }
 
 .shift-pill:active {
@@ -1212,39 +1253,39 @@ table.schedule td.name-cell:hover {
   flex: 1;
 }
 
-.shift-M, .shift-MR { background: rgba(46, 139, 122, 0.15); color: #1a6b5a; }
-.shift-M7H { background: rgba(46, 139, 122, 0.12); color: #1a6b5a; font-size: 8px; }
-.shift-M6R { background: rgba(46, 139, 122, 0.10); color: #2e8b7a; font-size: 8px; }
-.shift-M55 { background: rgba(46, 139, 122, 0.08); color: #2e8b7a; font-size: 8px; }
-.shift-T { background: rgba(74, 157, 212, 0.15); color: #2a6f9a; }
-.shift-N { background: rgba(197, 168, 50, 0.18); color: #8a7520; }
-.shift-D { background: rgba(204, 68, 68, 0.12); color: #a03333; }
-.shift-VAC, .shift-VAA { background: rgba(139, 32, 32, 0.12); color: #8b2020; font-size: 9px; }
-.shift-LD { background: rgba(90, 138, 191, 0.15); color: #3a6a9f; font-size: 9px; }
-.shift-FOR { background: rgba(212, 136, 58, 0.15); color: #a06820; font-size: 9px; }
-.shift-CAA { background: rgba(122, 138, 106, 0.15); color: #5a6a4a; font-size: 9px; }
-.shift-AE { background: rgba(168, 168, 50, 0.15); color: #787820; font-size: 9px; }
-.shift-EX { background: rgba(154, 154, 154, 0.15); color: #6a6a6a; font-size: 9px; }
-.shift-BAJ { background: rgba(176, 64, 80, 0.12); color: #903040; font-size: 9px; }
-.shift-CJ { background: rgba(106, 122, 154, 0.15); color: #4a5a7a; font-size: 9px; }
-.shift-FN { background: rgba(136, 136, 136, 0.12); color: #666; font-size: 9px; }
-.shift-LAC { background: rgba(192, 96, 144, 0.12); color: #904070; font-size: 8px; }
-.shift-MTC { background: rgba(208, 112, 160, 0.12); color: #a05080; font-size: 8px; }
-.shift-INT { background: rgba(176, 64, 80, 0.12); color: #903040; font-size: 8px; }
-.shift-HF { background: rgba(122, 90, 154, 0.15); color: #5a3a8a; font-size: 9px; }
-.shift-HS { background: rgba(90, 122, 90, 0.15); color: #3a5a3a; font-size: 9px; }
-.shift-PM { background: rgba(150, 100, 180, 0.12); color: #7a4a9a; font-size: 9px; }
-.shift-DLA { background: rgba(74, 122, 176, 0.12); color: #3a5a9f; font-size: 8px; }
-.shift-VAN { background: rgba(139, 53, 53, 0.12); color: #8b2020; font-size: 8px; }
-.shift-IQF { background: rgba(122, 80, 128, 0.12); color: #6a3a7a; font-size: 8px; }
+.shift-M, .shift-MR { background: rgba(46, 139, 122, 0.18); color: #1a6b5a; }
+.shift-M7H { background: rgba(46, 139, 122, 0.14); color: #1a6b5a; font-size: 8px; }
+.shift-M6R { background: rgba(46, 139, 122, 0.12); color: #2e8b7a; font-size: 8px; }
+.shift-M55 { background: rgba(46, 139, 122, 0.10); color: #2e8b7a; font-size: 8px; }
+.shift-T { background: rgba(74, 157, 212, 0.18); color: #2266a0; }
+.shift-N { background: rgba(197, 168, 50, 0.20); color: #7a6510; }
+.shift-D { background: rgba(204, 68, 68, 0.10); color: #b03333; }
+.shift-VAC, .shift-VAA { background: rgba(139, 32, 32, 0.14); color: #8b2020; font-size: 9px; }
+.shift-LD { background: rgba(90, 138, 191, 0.18); color: #2a5a8f; font-size: 9px; }
+.shift-FOR { background: rgba(212, 136, 58, 0.18); color: #96580a; font-size: 9px; }
+.shift-CAA { background: rgba(122, 138, 106, 0.18); color: #4a5a3a; font-size: 9px; }
+.shift-AE { background: rgba(168, 168, 50, 0.18); color: #6a6810; font-size: 9px; }
+.shift-EX { background: rgba(154, 154, 154, 0.15); color: #5a5a5a; font-size: 9px; }
+.shift-BAJ { background: rgba(176, 64, 80, 0.14); color: #903040; font-size: 9px; }
+.shift-CJ { background: rgba(106, 122, 154, 0.18); color: #3a4a6a; font-size: 9px; }
+.shift-FN { background: rgba(136, 136, 136, 0.12); color: #555; font-size: 9px; }
+.shift-LAC { background: rgba(192, 96, 144, 0.14); color: #803060; font-size: 8px; }
+.shift-MTC { background: rgba(208, 112, 160, 0.14); color: #904070; font-size: 8px; }
+.shift-INT { background: rgba(176, 64, 80, 0.14); color: #903040; font-size: 8px; }
+.shift-HF { background: rgba(122, 90, 154, 0.18); color: #4a2a7a; font-size: 9px; }
+.shift-HS { background: rgba(90, 122, 90, 0.18); color: #2a4a2a; font-size: 9px; }
+.shift-PM { background: rgba(150, 100, 180, 0.14); color: #6a3a8a; font-size: 9px; }
+.shift-DLA { background: rgba(74, 122, 176, 0.14); color: #2a4a8f; font-size: 8px; }
+.shift-VAN { background: rgba(139, 53, 53, 0.14); color: #8b2020; font-size: 8px; }
+.shift-IQF { background: rgba(122, 80, 128, 0.14); color: #5a2a6a; font-size: 8px; }
 
 .today-col {
-  background: rgba(46, 139, 122, 0.08) !important;
-  box-shadow: inset 1px 0 0 rgba(46,139,122,0.15), inset -1px 0 0 rgba(46,139,122,0.15);
+  background: rgba(46, 139, 122, 0.06) !important;
+  box-shadow: inset 2px 0 0 rgba(46,139,122,0.25), inset -2px 0 0 rgba(46,139,122,0.25);
 }
 
 .today-col-header {
-  background: rgba(46, 139, 122, 0.14) !important;
+  background: rgba(46, 139, 122, 0.12) !important;
   position: relative;
 }
 .today-col-header::before {
@@ -1255,8 +1296,8 @@ table.schedule td.name-cell:hover {
   transform: translateX(-50%);
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, transparent, var(--morning), transparent);
-  border-radius: 0 0 2px 2px;
+  background: var(--morning);
+  border-radius: 0 0 3px 3px;
 }
 
 .today-marker {
@@ -1265,14 +1306,17 @@ table.schedule td.name-cell:hover {
 .today-marker::after {
   content: 'HOY';
   position: absolute;
-  bottom: -2px;
+  bottom: -4px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 6px;
+  font-size: 7px;
   font-weight: 800;
-  color: var(--morning);
+  color: white;
   letter-spacing: 0.5px;
   white-space: nowrap;
+  background: var(--morning);
+  padding: 1px 5px;
+  border-radius: 3px;
 }
 
 .festivo-header {
@@ -1281,10 +1325,14 @@ table.schedule td.name-cell:hover {
 
 /* Weekend column shading */
 .weekend-col {
-  background: rgba(0,0,0,0.025) !important;
+  background: rgba(0,0,0,0.018) !important;
 }
 .weekend-col-header {
-  background: rgba(0,0,0,0.03) !important;
+  background: rgba(0,0,0,0.025) !important;
+}
+.weekend-col-header .day-num {
+  color: var(--danger) !important;
+  opacity: 0.7;
 }
 
 /* Shift pill tooltips */
@@ -1366,22 +1414,21 @@ table.schedule td.name-cell:hover {
 /* Mini calendar */
 .mini-cal-btn {
   background: none;
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 8px;
-  padding: 6px 14px;
+  padding: 6px 4px;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--accent);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
   font-family: inherit;
-  transition: all 0.2s ease;
-  min-width: 140px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 150px;
   text-align: center;
+  letter-spacing: -0.3px;
 }
 .mini-cal-btn:hover {
-  background: var(--surface2);
-  color: var(--text);
-  border-color: var(--accent);
+  color: var(--accent);
 }
 .mini-cal-popup {
   position: absolute;
@@ -1447,98 +1494,100 @@ table.schedule td.name-cell:hover {
 /* Coverage heatmap */
 .coverage-heatmap-wrap {
   background: var(--surface);
-  border: 1px solid var(--border, var(--surface2));
-  border-radius: 12px;
-  padding: 14px 16px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 20px 14px;
   margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 .coverage-heatmap-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 .coverage-heatmap-title {
   font-size: 11px;
   font-weight: 700;
   color: var(--text2);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 .coverage-heatmap-title::before {
   content: '';
   width: 3px;
   height: 14px;
-  background: var(--accent);
+  background: linear-gradient(180deg, var(--accent), var(--morning));
   border-radius: 2px;
 }
 .heatmap-legend {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
 }
 .heatmap-legend-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: 10px;
   color: var(--text3);
   font-weight: 500;
 }
 .heatmap-legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
 }
-.heatmap-legend-dot.lg-ok { background: var(--success); opacity: 0.7; }
-.heatmap-legend-dot.lg-warn { background: var(--for); opacity: 0.8; }
+.heatmap-legend-dot.lg-ok { background: var(--success); opacity: 0.75; }
+.heatmap-legend-dot.lg-warn { background: var(--for); opacity: 0.85; }
 .heatmap-legend-dot.lg-bad { background: var(--danger); opacity: 0.9; }
-.heatmap-legend-dot.lg-empty { background: var(--surface2); border: 1px solid var(--text3); }
+.heatmap-legend-dot.lg-empty { background: var(--surface2); border: 1.5px solid var(--text3); }
 .coverage-heatmap {
   display: flex;
-  gap: 2px;
+  gap: 3px;
   align-items: flex-end;
+  padding: 4px 0;
 }
 .heatmap-day {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   min-width: 4px;
 }
 .heatmap-day-num {
   font-size: 8px;
   color: var(--text3);
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1;
 }
-.heatmap-day-num.hd-weekend { color: var(--danger); opacity: 0.6; }
+.heatmap-day-num.hd-weekend { color: var(--danger); opacity: 0.7; }
 .heatmap-day-num.hd-today { color: var(--accent); font-weight: 800; font-size: 9px; }
 .heatmap-cell {
   width: 100%;
-  height: 14px;
-  border-radius: 3px;
-  transition: all 0.15s ease;
+  height: 18px;
+  border-radius: 4px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
   position: relative;
 }
 .heatmap-cell:hover {
-  transform: scaleY(1.5);
-  border-radius: 4px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transform: scaleY(1.6);
+  border-radius: 5px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.12);
 }
-.heatmap-cell.hm-ok { background: var(--success); opacity: 0.55; }
-.heatmap-cell.hm-warn { background: var(--for); opacity: 0.75; }
+.heatmap-cell.hm-ok { background: var(--success); opacity: 0.6; }
+.heatmap-cell.hm-warn { background: var(--for); opacity: 0.8; }
 .heatmap-cell.hm-bad { background: var(--danger); opacity: 0.85; }
 .heatmap-cell.hm-empty { background: var(--surface2); }
-.heatmap-cell.hm-today { box-shadow: 0 0 0 2px var(--accent); border-radius: 3px; }
-.heatmap-day.hm-past .heatmap-cell { opacity: 0.45; }
-.heatmap-day.hm-past .heatmap-day-num { color: var(--text3); opacity: 0.6; }
-.heatmap-today-marker { width: 2px; min-height: 28px; background: var(--accent); border-radius: 1px; margin: 0 2px; flex-shrink: 0; align-self: stretch; }
+.heatmap-cell.hm-today { box-shadow: 0 0 0 2px var(--accent); border-radius: 4px; }
+.heatmap-day.hm-past .heatmap-cell { opacity: 0.35; }
+.heatmap-day.hm-past .heatmap-day-num { color: var(--text3); opacity: 0.5; }
+.heatmap-today-marker { width: 2px; min-height: 32px; background: linear-gradient(180deg, var(--accent), transparent); border-radius: 1px; margin: 0 3px; flex-shrink: 0; align-self: stretch; }
 /* === FEATURE: Coverage Alerts Banner === */
 .coverage-alert-banner {
   padding: 12px 18px;
@@ -2012,12 +2061,96 @@ table.schedule td.name-cell:hover {
   box-shadow: 0 4px 12px rgba(92,122,111,0.25);
 }
 
+/* Toolbar Action Buttons */
+.toolbar-action-btn {
+  border: none;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: 0.3px;
+}
+.toolbar-action-btn:hover {
+  transform: translateY(-1px);
+}
+.toolbar-btn-accent {
+  background: linear-gradient(135deg, #e67e22, #d35400);
+  color: white;
+  box-shadow: 0 2px 8px rgba(230,126,34,0.25);
+}
+.toolbar-btn-accent:hover {
+  box-shadow: 0 4px 14px rgba(230,126,34,0.35);
+}
+.toolbar-btn-ghost {
+  background: transparent;
+  border: 1.5px solid var(--border) !important;
+  color: var(--text2);
+}
+.toolbar-btn-ghost:hover {
+  background: var(--surface2);
+  border-color: var(--text3) !important;
+  color: var(--text);
+}
+.toolbar-btn-primary {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px rgba(92,122,111,0.2);
+}
+.toolbar-btn-primary:hover {
+  box-shadow: 0 4px 14px rgba(92,122,111,0.3);
+  background: var(--accent2);
+}
+
+/* Schedule Legend Bar */
+.schedule-legend-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+  font-size: 11px;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.schedule-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text2);
+  font-weight: 500;
+}
+.schedule-legend-dot {
+  width: 22px;
+  height: 18px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
 /* Coverage summary row */
 .coverage-row td {
   padding: 6px 2px !important;
   border-bottom: none !important;
+  border-top: 2px solid var(--border) !important;
   font-size: 10px;
   font-weight: 600;
+  background: var(--surface2) !important;
+}
+.coverage-row td:first-child {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text3);
 }
 .coverage-ok { color: var(--success); font-weight: 600; }
 .coverage-warn { color: #d4883a; font-weight: 700; }
@@ -2029,13 +2162,21 @@ table.schedule td.name-cell:hover {
   font-weight: 500;
   color: var(--text2);
   white-space: nowrap;
-  padding: 8px 10px !important;
+  padding: 6px 12px !important;
   text-align: right !important;
   position: sticky;
   right: 0;
   z-index: 1;
   background: var(--surface);
   border-left: 1px solid var(--border);
+}
+.month-total-cell span {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.3px;
 }
 
 /* Hours progress bar */
@@ -4910,27 +5051,30 @@ table.schedule th.month-total-header {
 
 /* Schedule Filter Buttons */
 .schedule-filter-btn {
-  background: var(--surface2);
-  border: none;
+  background: transparent;
+  border: 1.5px solid var(--border);
   color: var(--text2);
-  padding: 7px 14px;
-  border-radius: 10px;
+  padding: 6px 14px;
+  border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
 
 .schedule-filter-btn:hover {
-  background: var(--accent2);
-  color: white;
+  background: rgba(92,122,111,0.08);
+  border-color: var(--accent2);
+  color: var(--text);
 }
 
 .schedule-filter-btn.active {
   background: var(--accent);
   color: white;
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(92,122,111,0.2);
 }
 
 @media (max-width: 768px) {
@@ -5334,25 +5478,29 @@ table.schedule td.drag-target {
   display: inline-flex;
   background: var(--surface2);
   border-radius: 8px;
-  padding: 2px;
+  padding: 3px;
   gap: 2px;
+  border: 1px solid var(--border);
 }
 .schedule-mode-btn {
   background: none;
   border: none;
-  padding: 6px 12px;
+  padding: 5px 14px;
   border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
   color: var(--text3);
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.schedule-mode-btn:hover {
+  color: var(--text2);
 }
 .schedule-mode-btn.active {
   background: var(--surface);
   color: var(--text);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
 
 /* Compact mode */
@@ -6990,14 +7138,7 @@ html {
 
       <div class="divider"></div>
 
-      <div class="roster-section">
-        <div class="section-title">Próximos 7 Días</div>
-        <div class="week-strip" id="weekPreview">
-          <!-- Generated -->
-        </div>
-      </div>
-
-      <div class="divider"></div>
+      <div style="display:none;"><div id="weekPreview"></div></div>
 
       <div class="roster-section">
         <div class="section-title" style="display:flex;align-items:center;gap:8px;">Radar de Riesgo <span style="font-size:9px;font-weight:600;padding:2px 8px;border-radius:6px;background:rgba(230,126,34,0.1);color:#e67e22;">14 dias</span></div>
@@ -7046,22 +7187,21 @@ html {
             <button class="schedule-mode-btn active" onclick="setScheduleMode('normal')" data-mode="normal">Normal</button>
           </div>
           <input type="text" class="search-box" id="workerSearch" placeholder="Buscar trabajador...">
-          <button onclick="openBulkEdit()" title="Edicion masiva de turnos" style="background:linear-gradient(135deg,#e67e22,#d35400);border:none;padding:8px 14px;border-radius:10px;font-size:11px;cursor:pointer;color:white;font-family:inherit;font-weight:600;white-space:nowrap;transition:all 0.2s;">Masivo</button>
-          <button onclick="exportScheduleCSV()" title="Exportar a CSV" style="background:var(--surface2);border:none;padding:8px 14px;border-radius:10px;font-size:11px;cursor:pointer;color:var(--text2);font-family:inherit;font-weight:500;white-space:nowrap;transition:all 0.2s;">CSV</button>
-          <button onclick="exportSchedulePDF()" title="Imprimir / Guardar como PDF" style="background:var(--accent);border:none;padding:8px 14px;border-radius:10px;font-size:11px;cursor:pointer;color:white;font-family:inherit;font-weight:500;white-space:nowrap;transition:all 0.2s;">PDF</button>
+          <button class="toolbar-action-btn toolbar-btn-accent" onclick="openBulkEdit()" title="Edicion masiva de turnos">Masivo</button>
+          <button class="toolbar-action-btn toolbar-btn-ghost" onclick="exportScheduleCSV()" title="Exportar a CSV">CSV</button>
+          <button class="toolbar-action-btn toolbar-btn-primary" onclick="exportSchedulePDF()" title="Imprimir / Guardar como PDF">PDF</button>
         </div>
       </div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;font-size:10px;align-items:center;">
-        <span style="color:var(--text3);font-weight:500;">Leyenda:</span>
-        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#2e8b7a;display:inline-block;"></span> Mañana</span>
-        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#4a9dd4;display:inline-block;"></span> Tarde</span>
-        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#d4c032;display:inline-block;"></span> Noche</span>
-        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#d94444;display:inline-block;"></span> Descanso</span>
-        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#8b2020;display:inline-block;"></span> VAC</span>
-        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#5a8abf;display:inline-block;"></span> LD</span>
-        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#d4883a;display:inline-block;"></span> FOR</span>
-        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#7a8a6a;display:inline-block;"></span> CAA</span>
+      <div class="schedule-legend-bar">
+        <span class="schedule-legend-item"><span class="schedule-legend-dot" style="background:rgba(46,139,122,0.2);color:#1a6b5a;">M</span> Mañana</span>
+        <span class="schedule-legend-item"><span class="schedule-legend-dot" style="background:rgba(74,157,212,0.2);color:#2a6f9a;">T</span> Tarde</span>
+        <span class="schedule-legend-item"><span class="schedule-legend-dot" style="background:rgba(197,168,50,0.2);color:#8a7520;">N</span> Noche</span>
+        <span class="schedule-legend-item"><span class="schedule-legend-dot" style="background:rgba(204,68,68,0.15);color:#a03333;">D</span> Descanso</span>
+        <span class="schedule-legend-item"><span class="schedule-legend-dot" style="background:rgba(139,32,32,0.15);color:#8b2020;">V</span> VAC</span>
+        <span class="schedule-legend-item"><span class="schedule-legend-dot" style="background:rgba(90,138,191,0.18);color:#3a6a9f;">LD</span> LD</span>
+        <span class="schedule-legend-item"><span class="schedule-legend-dot" style="background:rgba(212,136,58,0.18);color:#a06820;">F</span> FOR</span>
+        <span class="schedule-legend-item"><span class="schedule-legend-dot" style="background:rgba(122,138,106,0.18);color:#5a6a4a;">C</span> CAA</span>
       </div>
 
       <div class="coverage-heatmap-wrap" id="coverageHeatmapWrap">
@@ -8336,13 +8476,35 @@ function buildWhatIfPanel() {
   }
 
   // Helper: get available subs (workers on rest that day)
-  function getAvailableSubs(date, type) {
+  function getAvailableSubs(date, type, shift) {
     const sch = genSchedule(date.getFullYear(), date.getMonth());
     const idx = date.getDate() - 1;
+    const shiftNeeded = shift || 'M';
     return workers.filter(w => {
       if (w.type !== type) return false;
+      // Rule exclusions
+      if (w.rules && w.rules.noSwap) return false;
+      if (w.rules && w.rules.noCover) return false;
+      if (w.rules && w.rules.noNights && shiftNeeded === 'N') return false;
+      // Micro workers can't cover lab and vice versa
+      if (w.area === 'micro') return false;
+      if (w.type === 'enf' && type === 'tec') return false;
+      // Must be off/rest
       const s = sch[w.id] ? (sch[w.id][idx] || '').toString().trim() : '';
-      return !s || s === '' || s === 'D';
+      const isOff = !s || s === '' || s === 'D';
+      if (!isOff) return false;
+      // Check shift assignment rules (post-night rest, consecutive nights, etc.)
+      if (!canAssignShift(w.id, idx, shiftNeeded, sch)) return false;
+      return true;
+    }).map(w => {
+      // Add flags for display
+      const flags = [];
+      if (w.rules && w.rules.conciliacion) flags.push('conciliacion');
+      if (w.rules && w.rules.maxNightsPerMonth !== null && w.rules.maxNightsPerMonth !== undefined) {
+        const monthNights = (sch[w.id] || []).filter(s => (s || '').toString().trim() === 'N').length;
+        if (monthNights >= w.rules.maxNightsPerMonth - 1) flags.push('limite noches');
+      }
+      return { ...w, _flags: flags };
     });
   }
 
@@ -8370,7 +8532,7 @@ function buildWhatIfPanel() {
   const sc1EnfOk = sc1AfterEnf >= sc1NeedEnf;
   const sc1TecOk = sc1Tec.length === 0 || sc1AfterTec >= sc1NeedTec;
   const sc1Ok = sc1EnfOk && sc1TecOk;
-  const sc1Subs = getAvailableSubs(sc1Date, 'enf');
+  const sc1Subs = getAvailableSubs(sc1Date, 'enf', sc1Shift);
 
   scenarios.push({
     id: 'whatif_1',
@@ -8407,16 +8569,17 @@ function buildWhatIfPanel() {
       // Available subs
       if (!sc1Ok) {
         h += `<div class="ws-workers-list">
-          <div class="ws-workers-title" style="color:#27ae60;">Disponibles para cubrir (descanso)</div>`;
+          <div class="ws-workers-title" style="color:#27ae60;">Pueden cubrir (${sc1Subs.length} disponibles)</div>`;
         if (sc1Subs.length > 0) {
           sc1Subs.slice(0, 5).forEach(w => {
+            const flagsHtml = w._flags && w._flags.length > 0 ? ' <span style="font-size:8px;color:#e67e22;font-weight:600;">(' + w._flags.join(', ') + ')</span>' : '';
             h += `<div class="ws-worker-row">
-              <span class="ws-worker-name">${w.name}</span>
+              <span class="ws-worker-name">${w.name}${flagsHtml}</span>
               <span class="ws-worker-tag" style="background:rgba(39,174,96,0.1);color:#27ae60;">LIBRE</span>
             </div>`;
           });
         } else {
-          h += `<div style="font-size:11px;color:var(--text3);padding:4px 0;">Sin enfermeros de descanso hoy</div>`;
+          h += `<div style="font-size:11px;color:#cc4444;padding:6px 0;font-weight:600;">Nadie disponible — todos tienen reglas que lo impiden o ya trabajan</div>`;
         }
         h += `</div>`;
         h += `<div class="ws-action-hint">
@@ -8442,7 +8605,7 @@ function buildWhatIfPanel() {
   const tmAfter2Enf = tmEnf.length - 2;
   const tmNeedEnf = tmCov.M ? tmCov.M.enf : 0;
   const tmOk = tmAfter2Enf >= tmNeedEnf;
-  const tmSubs = getAvailableSubs(tomorrow, 'enf');
+  const tmSubs = getAvailableSubs(tomorrow, 'enf', 'M');
   const tmDayName = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'][tomorrow.getDay()];
 
   scenarios.push({
@@ -8473,17 +8636,20 @@ function buildWhatIfPanel() {
         </div>`;
       });
       h += `</div>`;
+      h += `<div class="ws-workers-list">
+        <div class="ws-workers-title" style="color:#27ae60;">Pueden cubrir mañana (${tmSubs.length})</div>`;
       if (tmSubs.length > 0) {
-        h += `<div class="ws-workers-list">
-          <div class="ws-workers-title" style="color:#27ae60;">Enfermeras de descanso mañana</div>`;
         tmSubs.slice(0, 5).forEach(w => {
+          const flagsHtml = w._flags && w._flags.length > 0 ? ' <span style="font-size:8px;color:#e67e22;font-weight:600;">(' + w._flags.join(', ') + ')</span>' : '';
           h += `<div class="ws-worker-row">
-            <span class="ws-worker-name">${w.name}</span>
+            <span class="ws-worker-name">${w.name}${flagsHtml}</span>
             <span class="ws-worker-tag" style="background:rgba(39,174,96,0.1);color:#27ae60;">LIBRE</span>
           </div>`;
         });
-        h += `</div>`;
+      } else {
+        h += `<div style="font-size:11px;color:#cc4444;padding:6px 0;font-weight:600;">Nadie puede cubrir — reglas de convenio o ya trabajan</div>`;
       }
+      h += `</div>`;
       const deficit = Math.max(0, tmNeedEnf - tmAfter2Enf);
       h += `<div class="ws-action-hint">
         <strong>${tmOk ? 'Situacion ajustada' : 'Situacion critica'}:</strong>
@@ -8505,7 +8671,7 @@ function buildWhatIfPanel() {
   const wkAfterEnf = wkNEnf.length - 1;
   const wkNeedEnf = wkCov.N ? wkCov.N.enf : 0;
   const wkOk = wkAfterEnf >= wkNeedEnf;
-  const wkSubs = getAvailableSubs(nextSat, 'enf');
+  const wkSubs = getAvailableSubs(nextSat, 'enf', 'N');
 
   scenarios.push({
     id: 'whatif_3',
@@ -8537,17 +8703,20 @@ function buildWhatIfPanel() {
         </div>`;
       });
       h += `</div>`;
+      h += `<div class="ws-workers-list">
+        <div class="ws-workers-title" style="color:#27ae60;">Pueden cubrir noche sabado (${wkSubs.length})</div>`;
       if (wkSubs.length > 0) {
-        h += `<div class="ws-workers-list">
-          <div class="ws-workers-title" style="color:#27ae60;">Enfermeras libres el sabado</div>`;
         wkSubs.slice(0, 5).forEach(w => {
+          const flagsHtml = w._flags && w._flags.length > 0 ? ' <span style="font-size:8px;color:#e67e22;font-weight:600;">(' + w._flags.join(', ') + ')</span>' : '';
           h += `<div class="ws-worker-row">
-            <span class="ws-worker-name">${w.name}</span>
+            <span class="ws-worker-name">${w.name}${flagsHtml}</span>
             <span class="ws-worker-tag" style="background:rgba(39,174,96,0.1);color:#27ae60;">LIBRE</span>
           </div>`;
         });
-        h += `</div>`;
+      } else {
+        h += `<div style="font-size:11px;color:#cc4444;padding:6px 0;font-weight:600;">Nadie puede cubrir noche de sabado — reglas de descanso o noches maximas</div>`;
       }
+      h += `</div>`;
       h += `<div class="ws-action-hint">
         ${wkOk ? '<strong>Bajo control.</strong> La noche del sabado aguanta 1 baja.' : '<strong>Atencion.</strong> Si cae alguien en la noche del sabado, no hay cobertura minima.'}
         ${!wkOk && wkSubs.length > 0 ? ' Podrias llamar a ' + wkSubs[0].name + ' (de descanso).' : !wkOk ? ' No hay enfermeras de descanso — planificar cobertura preventiva.' : ''}
@@ -8981,21 +9150,22 @@ function renderSchedule() {
       lastType = w.type;
       const label = w.type === 'enf' ? 'ENFERMERÍA' : 'TÉCNICOS';
       const dotColor = w.type === 'enf' ? '#2e8b7a' : '#4a9dd4';
-      html += `<tr style="background:rgba(92,122,111,0.02);">
-        <td class="name-cell" style="font-size:11px;font-weight:600;color:var(--accent);letter-spacing:0.5px;padding:14px 12px 10px;border-bottom:1px solid var(--border);background:rgba(92,122,111,0.02);white-space:nowrap;">
-          <span style="display:inline-block;width:8px;height:8px;background:${dotColor};border-radius:50%;vertical-align:middle;margin-right:6px;"></span>
+      const typeCount = filteredWkrs.filter(ww => ww.type === w.type).length;
+      html += `<tr class="schedule-type-separator">
+        <td class="name-cell" style="font-size:10px;font-weight:700;color:${dotColor};letter-spacing:1.2px;padding:10px 14px 8px;border-bottom:2px solid ${dotColor}22;background:${dotColor}08;white-space:nowrap;border-left:3px solid ${dotColor};">
           <span style="vertical-align:middle;">${label}</span>
+          <span style="font-size:9px;font-weight:500;color:var(--text3);margin-left:6px;letter-spacing:0;">(${typeCount})</span>
         </td>`;
       allDays.forEach((dd, i) => {
         const isFirstOvf = dd.isOverflow && (i === 0 || !allDays[i - 1].isOverflow);
-        html += `<td style="border-bottom:1px solid var(--border);background:rgba(92,122,111,0.02);${isFirstOvf ? 'border-left:2.5px solid var(--accent);' : ''}"></td>`;
+        html += `<td style="border-bottom:2px solid ${dotColor}22;background:${dotColor}08;${isFirstOvf ? 'border-left:2.5px solid var(--accent);' : ''}"></td>`;
       });
-      html += '<td style="border-bottom:1px solid var(--border);background:rgba(92,122,111,0.02);"></td></tr>';
+      html += `<td style="border-bottom:2px solid ${dotColor}22;background:${dotColor}08;"></td></tr>`;
     }
 
     let wM = 0, wT = 0, wN = 0, wD = 0, wH = 0;
     const dotColor = w.type === 'enf' ? '#2e8b7a' : '#4a9dd4';
-    html += `<tr><td class="name-cell" title="${w.name}" onclick="openWorkerPanel(${w.id})"><span style="display:inline-block;width:6px;height:6px;background:${dotColor};border-radius:50%;flex-shrink:0;vertical-align:middle;margin-right:6px;"></span><span style="vertical-align:middle;">${w.name}</span></td>`;
+    html += `<tr><td class="name-cell" title="${w.name}" onclick="openWorkerPanel(${w.id})"><span style="display:inline-block;width:5px;height:5px;background:${dotColor};border-radius:50%;flex-shrink:0;vertical-align:middle;margin-right:8px;opacity:0.7;"></span><span style="vertical-align:middle;">${w.name}</span></td>`;
     allDays.forEach((dd, i) => {
       const s = dd.sch[w.id] ? dd.sch[w.id][dd.dayIdx] : '';
       const isToday = dd.isToday;
