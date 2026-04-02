@@ -10006,37 +10006,101 @@ function renderWorkers() {
   });
   const activeStats = allStats.filter(x => x.total > 0);
 
-  // Filter: only workers who ROTATE shifts (M/T/N) qualify for night equity
-  // Excludes: conciliacion (solo mañanas), supervisora, noNights, noCover, workers with 0 nights,
-  // and anyone who ONLY works mornings (no T or N in their schedule)
-  const nightRotators = activeStats.filter(x => {
+  // Filter: only workers who ROTATE nights qualify for night equity
+  // Excludes: conciliacion, supervisora, noNights, noCover, lab externo (noCover),
+  // micro area (solo mañanas), and anyone with 0 nights in their schedule
+  function isNightRotator(x) {
     if (x.w.rules && x.w.rules.noNights) return false;
     if (x.w.rules && x.w.rules.conciliacion) return false;
     if (x.w.role === 'supervisora') return false;
     if (x.w.rules && x.w.rules.noCover) return false;
+    if (x.w.area === 'micro') return false; // micro no hace noches
     if (x.n === 0 && x.t === 0) return false; // solo mañanas = no rota
     if (x.n === 0) return false;
     return true;
-  });
+  }
+
+  const nightRotators = activeStats.filter(isNightRotator);
   const nonRotators = activeStats.filter(x => !nightRotators.includes(x));
 
-  // Compute team averages — nights only from rotators
-  const avgN = nightRotators.length > 0 ? nightRotators.reduce((a,x) => a + x.n, 0) / nightRotators.length : 0;
-  // Monthly average hours: total hours / workers / months with data
+  // Compute equity PER TYPE GROUP so enf vs tec don't mix
+  const nightRotatorsEnf = nightRotators.filter(x => x.w.type === 'enf');
+  const nightRotatorsTec = nightRotators.filter(x => x.w.type === 'tec');
+
+  function groupEquity(group) {
+    if (group.length === 0) return { avg: 0, max: 0, min: 0, spread: 0 };
+    const avg = group.reduce((a,x) => a + x.n, 0) / group.length;
+    const max = Math.max(...group.map(x => x.n));
+    const min = Math.min(...group.map(x => x.n));
+    return { avg, max, min, spread: max - min };
+  }
+  const equityEnf = groupEquity(nightRotatorsEnf);
+  const equityTec = groupEquity(nightRotatorsTec);
+
+  // For the summary bar: use the worker's own group equity
+  // When viewing 'all', show combined equity as worst of both groups
   const numMonths = Math.max(1, Object.keys(scheduleData).length);
   const avgH = activeStats.length > 0 ? activeStats.reduce((a,x) => a + x.h, 0) / activeStats.length / numMonths : 0;
   const avgW = activeStats.length > 0 ? activeStats.reduce((a,x) => a + x.wknd, 0) / activeStats.length : 0;
-  const maxN = nightRotators.length > 0 ? Math.max(...nightRotators.map(x => x.n)) : 0;
   const maxH = activeStats.length > 0 ? Math.max(...activeStats.map(x => x.h / numMonths)) : 0;
   const maxW = activeStats.length > 0 ? Math.max(...activeStats.map(x => x.wknd)) : 0;
-  const minN = nightRotators.length > 0 ? Math.min(...nightRotators.map(x => x.n)) : 0;
-  const spreadN = maxN - minN;
+
+  // Summary equity: if filtering by type use that group, otherwise show the worst
+  let summaryEquity, summaryAvgN;
+  if (appState.workersFilter === 'enf') {
+    summaryEquity = equityEnf;
+    summaryAvgN = equityEnf.avg;
+  } else if (appState.workersFilter === 'tec') {
+    summaryEquity = equityTec;
+    summaryAvgN = equityTec.avg;
+  } else {
+    // 'all': show worst spread between the two groups
+    summaryEquity = equityEnf.spread >= equityTec.spread ? equityEnf : equityTec;
+    summaryAvgN = nightRotators.length > 0 ? nightRotators.reduce((a,x) => a + x.n, 0) / nightRotators.length : 0;
+  }
+  const spreadN = summaryEquity.spread;
+  const avgN = summaryAvgN;
+  const maxN = summaryEquity.max || 0;
 
   // Render team summary bar
   const summaryEl = document.getElementById('teamSummaryBar');
   if (activeStats.length > 0) {
-    const equityScore = spreadN <= 8 ? 'Buena' : spreadN <= 16 ? 'Regular' : 'Mala';
-    const equityColor = spreadN <= 8 ? 'var(--success)' : spreadN <= 16 ? 'var(--afternoon)' : 'var(--danger)';
+    // Equity per group
+    function equityLabel(eq) {
+      return eq.spread <= 8 ? 'Buena' : eq.spread <= 16 ? 'Regular' : 'Mala';
+    }
+    function equityClr(eq) {
+      return eq.spread <= 8 ? 'var(--success)' : eq.spread <= 16 ? 'var(--afternoon)' : 'var(--danger)';
+    }
+
+    // Equity card: show per-group when viewing 'all'
+    let equityCard = '';
+    if (appState.workersFilter === 'all' && nightRotatorsEnf.length > 0 && nightRotatorsTec.length > 0) {
+      equityCard = `
+      <div style="background:var(--surface);padding:14px;border-radius:12px;box-shadow:var(--shadow);text-align:center;">
+        <div style="display:flex;gap:12px;justify-content:center;align-items:center;">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:${equityClr(equityEnf)};">${equityLabel(equityEnf)}</div>
+            <div style="font-size:8px;color:var(--text3);letter-spacing:0.5px;">ENF (dif ${equityEnf.spread}N)</div>
+          </div>
+          <div style="width:1px;height:28px;background:var(--border);"></div>
+          <div>
+            <div style="font-size:16px;font-weight:700;color:${equityClr(equityTec)};">${equityLabel(equityTec)}</div>
+            <div style="font-size:8px;color:var(--text3);letter-spacing:0.5px;">TEC (dif ${equityTec.spread}N)</div>
+          </div>
+        </div>
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;">Equidad noches</div>
+      </div>`;
+    } else {
+      const eqScore = equityLabel(summaryEquity);
+      const eqColor = equityClr(summaryEquity);
+      equityCard = `
+      <div style="background:var(--surface);padding:14px;border-radius:12px;box-shadow:var(--shadow);text-align:center;">
+        <div style="font-size:22px;font-weight:700;color:${eqColor};">${eqScore}</div>
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Equidad (dif ${summaryEquity.spread}N)</div>
+      </div>`;
+    }
+
     summaryEl.innerHTML = `
       <div style="background:var(--surface);padding:14px;border-radius:12px;box-shadow:var(--shadow);text-align:center;">
         <div style="font-size:22px;font-weight:700;color:var(--accent);">${activeStats.length}</div>
@@ -10044,7 +10108,7 @@ function renderWorkers() {
       </div>
       <div style="background:var(--surface);padding:14px;border-radius:12px;box-shadow:var(--shadow);text-align:center;">
         <div style="font-size:22px;font-weight:700;color:var(--night);">${avgN.toFixed(1)}</div>
-        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Media noches</div>
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Media noches${appState.workersFilter === 'all' ? ' (rotadores)' : ''}</div>
       </div>
       <div style="background:var(--surface);padding:14px;border-radius:12px;box-shadow:var(--shadow);text-align:center;">
         <div style="font-size:22px;font-weight:700;">${avgH.toFixed(0)}h</div>
@@ -10054,10 +10118,7 @@ function renderWorkers() {
         <div style="font-size:22px;font-weight:700;">${avgW.toFixed(1)}</div>
         <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Media fds</div>
       </div>
-      <div style="background:var(--surface);padding:14px;border-radius:12px;box-shadow:var(--shadow);text-align:center;">
-        <div style="font-size:22px;font-weight:700;color:${equityColor};">${equityScore}</div>
-        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Equidad (dif ${spreadN}N)</div>
-      </div>`;
+      ${equityCard}`;
   } else {
     summaryEl.innerHTML = '';
   }
@@ -10077,11 +10138,14 @@ function renderWorkers() {
     const hasData = total > 0;
     const computo = parseFloat((n * 2.1).toFixed(1));
 
-    // Equity indicators
-    const nightDiff = n - avgN;
+    // Equity indicators — compare against worker's OWN group (enf vs tec)
+    const workerGroupEquity = w.type === 'enf' ? equityEnf : equityTec;
+    const workerGroupAvgN = workerGroupEquity.avg;
+    const workerGroupMaxN = workerGroupEquity.max || 1;
+    const nightDiff = isNightRotator({w, m, t, n, d, h, vac, baj, wknd, total, other: 0}) ? n - workerGroupAvgN : 0;
     const hMonthly = h / numMonths;
     const hourDiff = hMonthly - avgH;
-    const nightBarPct = maxN > 0 ? Math.round((n / maxN) * 100) : 0;
+    const nightBarPct = workerGroupMaxN > 0 ? Math.round((n / workerGroupMaxN) * 100) : 0;
     const hourBarPct = maxH > 0 ? Math.round((hMonthly / maxH) * 100) : 0;
     const wkndBarPct = maxW > 0 ? Math.round((wknd / maxW) * 100) : 0;
 
