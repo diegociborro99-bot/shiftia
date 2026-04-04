@@ -8267,7 +8267,7 @@ table.schedule tbody tr:hover {
       </div>
     </div>
     <div class="topbar-right">
-      <span id="wsSyncBadge" style="display:none;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:rgba(46,139,122,0.1);color:var(--morning);font-size:10px;font-weight:600;letter-spacing:0.3px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--morning);animation:savePulse 1.5s ease infinite;"></span>2 sesiones</span>
+      <span id="wsSyncBadge" style="display:none;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:rgba(46,139,122,0.1);color:var(--morning);font-size:10px;font-weight:600;letter-spacing:0.3px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--morning);animation:savePulse 1.5s ease infinite;"></span><span id="wsSyncText"></span></span>
       <span class="user-display" id="userDisplay" style="font-size:12px;color:var(--text3);margin-right:8px;"></span>
       <button class="theme-btn" id="themeToggle" aria-label="Cambiar tema claro/oscuro">🌙</button>
       <button class="theme-btn" id="logoutBtn" onclick="handleLogout()" title="Cerrar sesión" aria-label="Cerrar sesión" style="font-size:14px;">⏻</button>
@@ -8756,6 +8756,12 @@ table.schedule tbody tr:hover {
 </div>
 
 <script>
+// ========== SECURITY UTILS ==========
+function escHtml(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
 // ========== DATA MODEL ==========
 const appState = {
   currentView: 'dashboard',
@@ -8979,7 +8985,7 @@ function canAssignShift(wId, day, shift, schedule) {
   if (!w) return false;
   if (['VAC','LD','FOR','CAA','AE','EX','BAJ','D','LAC','MTC','INT','HF','HS','VAA','DLA','CJ','FN','VAN','IQF','PM'].includes(shift)) return true;
   if (w.rules && w.rules.noNights && shift === 'N') return false;
-  if (w.rules.maxNightsPerMonth !== null && shift === 'N') {
+  if (w.rules && w.rules.maxNightsPerMonth !== null && shift === 'N') {
     const monthNights = schedule[wId].filter(s => (s || '').toString().trim() === 'N').length;
     if (monthNights >= w.rules.maxNightsPerMonth) return false;
   }
@@ -9035,7 +9041,7 @@ function detectForbiddenCombinations(wId, dayIdx, shiftToAssign, month, year) {
   if (dayIdx > 0) {
     const prev = (sch[wId][dayIdx - 1] || '').toString().trim();
     if (prev === 'N' && (isMorning(shiftToAssign) || shiftToAssign === 'T')) {
-      warnings.push({ type: 'forbidden', desc: `${w.name} tiene Noche el dia ${dn - 1} → no puede hacer ${shiftToAssign} el dia ${dn} (descanso obligatorio tras N)` });
+      warnings.push({ type: 'forbidden', desc: `${escHtml(w.name)} tiene Noche el dia ${dn - 1} → no puede hacer ${shiftToAssign} el dia ${dn} (descanso obligatorio tras N)` });
     }
   }
 
@@ -9043,7 +9049,7 @@ function detectForbiddenCombinations(wId, dayIdx, shiftToAssign, month, year) {
   if (shiftToAssign === 'N' && dayIdx < days - 1) {
     const next = (sch[wId][dayIdx + 1] || '').toString().trim();
     if (next && !ALLOWED_POST_NIGHT.includes(next)) {
-      warnings.push({ type: 'forbidden', desc: `${w.name} tiene ${next} el dia ${dn + 1} → asignar Noche el dia ${dn} crearia N→${next} (prohibido)` });
+      warnings.push({ type: 'forbidden', desc: `${escHtml(w.name)} tiene ${next} el dia ${dn + 1} → asignar Noche el dia ${dn} crearia N→${next} (prohibido)` });
     }
   }
 
@@ -9053,7 +9059,7 @@ function detectForbiddenCombinations(wId, dayIdx, shiftToAssign, month, year) {
     for (let i = dayIdx - 1; i >= 0; i--) { if ((sch[wId][i] || '').toString().trim() === 'N') consec++; else break; }
     for (let i = dayIdx + 1; i < days; i++) { if ((sch[wId][i] || '').toString().trim() === 'N') consec++; else break; }
     if (consec > RULES.MAX_CONSECUTIVE_NIGHTS) {
-      warnings.push({ type: 'forbidden', desc: `${w.name} tendria ${consec} noches consecutivas (max ${RULES.MAX_CONSECUTIVE_NIGHTS})` });
+      warnings.push({ type: 'forbidden', desc: `${escHtml(w.name)} tendria ${consec} noches consecutivas (max ${RULES.MAX_CONSECUTIVE_NIGHTS})` });
     }
   }
 
@@ -9404,17 +9410,17 @@ function renderDashboard() {
     if (wkrs.length > 0) {
       if (enfWkrs.length > 0) {
         workersHtml += `<div style="margin-bottom:6px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);margin-bottom:3px;">Enfermeria</div>`;
-        workersHtml += enfWkrs.map(w => `<div class="worker-name">${w.name} <span style="font-size:9px;color:#cc4444;font-weight:600;opacity:0.7;">ENF</span></div>`).join('');
+        workersHtml += enfWkrs.map(w => `<div class="worker-name">${escHtml(w.name)} <span style="font-size:9px;color:#cc4444;font-weight:600;opacity:0.7;">ENF</span></div>`).join('');
         workersHtml += `</div>`;
       }
       if (tecLabWkrs.length > 0) {
         workersHtml += `<div style="margin-bottom:6px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);margin-bottom:3px;">Tec. Laboratorio</div>`;
-        workersHtml += tecLabWkrs.map(w => `<div class="worker-name">${w.name} <span style="font-size:9px;color:#cc4444;font-weight:600;opacity:0.7;">TEC</span></div>`).join('');
+        workersHtml += tecLabWkrs.map(w => `<div class="worker-name">${escHtml(w.name)} <span style="font-size:9px;color:#cc4444;font-weight:600;opacity:0.7;">TEC</span></div>`).join('');
         workersHtml += `</div>`;
       }
       if (tecMicroWkrs.length > 0) {
         workersHtml += `<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);margin-bottom:3px;">Microbiologia</div>`;
-        workersHtml += tecMicroWkrs.map(w => `<div class="worker-name">${w.name} <span style="font-size:9px;color:#9a6abf;font-weight:600;opacity:0.7;">MICRO</span></div>`).join('');
+        workersHtml += tecMicroWkrs.map(w => `<div class="worker-name">${escHtml(w.name)} <span style="font-size:9px;color:#9a6abf;font-weight:600;opacity:0.7;">MICRO</span></div>`).join('');
         workersHtml += `</div>`;
       }
     } else {
@@ -9841,7 +9847,7 @@ function buildWhatIfPanel() {
           <div class="ws-workers-title">${typeLabel} en ${labelShift} ${labelDate}</div>`;
         typeWorkers.slice(0, 8).forEach(w => {
           h += `<div class="ws-worker-row">
-            <span class="ws-worker-name">${w.name}</span>
+            <span class="ws-worker-name">${escHtml(w.name)}</span>
             <span class="ws-worker-tag" style="${tagStyle}">${typeTag}</span>
           </div>`;
         });
@@ -9857,7 +9863,7 @@ function buildWhatIfPanel() {
             subs.slice(0, 5).forEach(w => {
               const flagsHtml = w._flags && w._flags.length > 0 ? ' <span style="font-size:8px;color:#e67e22;font-weight:600;">(' + w._flags.join(', ') + ')</span>' : '';
               h += `<div class="ws-worker-row">
-                <span class="ws-worker-name">${w.name}${flagsHtml}</span>
+                <span class="ws-worker-name">${escHtml(w.name)}${flagsHtml}</span>
                 <span class="ws-worker-tag" style="background:rgba(39,174,96,0.1);color:#27ae60;">LIBRE</span>
               </div>`;
             });
@@ -10403,7 +10409,7 @@ function renderSchedule() {
 
     let wM = 0, wT = 0, wN = 0, wD = 0, wH = 0;
     const dotColor = w.type === 'enf' ? '#2e8b7a' : '#4a9dd4';
-    html += `<tr data-worker-id="${w.id}"><td class="name-cell" title="${w.name} — clic para foco, doble-clic para perfil" onclick="toggleFocusMode(${w.id})" ondblclick="openWorkerPanel(${w.id})"><span style="display:inline-block;width:5px;height:5px;background:${dotColor};border-radius:50%;flex-shrink:0;vertical-align:middle;margin-right:8px;opacity:0.7;"></span><span style="vertical-align:middle;">${w.name}</span></td>`;
+    html += `<tr data-worker-id="${w.id}"><td class="name-cell" title="${escHtml(w.name)} — clic para foco, doble-clic para perfil" onclick="toggleFocusMode(${w.id})" ondblclick="openWorkerPanel(${w.id})"><span style="display:inline-block;width:5px;height:5px;background:${dotColor};border-radius:50%;flex-shrink:0;vertical-align:middle;margin-right:8px;opacity:0.7;"></span><span style="vertical-align:middle;">${escHtml(w.name)}</span></td>`;
     allDays.forEach((dd, i) => {
       const s = dd.sch[w.id] ? dd.sch[w.id][dd.dayIdx] : '';
       const isToday = dd.isToday;
@@ -10833,7 +10839,7 @@ function renderWorkers() {
         <div class="worker-header">
           <div class="worker-avatar ${w.type}">${w.name[0]}</div>
           <div class="worker-info">
-            <div class="worker-name">${w.name}${memoryIndicator}</div>
+            <div class="worker-name">${escHtml(w.name)}${memoryIndicator}</div>
             <div class="worker-role">${w.type === 'enf' ? 'Enfermero/a' : 'Tecnico/a'}${statusBadge}</div>
           </div>
         </div>
@@ -10846,7 +10852,7 @@ function renderWorkers() {
       <div class="worker-header">
         <div class="worker-avatar ${w.type}">${w.name[0]}</div>
         <div class="worker-info">
-          <div class="worker-name">${w.name}${memoryIndicator}</div>
+          <div class="worker-name">${escHtml(w.name)}${memoryIndicator}</div>
           <div class="worker-role">${w.type === 'enf' ? 'Enfermero/a' : 'Tecnico/a'}${statusBadge}</div>
         </div>
       </div>
@@ -11199,10 +11205,10 @@ function findConflictSolution(data) {
         replacementStats: best.stats,
         originalShift: currentShift,
         year, month, day,
-        description: `${w.name} → D (descanso), ${best.w.name} → ${currentShift}`
+        description: `${escHtml(w.name)} → D (descanso), ${best.w.name} → ${currentShift}`
       };
     }
-    return { found: false, reason: `No hay ${w.type === 'enf' ? 'enfermeros' : 'tecnicos'} disponibles para cubrir el ${currentShift} de ${w.name}.` };
+    return { found: false, reason: `No hay ${w.type === 'enf' ? 'enfermeros' : 'tecnicos'} disponibles para cubrir el ${currentShift} de ${escHtml(w.name)}.` };
   }
 
   if (type === 'restriction') {
@@ -11227,10 +11233,10 @@ function findConflictSolution(data) {
         replacementStats: best.stats,
         originalShift: currentShift,
         year, month, day,
-        description: `${w.name} → D, ${best.w.name} → ${currentShift}`
+        description: `${escHtml(w.name)} → D, ${best.w.name} → ${currentShift}`
       };
     }
-    return { found: false, reason: `No hay trabajadores disponibles para sustituir a ${w.name}.` };
+    return { found: false, reason: `No hay trabajadores disponibles para sustituir a ${escHtml(w.name)}.` };
   }
 
   return { found: false, reason: 'Este tipo de conflicto no tiene resolucion automatica.' };
@@ -11397,7 +11403,7 @@ function addBotMessage(html, cls = 'chat-msg-bot') {
 
 function addUserMessage(msg) {
   const content = document.getElementById('chatContent');
-  content.innerHTML += `<div class="chat-message chat-msg-user">${msg}</div>`;
+  content.innerHTML += `<div class="chat-message chat-msg-user">${escHtml(msg)}</div>`;
   content.scrollTop = content.scrollHeight;
 }
 
@@ -12249,7 +12255,7 @@ function purgeWorkerData(workerId) {
   detectConflicts();
   renderImportManagement();
   renderDashboard();
-  showToast(`Datos de ${w.name} eliminados`);
+  showToast(`Datos de ${escHtml(w.name)} eliminados`);
 }
 
 // Purge ALL import data
@@ -12333,7 +12339,7 @@ function renderImportManagement() {
       orphanSection.innerHTML += `<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--surface);border-radius:12px;box-shadow:var(--shadow);margin-bottom:8px;border-left:3px solid var(--warning);">
         <div style="width:40px;height:40px;border-radius:10px;background:rgba(230,180,80,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;">⚠</div>
         <div style="flex:1;">
-          <div style="font-size:13px;font-weight:600;">${w.name}</div>
+          <div style="font-size:13px;font-weight:600;">${escHtml(w.name)}</div>
           <div style="font-size:11px;color:var(--text3);">${w.type === 'enf' ? 'Enfermera' : 'Técnico'} · Datos sin registro de importación</div>
         </div>
         <div style="text-align:right;font-size:10px;color:var(--text2);line-height:1.6;">
@@ -12685,10 +12691,15 @@ function showToast(msg, type = 'info', duration = 3000) {
   toast.className = `toast ${type}`;
   toast.style.setProperty('--toast-duration', duration + 'ms');
   toast.setAttribute('role', 'alert');
-  toast.innerHTML = `
-    <span class="toast-icon" aria-hidden="true">${icons[type] || icons.info}</span>
-    <span class="toast-text">${msg}</span>
-  `;
+  const toastIcon = document.createElement('span');
+  toastIcon.className = 'toast-icon';
+  toastIcon.setAttribute('aria-hidden', 'true');
+  toastIcon.textContent = icons[type] || icons.info;
+  const toastText = document.createElement('span');
+  toastText.className = 'toast-text';
+  toastText.textContent = msg;
+  toast.appendChild(toastIcon);
+  toast.appendChild(toastText);
 
   container.appendChild(toast);
   appState.toasts.push(toastId);
@@ -12726,7 +12737,7 @@ function openShiftEditor(wId, day) {
     <div class="shift-editor-overlay" onclick="if(event.target===this)closeShiftEditor()">
       <div class="shift-editor">
         <div class="se-header">
-          <div class="se-worker-name">${w.name}</div>
+          <div class="se-worker-name">${escHtml(w.name)}</div>
           <div class="se-date">${dateStr}</div>
           <div class="se-current">
             <span class="shift-pill shift-${currentShift}" style="width:36px;height:28px;font-size:11px;">${currentShift}</span>
@@ -12810,7 +12821,7 @@ function validateShiftChange(newShift) {
 
   // 1. Check constraint violations for the NEW shift
   if (newShift === 'N' && w.rules && w.rules.noNights) {
-    alerts.push({ type: 'danger', msg: `${w.name} tiene restricción médica: NO puede hacer noches.` });
+    alerts.push({ type: 'danger', msg: `${escHtml(w.name)} tiene restricción médica: NO puede hacer noches.` });
   }
 
   if (newShift === 'N') {
@@ -12820,7 +12831,7 @@ function validateShiftChange(newShift) {
     if (day > 1 && sch[wId][day-2] === 'N') consec++;
     if (day < days-1 && sch[wId][day+1] === 'N') consec++;
     if (consec >= 2) {
-      alerts.push({ type: 'danger', msg: `BLOQUEADO: ${w.name} haría ${consec + 1} noches consecutivas (máximo 2 por convenio). No se puede asignar.` });
+      alerts.push({ type: 'danger', msg: `BLOQUEADO: ${escHtml(w.name)} haría ${consec + 1} noches consecutivas (máximo 2 por convenio). No se puede asignar.` });
     }
   }
 
@@ -13016,7 +13027,7 @@ function saveShiftChange() {
   // Close editor and re-render
   closeShiftEditor();
   renderSchedule();
-  showToast(`${w.name}: ${shiftNames[originalShift] || originalShift} → ${shiftNames[selectedShift] || selectedShift}`);
+  showToast(`${escHtml(w.name)}: ${shiftNames[originalShift] || originalShift} → ${shiftNames[selectedShift] || selectedShift}`);
 }
 
 function closeShiftEditor() {
@@ -13248,7 +13259,7 @@ function openBulkEdit() {
   let workerOpts = '<option value="">Selecciona trabajador...</option>';
   workers.forEach(w => {
     const t = w.type === 'enf' ? 'Enf' : (w.area === 'micro' ? 'Micro' : 'Tec');
-    workerOpts += `<option value="${w.id}">${w.name} (${t})</option>`;
+    workerOpts += `<option value="${w.id}">${escHtml(w.name)} (${t})</option>`;
   });
 
   const shiftCodes = ['M','T','N','D','VAC','BAJ','LD','FOR','CAA','AE','EX','LAC','MTC','INT','HF','HS','VAA','DLA','CJ','FN','VAN','IQF','PM'];
@@ -13328,7 +13339,7 @@ function updateBulkPreview() {
     return;
   }
 
-  preview.innerHTML = `<strong>${w.name}</strong> → <strong>${bulkEditState.shift}</strong> durante <strong>${dayCount} dias</strong> (${from.getDate()}/${from.getMonth()+1} — ${to.getDate()}/${to.getMonth()+1})`;
+  preview.innerHTML = `<strong>${escHtml(w.name)}</strong> → <strong>${escHtml(bulkEditState.shift)}</strong> durante <strong>${dayCount} dias</strong> (${from.getDate()}/${from.getMonth()+1} — ${to.getDate()}/${to.getMonth()+1})`;
   if (applyBtn) applyBtn.disabled = false;
 }
 
@@ -13361,7 +13372,7 @@ function applyBulkEdit() {
   closeBulkEdit();
   renderSchedule();
   renderDashboard();
-  showToast(`Edicion masiva: ${w.name} → ${bulkEditState.shift} x${count} dias`, 'success', 4000);
+  showToast(`Edicion masiva: ${escHtml(w.name)} → ${bulkEditState.shift} x${count} dias`, 'success', 4000);
 }
 
 // ===============================================================
@@ -13401,7 +13412,7 @@ function openWorkerPanel(wId) {
   if (w.rules && w.rules.noSwap) restrictionsHtml += `<div class="wp-restriction"><span class="wp-r-icon">🔒</span><span class="wp-r-text">Sin cambios/intercambios</span></div>`;
   if (w.rules && w.rules.noMicro) restrictionsHtml += `<div class="wp-restriction"><span class="wp-r-icon">🔬</span><span class="wp-r-text">No puede ir a microbiologia</span></div>`;
   if (w.rules && w.rules.conciliacion) restrictionsHtml += `<div class="wp-restriction"><span class="wp-r-icon">👶</span><span class="wp-r-text">Conciliacion familiar</span></div>`;
-  if (w.rules.maxNightsPerMonth !== null) restrictionsHtml += `<div class="wp-restriction"><span class="wp-r-icon">🌙</span><span class="wp-r-text">Max ${w.rules.maxNightsPerMonth} noches/mes</span></div>`;
+  if (w.rules && w.rules.maxNightsPerMonth !== null) restrictionsHtml += `<div class="wp-restriction"><span class="wp-r-icon">🌙</span><span class="wp-r-text">Max ${w.rules.maxNightsPerMonth} noches/mes</span></div>`;
   if (!restrictionsHtml) restrictionsHtml = '<div style="font-size:11px;color:var(--text3);">Sin restricciones especiales</div>';
 
   // History (last 10)
@@ -13446,7 +13457,7 @@ function openWorkerPanel(wId) {
   panel.innerHTML = `
     <button class="wp-close" onclick="closeWorkerPanel()">&times;</button>
     <div class="wp-header">
-      <div class="wp-name">${w.name}</div>
+      <div class="wp-name">${escHtml(w.name)}</div>
       <span class="wp-type-badge" style="${typeColor}">${typeLabel}</span>
     </div>
 
@@ -14117,9 +14128,9 @@ function detectConflicts() {
         if (s === 'N' && d >= 2 && wSch && wSch[d-1] === 'N' && wSch[d-2] === 'N') {
           predictedConflicts.push({
             date: dayStr, year, month, day: d, severity: 'medium', type: 'rest',
-            title: `3+ noches seguidas — ${w.name}`,
+            title: `3+ noches seguidas — ${escHtml(w.name)}`,
             desc: `Lleva 3+ noches consecutivas (máx convenio: ${RULES.MAX_CONSECUTIVE_NIGHTS})`,
-            ai: `${w.name} acumula fatiga. El convenio permite máximo ${RULES.MAX_CONSECUTIVE_NIGHTS} noches seguidas. Planifica relevo.`
+            ai: `${escHtml(w.name)} acumula fatiga. El convenio permite máximo ${RULES.MAX_CONSECUTIVE_NIGHTS} noches seguidas. Planifica relevo.`
           });
         }
         const isMorn = ['M','MR','M7H','M6R','M55'].includes(s);
@@ -14128,26 +14139,26 @@ function detectConflicts() {
           const restH = s === 'T' ? 7 : 0;
           predictedConflicts.push({
             date: dayStr, year, month, day: d, severity: 'high', type: 'rest',
-            title: `${s === 'T' ? 'Tarde' : 'Mañana'} tras noche — ${w.name}`,
+            title: `${s === 'T' ? 'Tarde' : 'Mañana'} tras noche — ${escHtml(w.name)}`,
             desc: `${s} después de N (solo ${restH}h descanso)`,
-            ai: `${w.name} tiene ${restH}h entre noche y ${s}. Tras noche solo se puede hacer otra noche o descansar.`
+            ai: `${escHtml(w.name)} tiene ${restH}h entre noche y ${s}. Tras noche solo se puede hacer otra noche o descansar.`
           });
         }
         // T→M: aviso suave — evitar si es posible (no es violación)
         if (d > 0 && sch[w.id] && sch[w.id][d-1] === 'T' && isMorn) {
           predictedConflicts.push({
             date: dayStr, year, month, day: d, severity: 'medium', type: 'rest',
-            title: `Mañana tras tarde — ${w.name}`,
+            title: `Mañana tras tarde — ${escHtml(w.name)}`,
             desc: `${s} después de T (evitar si es posible)`,
-            ai: `${w.name} tiene tarde seguida de mañana. No es violación pero conviene evitarlo para mejor descanso.`
+            ai: `${escHtml(w.name)} tiene tarde seguida de mañana. No es violación pero conviene evitarlo para mejor descanso.`
           });
         }
         if (s === 'N' && w.rules && w.rules.noNights) {
           predictedConflicts.push({
             date: dayStr, year, month, day: d, severity: 'high', type: 'restriction',
-            title: `Restricción noches — ${w.name}`,
+            title: `Restricción noches — ${escHtml(w.name)}`,
             desc: `Asignado a noche con restricción médica`,
-            ai: `${w.name} tiene restricción médica de noches. Reasigna a otro trabajador urgentemente.`
+            ai: `${escHtml(w.name)} tiene restricción médica de noches. Reasigna a otro trabajador urgentemente.`
           });
         }
       });
@@ -15034,7 +15045,7 @@ function handleChatQuery(query) {
     let html = `<div class="chat-section-label">Turno ${shiftNames[currentShift]} (${hour}h)${typeLabel}</div>`;
     onShift.forEach(w => {
       const s = (sch[w.id] && sch[w.id][todayIdx]) || '';
-      html += `<div style="font-size:12px;padding:2px 0;">${w.name} <span style="color:var(--text3);">${w.type} — ${s}</span></div>`;
+      html += `<div style="font-size:12px;padding:2px 0;">${escHtml(w.name)} <span style="color:var(--text3);">${w.type} — ${s}</span></div>`;
     });
     html += `<div style="margin-top:6px;font-size:11px;color:var(--text2);">${onShift.length} personas en turno</div>`;
     html += `<button class="chat-action-btn" onclick="goToDay(${now.getFullYear()},${now.getMonth()},${now.getDate()})">Ver en planilla</button>`;
@@ -15205,14 +15216,14 @@ function handleChatQuery(query) {
           html += '<div style="font-size:11px;font-weight:600;margin-top:4px;">Enfermeros libres:</div>';
           enfs.forEach(w => {
             const st = getWorkerStats(w.id);
-            html += `<div style="font-size:11px;padding:2px 0;">${w.name} <span style="color:var(--text3);">${st.n}N ${st.h}h</span></div>`;
+            html += `<div style="font-size:11px;padding:2px 0;">${escHtml(w.name)} <span style="color:var(--text3);">${st.n}N ${st.h}h</span></div>`;
           });
         }
         if (tecs.length > 0) {
           html += '<div style="font-size:11px;font-weight:600;margin-top:4px;">Tecnicos libres:</div>';
           tecs.forEach(w => {
             const st = getWorkerStats(w.id);
-            html += `<div style="font-size:11px;padding:2px 0;">${w.name} <span style="color:var(--text3);">${st.n}N ${st.h}h</span></div>`;
+            html += `<div style="font-size:11px;padding:2px 0;">${escHtml(w.name)} <span style="color:var(--text3);">${st.n}N ${st.h}h</span></div>`;
           });
         }
       }
@@ -15289,12 +15300,12 @@ function handleChatQuery(query) {
       const currentShift = daySch && daySch[w.id] ? daySch[w.id][dayIdx] : '';
 
       if (!currentShift || currentShift === 'D' || currentShift === '') {
-        return `${w.name} no tiene turno asignado el dia ${targetDayNum}. ¿Quieres que busque quien puede cubrir? Ejemplo: "cubrir dia ${targetDayNum} de manana"`;
+        return `${escHtml(w.name)} no tiene turno asignado el dia ${targetDayNum}. ¿Quieres que busque quien puede cubrir? Ejemplo: "cubrir dia ${targetDayNum} de manana"`;
       }
 
       const candidates = findCoverageCandidates(dayIdx, now.getMonth(), now.getFullYear(), currentShift, w.id);
-      let html = `<div class="chat-section-label">Cambio de ${w.name} — Dia ${targetDayNum} (${currentShift})</div>`;
-      html += `<div style="font-size:11px;color:var(--text2);margin-bottom:8px;">${w.name} tiene turno <strong>${currentShift}</strong>. Estos pueden sustituirle:</div>`;
+      let html = `<div class="chat-section-label">Cambio de ${escHtml(w.name)} — Dia ${targetDayNum} (${currentShift})</div>`;
+      html += `<div style="font-size:11px;color:var(--text2);margin-bottom:8px;">${escHtml(w.name)} tiene turno <strong>${currentShift}</strong>. Estos pueden sustituirle:</div>`;
       if (candidates.length === 0) {
         html += '<div style="font-size:12px;color:var(--danger);">No hay sustitutos disponibles ese dia.</div>';
       } else {
@@ -15387,7 +15398,7 @@ function handleChatQuery(query) {
         const need = dayCOV[sh];
         const ok = enfs >= need.enf && tecs >= need.tec;
         html += `<div style="font-size:12px;font-weight:600;margin-top:6px;">${label} <span style="font-size:10px;color:${ok?'var(--success)':'var(--danger)'};">${enfs}e+${tecs}t ${ok?'OK':'FALTA'} (min ${need.enf}e+${need.tec}t)</span></div>`;
-        onShift.forEach(w => html += `<div style="font-size:11px;padding:1px 0;color:var(--text2);">${w.name} <span style="color:var(--text3);">${w.type}</span></div>`);
+        onShift.forEach(w => html += `<div style="font-size:11px;padding:1px 0;color:var(--text2);">${escHtml(w.name)} <span style="color:var(--text3);">${w.type}</span></div>`);
       });
       const libres = filteredWorkers.filter(w => {
         const s = daySch[w.id] ? daySch[w.id][dayIdx] : '';
@@ -15395,7 +15406,7 @@ function handleChatQuery(query) {
       });
       if (libres.length > 0) {
         html += `<div style="font-size:12px;font-weight:600;margin-top:6px;">Libres (${libres.length})</div>`;
-        libres.forEach(w => html += `<div style="font-size:11px;padding:1px 0;color:var(--text3);">${w.name}</div>`);
+        libres.forEach(w => html += `<div style="font-size:11px;padding:1px 0;color:var(--text3);">${escHtml(w.name)}</div>`);
       }
       html += `<button class="chat-action-btn" onclick="goToDay(${now.getFullYear()},${now.getMonth()},${targetDay})">Ver en planilla</button>`;
       return html;
@@ -15521,7 +15532,7 @@ function handleChatQuery(query) {
       });
       const label = {M:'Manana',T:'Tarde',N:'Noche'}[sh];
       html += `<div style="font-size:11px;font-weight:600;margin-top:6px;">${label} (${wkrs.length})</div>`;
-      wkrs.forEach(w => html += `<div style="font-size:11px;padding:1px 0;color:var(--text2);">${w.name}</div>`);
+      wkrs.forEach(w => html += `<div style="font-size:11px;padding:1px 0;color:var(--text2);">${escHtml(w.name)}</div>`);
     });
     html += `<button class="chat-action-btn" onclick="goToDay(${tom.getFullYear()},${tom.getMonth()},${tom.getDate()})">Ver en planilla</button>`;
     return html;
@@ -15646,7 +15657,7 @@ function exportScheduleCSV() {
   csv += ',Total_H\n';
 
   workers.forEach(w => {
-    csv += `"${w.name}",${w.type}`;
+    csv += `"${escHtml(w.name)}",${w.type}`;
     let h = 0;
     for (let d = 0; d < days; d++) {
       const s = sch[w.id] ? sch[w.id][d] : '';
@@ -15759,7 +15770,7 @@ function exportSchedulePDF() {
     const status = s.baj > 5 ? '<span class="badge badge-bad">Baja</span>' :
                    s.total > 0 ? '<span class="badge badge-ok">OK</span>' :
                    '<span class="badge badge-warn">Sin datos</span>';
-    html += `<tr><td><strong>${w.name}</strong></td><td>${w.type === 'enf' ? 'Enfermero/a' : (w.area === 'micro' ? 'Tec. Micro' : 'Tec. Lab')}</td>`;
+    html += `<tr><td><strong>${escHtml(w.name)}</strong></td><td>${w.type === 'enf' ? 'Enfermero/a' : (w.area === 'micro' ? 'Tec. Micro' : 'Tec. Lab')}</td>`;
     html += `<td>${s.m}</td><td>${s.t}</td><td>${s.n}</td><td>${s.d}</td><td>${s.h}h</td><td>${status}</td></tr>`;
   });
   html += '</tbody></table></div>';
@@ -15806,7 +15817,7 @@ function openGestor() {
   sel.innerHTML = '<option value="">Selecciona un trabajador...</option>';
   workers.forEach(w => {
     const typeLabel = w.type === 'enf' ? 'Enf' : (w.area === 'micro' ? 'Micro' : 'Tec');
-    sel.innerHTML += `<option value="${w.id}">${w.name} (${typeLabel})</option>`;
+    sel.innerHTML += `<option value="${w.id}">${escHtml(w.name)} (${typeLabel})</option>`;
   });
 
   // Reset UI
@@ -16009,7 +16020,7 @@ function onGestorWorkerChange() {
   summaryEl.style.display = 'block';
   summaryEl.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-      <strong style="color:var(--text);">${w.name}</strong>
+      <strong style="color:var(--text);">${escHtml(w.name)}</strong>
       <span style="font-size:10px;background:var(--surface);padding:2px 8px;border-radius:6px;color:var(--accent);">${typeLabel}</span>
     </div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
@@ -16244,7 +16255,7 @@ function analyzeGestor() {
       <div class="ai-brain-icon">🧠</div>
       <div>
         <div class="ai-title">Motor de Razonamiento IA</div>
-        <div class="ai-subtitle">Analizando ${daysToProcess.length} dia${daysToProcess.length > 1 ? 's' : ''} para ${w.name}...</div>
+        <div class="ai-subtitle">Analizando ${daysToProcess.length} dia${daysToProcess.length > 1 ? 's' : ''} para ${escHtml(w.name)}...</div>
       </div>
     </div>
     <div class="gestor-ai-loader">
@@ -16421,14 +16432,14 @@ function buildAICoverageAnalysis(w, days, action) {
     reasoningSteps.push({
       icon: 'alert',
       title: `ALERTA: Ausencias simultaneas detectadas (${simultDays} dia${simultDays > 1 ? 's' : ''})`,
-      detail: `Ademas de ${w.name}, los siguientes trabajadores estan ausentes en dias criticos: ${allAbsent}. Esto reduce significativamente el pool de candidatos y aumenta complejidad de cobertura.`
+      detail: `Ademas de ${escHtml(w.name)}, los siguientes trabajadores estan ausentes en dias criticos: ${allAbsent}. Esto reduce significativamente el pool de candidatos y aumenta complejidad de cobertura.`
     });
   }
 
   // Step 1: Days analyzed
   reasoningSteps.push({
     icon: 'info',
-    title: `Analizados ${dayAnalyses.length} dias para ${w.name}`,
+    title: `Analizados ${dayAnalyses.length} dias para ${escHtml(w.name)}`,
     detail: `${offDays.length > 0 ? offDays.length + ' dia(s) ya son descanso. ' : ''}${daysNeedingCoverage.length} dia(s) requieren atencion. ${critDays.length > 0 ? critDays.length + ' dia(s) con cobertura CRITICA.' : 'Cobertura no critica en ningun dia.'}`
   });
 
@@ -17146,7 +17157,7 @@ function buildAICoverageAnalysis(w, days, action) {
     html += `<div style="padding:24px;text-align:center;color:var(--text3);">
       <div style="font-size:28px;margin-bottom:8px;">✓</div>
       <div style="font-size:14px;font-weight:700;color:var(--text2);">Sin necesidad de sustitucion</div>
-      <div style="font-size:12px;margin-top:4px;">${w.name} ya tiene descanso en todos los dias seleccionados.</div>
+      <div style="font-size:12px;margin-top:4px;">${escHtml(w.name)} ya tiene descanso en todos los dias seleccionados.</div>
     </div>`;
   } else {
     html += `<div style="padding:24px;text-align:center;">
@@ -18022,7 +18033,7 @@ function buildDetailedDayAnalysis(w, dayAnalyses, shiftToAssign, avgN, avgH, avg
     if (isMicroWorker) {
       html += `<div style="font-size:11px;color:#9a6abf;padding:6px 10px;background:rgba(154,106,191,0.06);border-radius:8px;margin-bottom:8px;">Microbiologia — no afecta cobertura lab</div>`;
     } else if (covStillOk) {
-      html += `<div style="font-size:11px;color:#27ae60;padding:6px 10px;background:rgba(39,174,96,0.06);border-radius:8px;margin-bottom:8px;">Cobertura OK sin ${w.name} (${w.type === 'enf' ? da.haveEnf + '/' + da.needEnf + ' enf' : da.haveTec + '/' + da.needTec + ' tec'})</div>`;
+      html += `<div style="font-size:11px;color:#27ae60;padding:6px 10px;background:rgba(39,174,96,0.06);border-radius:8px;margin-bottom:8px;">Cobertura OK sin ${escHtml(w.name)} (${w.type === 'enf' ? da.haveEnf + '/' + da.needEnf + ' enf' : da.haveTec + '/' + da.needTec + ' tec'})</div>`;
     } else {
       html += `<div style="font-size:11px;color:#cc4444;padding:6px 10px;background:rgba(204,68,68,0.06);border-radius:8px;margin-bottom:8px;">Cobertura INSUFICIENTE (${w.type === 'enf' ? da.haveEnf + '/' + da.needEnf + ' enf' : da.haveTec + '/' + da.needTec + ' tec'})</div>`;
     }
@@ -18187,7 +18198,7 @@ function showPlanPreview(planDataStr, btnEl) {
       const nameStyle = isAbsent ? 'color:var(--danger);' : 'color:var(--accent);';
       const roleTag = isAbsent ? '<span style="font-size:8px;background:rgba(204,68,68,0.1);color:#cc4444;padding:1px 5px;border-radius:4px;margin-left:4px;">AUSENTE</span>' :
         '<span style="font-size:8px;background:rgba(39,174,96,0.1);color:#27ae60;padding:1px 5px;border-radius:4px;margin-left:4px;">SUPLE</span>';
-      h += `<td style="${nameStyle}">${w.name}${roleTag}</td>`;
+      h += `<td style="${nameStyle}">${escHtml(w.name)}${roleTag}</td>`;
 
       // Day cells
       for (let d = minDay; d <= maxDay; d++) {
@@ -18511,16 +18522,16 @@ function buildSwapAnalysis(w, dayDate) {
     <div class="ai-brain-icon">🔀</div>
     <div>
       <div class="ai-title">Analisis de Cambio de Turno</div>
-      <div class="ai-subtitle">${w.name} — ${dayName} ${dayDate.getDate()}/${month+1}</div>
+      <div class="ai-subtitle">${escHtml(w.name)} — ${dayName} ${dayDate.getDate()}/${month+1}</div>
     </div>
   </div>`;
 
   html += `<div class="gestor-warning" style="margin-bottom:12px;">
-    <strong>Cambio de turno:</strong> ${w.name} tiene <strong>${wShift || 'nada'}</strong> el ${dayName} ${dayDate.getDate()}/${month+1}. Buscando con quien puede intercambiar...
+    <strong>Cambio de turno:</strong> ${escHtml(w.name)} tiene <strong>${wShift || 'nada'}</strong> el ${dayName} ${dayDate.getDate()}/${month+1}. Buscando con quien puede intercambiar...
   </div>`;
 
   if (!wShift || wShift === '' || wShift === 'D') {
-    html += `<div class="gestor-error">${w.name} no tiene turno asignado el dia ${dayDate.getDate()}. No hay nada que intercambiar.</div>`;
+    html += `<div class="gestor-error">${escHtml(w.name)} no tiene turno asignado el dia ${dayDate.getDate()}. No hay nada que intercambiar.</div>`;
     html += `</div>`;
     return html;
   }
@@ -18573,7 +18584,7 @@ function buildSwapAnalysis(w, dayDate) {
           <span style="font-size:11px;font-weight:500;color:var(--text2);margin-left:8px;">tiene ${c.currentShift}</span>
         </div>
         <div style="font-size:12px;margin:6px 0;padding:8px;background:var(--surface2);border-radius:8px;text-align:center;">
-          ${w.name}: ${wShift} → ${c.currentShift} &nbsp;&nbsp;|&nbsp;&nbsp; ${c.w.name}: ${c.currentShift} → ${wShift}
+          ${escHtml(w.name)}: ${wShift} → ${c.currentShift} &nbsp;&nbsp;|&nbsp;&nbsp; ${c.w.name}: ${c.currentShift} → ${wShift}
         </div>
         ${renderMetricBars(c.stats, teamAvgForMetrics)}
         ${renderTimeline(c.w.id, year, month, dayIdx + 1)}
@@ -18790,16 +18801,24 @@ function showAuthError(formId, message) {
   setTimeout(() => card.classList.remove('login-shake'), 600);
 }
 
-// Offline credentials fallback (same as server seed)
+// Offline credentials fallback (hashed — never store plaintext passwords in client code)
 const OFFLINE_USERS = {
-  'sav': { password: 'vinicius1', user: { id: 1, email: 'sara@shiftia.es', name: 'Sara — Supervisora', company: 'Hospital de Jove', plan: 'enterprise', plan_status: 'active', workers_limit: 1000 } },
-  'sara@shiftia.es': { password: 'vinicius1', user: { id: 1, email: 'sara@shiftia.es', name: 'Sara — Supervisora', company: 'Hospital de Jove', plan: 'enterprise', plan_status: 'active', workers_limit: 1000 } }
+  'sav': { hash: '80949a4aedb5b911bbc842bc14a27fbe3f4e133614a096bb5a8ff13da299b949', user: { id: 1, email: 'sara@shiftia.es', name: 'Sara — Supervisora', company: 'Hospital de Jove', plan: 'enterprise', plan_status: 'active', workers_limit: 1000 } },
+  'sara@shiftia.es': { hash: '80949a4aedb5b911bbc842bc14a27fbe3f4e133614a096bb5a8ff13da299b949', user: { id: 1, email: 'sara@shiftia.es', name: 'Sara — Supervisora', company: 'Hospital de Jove', plan: 'enterprise', plan_status: 'active', workers_limit: 1000 } }
 };
 
-function offlineLogin(username, password) {
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function offlineLogin(username, password) {
   const entry = OFFLINE_USERS[username.toLowerCase()];
   if (!entry) return null;
-  if (entry.password !== password) return null;
+  const inputHash = await hashPassword(password);
+  if (entry.hash !== inputHash) return null;
   return entry.user;
 }
 
@@ -18856,7 +18875,7 @@ async function handleLogin(e) {
   if (serverOk) return false;
 
   // Fallback: offline login
-  const offlineUser = offlineLogin(user, pass);
+  const offlineUser = await offlineLogin(user, pass);
   if (offlineUser) {
     console.log('[Shiftia] Offline login successful for', offlineUser.name);
     setAuthToken('offline-token-' + Date.now());
@@ -19060,7 +19079,7 @@ function renderHeatmap() {
 
       html += `<tr><td class="hm-worker"><div class="hm-worker-inner">
         <div class="hm-worker-avatar ${avatarCls}">${initials}</div>
-        <div><div class="hm-worker-name">${w.name}</div></div>
+        <div><div class="hm-worker-name">${escHtml(w.name)}</div></div>
       </div></td>`;
 
       for (let d = 0; d < daysInMonth; d++) {
@@ -19069,7 +19088,7 @@ function renderHeatmap() {
         const label = shiftLabel(shift);
         const date = new Date(year, month, d + 1);
         const isToday = date.toDateString() === todayStr;
-        html += `<td class="hm-td ${isToday ? 'hm-today-col' : ''}" title="${w.name} · ${date.getDate()}/${month+1} · ${shift || 'Descanso'}">
+        html += `<td class="hm-td ${isToday ? 'hm-today-col' : ''}" title="${escHtml(w.name)} · ${date.getDate()}/${month+1} · ${shift || 'Descanso'}">
           <div class="hm-shift ${cls}">${label}</div>
         </td>`;
       }
@@ -20489,14 +20508,15 @@ function connectWebSocket() {
   if (!token) return;
 
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = `${protocol}//${location.host}/ws?token=${encodeURIComponent(token)}`;
+  const wsUrl = `${protocol}//${location.host}/ws`;
 
   try {
     if (wsConnection && wsConnection.readyState < 2) wsConnection.close();
     wsConnection = new WebSocket(wsUrl);
 
     wsConnection.onopen = () => {
-      console.log('[WS] Connected');
+      console.log('[WS] Connected, authenticating...');
+      wsConnection.send(JSON.stringify({ type: 'auth', token: token }));
       wsReconnectAttempts = 0;
       clearTimeout(wsReconnectTimer);
     };
@@ -20509,7 +20529,8 @@ function connectWebSocket() {
           if (badge) {
             if (msg.count > 1) {
               badge.style.display = 'inline-flex';
-              badge.textContent = msg.count + ' sesiones';
+              const txt = document.getElementById('wsSyncText');
+              if (txt) txt.textContent = msg.count + ' sesiones';
             } else {
               badge.style.display = 'none';
             }

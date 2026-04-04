@@ -17,42 +17,73 @@ const wss = new WebSocket.Server({ server, path: '/ws' });
 const wsClients = new Map(); // userId → Set<ws>
 
 wss.on('connection', (ws, req) => {
-  // Authenticate via query param token
+  // Authentication via message (more secure than URL query params)
+  ws.isAuthenticated = false;
+
+  // Auto-close if not authenticated within 10 seconds
+  const authTimeout = setTimeout(() => {
+    if (!ws.isAuthenticated) {
+      ws.close(4001, 'Auth timeout');
+    }
+  }, 10000);
+
+  // Also support legacy query param auth for backwards compatibility
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const token = url.searchParams.get('token');
-    if (!token) { ws.close(4001, 'No token'); return; }
-    const decoded = jwt.verify(token, JWT_SECRET);
-    ws.userId = decoded.id;
-    ws.userEmail = decoded.email;
-
-    if (!wsClients.has(decoded.id)) wsClients.set(decoded.id, new Set());
-    wsClients.get(decoded.id).add(ws);
-    console.log(`[WS] ${decoded.email} connected (${wsClients.get(decoded.id).size} sessions)`);
-
-    // Broadcast online count to same user's sessions
-    broadcastToUser(decoded.id, { type: 'sessions', count: wsClients.get(decoded.id).size });
-  } catch (e) {
-    ws.close(4001, 'Invalid token');
-    return;
-  }
+    if (token) {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      ws.userId = decoded.id;
+      ws.userEmail = decoded.email;
+      ws.isAuthenticated = true;
+      clearTimeout(authTimeout);
+      if (!wsClients.has(decoded.id)) wsClients.set(decoded.id, new Set());
+      wsClients.get(decoded.id).add(ws);
+      console.log(`[WS] ${decoded.email} connected via query (${wsClients.get(decoded.id).size} sessions)`);
+      broadcastToUser(decoded.id, { type: 'sessions', count: wsClients.get(decoded.id).size });
+    }
+  } catch (e) { /* No valid query token, wait for message auth */ }
 
   ws.on('message', (msg) => {
     try {
       const data = JSON.parse(msg);
+
+      // Handle auth message
+      if (data.type === 'auth' && !ws.isAuthenticated) {
+        try {
+          const decoded = jwt.verify(data.token, JWT_SECRET);
+          ws.userId = decoded.id;
+          ws.userEmail = decoded.email;
+          ws.isAuthenticated = true;
+          clearTimeout(authTimeout);
+          if (!wsClients.has(decoded.id)) wsClients.set(decoded.id, new Set());
+          wsClients.get(decoded.id).add(ws);
+          console.log(`[WS] ${decoded.email} connected via message (${wsClients.get(decoded.id).size} sessions)`);
+          broadcastToUser(decoded.id, { type: 'sessions', count: wsClients.get(decoded.id).size });
+        } catch (authErr) {
+          ws.close(4001, 'Invalid token');
+        }
+        return;
+      }
+
+      // All other messages require authentication
+      if (!ws.isAuthenticated) return;
+
       if (data.type === 'shift_change') {
-        // Broadcast to other sessions of same user
         broadcastToUser(ws.userId, { type: 'shift_change', payload: data.payload, from: ws.userEmail }, ws);
       }
     } catch (e) { /* ignore bad messages */ }
   });
 
   ws.on('close', () => {
-    const set = wsClients.get(ws.userId);
-    if (set) {
-      set.delete(ws);
-      if (set.size === 0) wsClients.delete(ws.userId);
-      else broadcastToUser(ws.userId, { type: 'sessions', count: set.size });
+    clearTimeout(authTimeout);
+    if (ws.userId) {
+      const set = wsClients.get(ws.userId);
+      if (set) {
+        set.delete(ws);
+        if (set.size === 0) wsClients.delete(ws.userId);
+        else broadcastToUser(ws.userId, { type: 'sessions', count: set.size });
+      }
     }
   });
 });
