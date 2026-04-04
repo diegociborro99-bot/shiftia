@@ -321,7 +321,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   gap: 20px;
   flex: 1;
   min-width: 0;
-  overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
   justify-content: center;
@@ -1425,9 +1424,9 @@ table.schedule td.name-cell:hover {
   position: relative;
 }
 .tab-badge {
-  position: absolute;
-  top: -6px;
-  right: -12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: var(--danger);
   color: white;
   font-size: 9px;
@@ -1435,12 +1434,12 @@ table.schedule td.name-cell:hover {
   min-width: 16px;
   height: 16px;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   padding: 0 4px;
   line-height: 1;
   box-shadow: 0 1px 4px rgba(204,68,68,0.3);
+  margin-left: 4px;
+  vertical-align: middle;
+  transform: translateY(-1px);
 }
 .tab-badge.warning {
   background: var(--for);
