@@ -1257,6 +1257,98 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// ====== DAILY SUMMARY EMAIL (7:00 AM) ======
+async function sendDailySummary() {
+  try {
+    const now = new Date();
+    const dayNames = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+    // Get all users with data
+    const users = await pool.query('SELECT id, email, name FROM users WHERE plan_status = $1', ['active']);
+
+    for (const user of users.rows) {
+      const dataRes = await pool.query('SELECT data FROM user_data WHERE user_id = $1', [user.id]);
+      if (!dataRes.rows.length) continue;
+
+      const data = dataRes.rows[0].data;
+      const key = `${now.getFullYear()}-${now.getMonth()}`;
+      const sch = data.scheduleData?.[key] || {};
+
+      // Count shifts today
+      const dayIdx = now.getDate() - 1;
+      const shifts = { M: [], T: [], N: [] };
+      const absences = [];
+
+      const workersData = data.workers || [];
+      workersData.forEach(w => {
+        const s = sch[w.id]?.[dayIdx] || '';
+        if (shifts[s]) shifts[s].push(w.name);
+        else if (['VAC','BAJ','FOR','LAC','MTC','HS','CAA','INT'].includes(s)) {
+          absences.push(`${w.name} (${s})`);
+        }
+      });
+
+      const html = `
+        <div style="font-family:'DM Sans',sans-serif;max-width:500px;margin:0 auto;padding:24px;">
+          <div style="text-align:center;margin-bottom:20px;">
+            <h2 style="color:#2e8b7a;margin:0;">Shiftia — Resumen Diario</h2>
+            <p style="color:#888;font-size:14px;margin:4px 0;">${dayNames[now.getDay()]}, ${now.getDate()} de ${monthNames[now.getMonth()]} ${now.getFullYear()}</p>
+          </div>
+          <div style="background:#f8f8f8;border-radius:12px;padding:16px;margin-bottom:12px;">
+            <h3 style="margin:0 0 8px;font-size:14px;color:#333;">☀️ Mañana</h3>
+            <p style="margin:0;color:#555;">${shifts.M.join(', ') || 'Sin asignar'}</p>
+          </div>
+          <div style="background:#f8f8f8;border-radius:12px;padding:16px;margin-bottom:12px;">
+            <h3 style="margin:0 0 8px;font-size:14px;color:#333;">🌅 Tarde</h3>
+            <p style="margin:0;color:#555;">${shifts.T.join(', ') || 'Sin asignar'}</p>
+          </div>
+          <div style="background:#f8f8f8;border-radius:12px;padding:16px;margin-bottom:12px;">
+            <h3 style="margin:0 0 8px;font-size:14px;color:#333;">🌙 Noche</h3>
+            <p style="margin:0;color:#555;">${shifts.N.join(', ') || 'Sin asignar'}</p>
+          </div>
+          ${absences.length > 0 ? `
+          <div style="background:#fff3f3;border-radius:12px;padding:16px;margin-bottom:12px;">
+            <h3 style="margin:0 0 8px;font-size:14px;color:#cc4444;">⚠ Ausencias (${absences.length})</h3>
+            <p style="margin:0;color:#555;">${absences.join(', ')}</p>
+          </div>` : ''}
+          <p style="text-align:center;font-size:11px;color:#aaa;margin-top:20px;">
+            Enviado automáticamente por Shiftia SARA · <a href="${process.env.RAILWAY_PUBLIC_DOMAIN ? 'https://' + process.env.RAILWAY_PUBLIC_DOMAIN : 'http://localhost:3000'}" style="color:#2e8b7a;">Abrir app</a>
+          </p>
+        </div>
+      `;
+
+      try {
+        await transporter.sendMail({
+          from: `"Shiftia SARA" <${process.env.GMAIL_USER || 'highkeycvsender@gmail.com'}>`,
+          to: user.email,
+          subject: `📋 Turnos ${dayNames[now.getDay()]} ${now.getDate()}/${now.getMonth() + 1} — Shiftia`,
+          html
+        });
+        console.log(`[Email] Daily summary sent to ${user.email}`);
+      } catch (emailErr) {
+        console.warn(`[Email] Failed to send to ${user.email}:`, emailErr.message);
+      }
+    }
+  } catch (err) {
+    console.warn('[Email] Daily summary error:', err.message);
+  }
+}
+
+// Schedule daily at 7:00 AM (Spain timezone)
+function scheduleDailySummary() {
+  const now = new Date();
+  const target = new Date(now);
+  target.setHours(7, 0, 0, 0);
+  if (now >= target) target.setDate(target.getDate() + 1);
+  const delay = target - now;
+  setTimeout(() => {
+    sendDailySummary();
+    setInterval(sendDailySummary, 24 * 60 * 60 * 1000);
+  }, delay);
+  console.log(`[Email] Daily summary scheduled for ${target.toISOString()} (in ${Math.round(delay / 60000)} min)`);
+}
+
 // ====== SERVER STARTUP ======
 async function startServer() {
   try {
@@ -1264,12 +1356,14 @@ async function startServer() {
     await initializeDatabase();
 
     server.listen(PORT, () => {
-      console.log(`Shiftia v3.0 running on port ${PORT}`);
+      console.log(`Shiftia v5.3 running on port ${PORT}`);
       console.log('Authentication: enabled');
       console.log('WebSocket: enabled (/ws)');
       console.log('Auto-backups: enabled');
       console.log('Audit logs: enabled');
       console.log('Worker API: enabled (/api/my-shifts)');
+      console.log('Daily email summary: enabled');
+      scheduleDailySummary();
     });
   } catch (err) {
     console.error('Failed to start server:', err.message);

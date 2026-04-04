@@ -939,6 +939,10 @@ table.schedule td.name-cell:hover {
   border-left-color: var(--accent);
 }
 
+.drag-over { background: rgba(46,139,122,0.15) !important; outline: 2px dashed var(--morning); outline-offset: -2px; border-radius: 4px; }
+.shift-pill[draggable="true"] { cursor: grab; }
+.shift-pill[draggable="true"]:active { cursor: grabbing; }
+
 .shift-pill {
   display: inline-flex;
   align-items: center;
@@ -8256,6 +8260,8 @@ table.schedule tbody tr:hover {
       <button class="nav-tab" data-view="incidents" role="tab" aria-selected="false" aria-controls="panel-incidents"><span class="tab-icon" aria-hidden="true">☰</span> Historial</button>
       <button class="nav-tab" data-view="conflicts" role="tab" aria-selected="false" aria-controls="panel-conflicts"><span class="tab-icon" aria-hidden="true">△</span> Conflictos</button>
       <button class="nav-tab" data-view="metrics" role="tab" aria-selected="false" aria-controls="panel-metrics"><span class="tab-icon" aria-hidden="true">📊</span> Métricas</button>
+      <button class="nav-tab" data-view="guardia" role="tab" aria-selected="false" aria-controls="panel-guardia"><span class="tab-icon" aria-hidden="true">🚨</span> Guardia</button>
+      <button class="nav-tab" data-view="vacaciones" role="tab" aria-selected="false" aria-controls="panel-vacaciones"><span class="tab-icon" aria-hidden="true">🏖️</span> Vacaciones</button>
       <button class="nav-tab" data-view="import" role="tab" aria-selected="false" aria-controls="panel-import"><span class="tab-icon" aria-hidden="true">↑</span> Importar</button>
     </nav>
     <!-- Mobile More Menu -->
@@ -8313,7 +8319,9 @@ table.schedule tbody tr:hover {
       <div style="display:none;"><div id="weekPreview"></div></div>
 
       <div class="roster-section">
-        <div class="section-title" style="display:flex;align-items:center;gap:8px;">Radar de Riesgo <span style="font-size:9px;font-weight:600;padding:2px 8px;border-radius:6px;background:rgba(230,126,34,0.1);color:#e67e22;">14 dias</span></div>
+        <div class="section-title" style="display:flex;align-items:center;gap:8px;">Radar de Riesgo <span style="font-size:9px;font-weight:600;padding:2px 8px;border-radius:6px;background:rgba(230,126,34,0.1);color:#e67e22;">14 dias</span>
+          <button onclick="openFestivosEditor()" style="margin-left:auto;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text3);font-size:10px;cursor:pointer;font-weight:600;" title="Gestionar festivos">📅 Festivos</button>
+        </div>
         <div id="riskRadar">
           <!-- Generated -->
         </div>
@@ -8368,6 +8376,7 @@ table.schedule tbody tr:hover {
           <button class="toolbar-action-btn toolbar-btn-accent" onclick="openBulkEdit()" title="Edicion masiva de turnos">Masivo</button>
           <button class="toolbar-action-btn toolbar-btn-ghost" onclick="exportScheduleCSV()" title="Exportar a CSV">CSV</button>
           <button class="toolbar-action-btn toolbar-btn-primary" onclick="exportSchedulePDF()" title="Imprimir / Guardar como PDF">PDF</button>
+          <button class="toolbar-action-btn" onclick="exportWhatsApp()" title="Copiar turnos para WhatsApp" style="background:#25D366;color:#fff;font-weight:600;">WA</button>
         </div>
       </div>
 
@@ -8567,6 +8576,16 @@ table.schedule tbody tr:hover {
     <!-- Metrics Dashboard -->
     <div class="view-panel" id="metricsPanel">
       <div class="mx-wrap" id="metricsGrid"></div>
+    </div>
+
+    <!-- Guardia (Jefe de Guardia) -->
+    <div class="view-panel" id="guardiaPanel">
+      <div id="guardiaContent"></div>
+    </div>
+
+    <!-- Vacaciones Gantt -->
+    <div class="view-panel" id="vacacionesPanel">
+      <div id="vacacionesContent"></div>
     </div>
   </main>
 
@@ -9341,8 +9360,10 @@ function switchView(view) {
   if (view === 'heatmap') renderHeatmap();
   if (view === 'incidents') renderIncidents();
   if (view === 'conflicts') { detectConflicts(); renderConflicts(); }
-  if (view === 'metrics') renderMetrics();
+  if (view === 'metrics') { renderMetrics(); try { renderComparativa(); } catch(e) { console.warn('[Shiftia] renderComparativa error:', e); } }
   if (view === 'import') { renderImportManagement(); updateImportBadge(); }
+  if (view === 'guardia') renderGuardia();
+  if (view === 'vacaciones') renderVacacionesGantt();
 }
 
 // Render Dashboard
@@ -12985,6 +13006,9 @@ function saveShiftChange() {
   const reason = document.getElementById('seReason').value.trim();
   const date = new Date(m.getFullYear(), m.getMonth(), day + 1);
 
+  // Push undo state before applying
+  pushUndo({ type: 'shift_change', wId, dayIdx: day, oldShift: originalShift, newShift: selectedShift, year: m.getFullYear(), month: m.getMonth() });
+
   // Apply the change
   if (!sch[wId]) sch[wId] = [];
   sch[wId][day] = selectedShift;
@@ -15643,6 +15667,586 @@ function handleChatQuery(query) {
     ${suggested.slice(0, 3).map(s => `<button class="chat-suggestion-btn" onclick="chatQuickQuery('${s.q}')">${s.label}</button>`).join('')}
     <button class="chat-suggestion-btn" onclick="chatQuickQuery('Ayuda')">Más ayuda</button>
   </div>`;
+}
+
+// ========== MODO JEFE DE GUARDIA ==========
+function renderGuardia() {
+  const container = document.getElementById('guardiaContent');
+  if (!container) return;
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth(), day = now.getDate();
+  const hour = now.getHours();
+  const sch = genSchedule(year, month);
+  const dayIdx = day - 1;
+
+  // Current shift
+  let currentShift = 'M', nextShift = 'T', nextLabel = 'Tarde (15:00)';
+  if (hour >= 15 && hour < 22) { currentShift = 'T'; nextShift = 'N'; nextLabel = 'Noche (22:00)'; }
+  if (hour >= 22 || hour < 8) { currentShift = 'N'; nextShift = 'M'; nextLabel = 'Mañana (08:00)'; }
+  const shiftLabels = { M: 'Mañana (08:00-15:00)', T: 'Tarde (15:00-22:00)', N: 'Noche (22:00-08:00)' };
+  const shiftColors = { M: '#2e8b7a', T: '#4a9dd4', N: '#7c6bb1' };
+
+  // Get workers on current and next shift
+  function getShiftWorkers(shift, dIdx) {
+    return workers.filter(w => {
+      const s = sch[w.id] ? (sch[w.id][dIdx] || '').toString().trim() : '';
+      return s === shift;
+    }).map(w => ({ ...w, shift: shift }));
+  }
+
+  // Get workers on rest (could be called in)
+  function getAvailable(dIdx) {
+    return workers.filter(w => {
+      const s = sch[w.id] ? (sch[w.id][dIdx] || '').toString().trim() : '';
+      return s === 'D' || s === '' || !s;
+    });
+  }
+
+  const onNow = getShiftWorkers(currentShift, dayIdx);
+  const nextDayIdx = (currentShift === 'N') ? Math.min(dayIdx + 1, 30) : dayIdx;
+  const onNext = getShiftWorkers(nextShift, nextDayIdx);
+  const available = getAvailable(dayIdx);
+  const cov = getCoverageRules(year, month, day);
+  const covReq = cov[currentShift] || { enf: 1, tec: 1 };
+  const enfNow = onNow.filter(w => w.type === 'enf').length;
+  const tecNow = onNow.filter(w => w.type === 'tec').length;
+  const covOk = enfNow >= covReq.enf && tecNow >= covReq.tec;
+
+  // Absences today
+  const absToday = workers.filter(w => {
+    const s = sch[w.id] ? (sch[w.id][dayIdx] || '').toString().trim() : '';
+    return ['VAC','BAJ','FOR','LAC','MTC','HS','CAA','INT'].includes(s);
+  }).map(w => ({ name: w.name, code: (sch[w.id][dayIdx] || '').toString().trim() }));
+
+  // Build HTML
+  let html = `
+  <div style="max-width:700px;margin:0 auto;padding:20px;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);font-weight:600;">Modo Jefe de Guardia</div>
+      <div style="font-size:28px;font-weight:800;color:var(--text1);margin:4px 0;">${shiftLabels[currentShift]}</div>
+      <div style="font-size:13px;color:var(--text3);">${now.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long', year:'numeric' })} — ${now.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' })}</div>
+      <div style="margin-top:8px;display:inline-block;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;background:${covOk ? 'rgba(39,174,96,0.12)' : 'rgba(204,68,68,0.12)'};color:${covOk ? '#27ae60' : '#cc4444'};">
+        ${covOk ? '✓ Cobertura completa' : '⚠ Cobertura insuficiente — ENF ' + enfNow + '/' + covReq.enf + ' · TEC ' + tecNow + '/' + covReq.tec}
+      </div>
+    </div>
+
+    <!-- Turno actual -->
+    <div style="background:var(--surface);border:1.5px solid ${shiftColors[currentShift]}33;border-radius:16px;padding:20px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:${shiftColors[currentShift]};text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">🟢 Trabajando ahora</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">
+        ${onNow.map(w => `
+          <div style="background:var(--bg);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;border:1px solid var(--border);">
+            <div style="width:36px;height:36px;border-radius:50%;background:${shiftColors[currentShift]}18;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:${shiftColors[currentShift]};">${escHtml(w.name.charAt(0))}</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text1);">${escHtml(w.name)}</div>
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;">${w.type === 'enf' ? 'Enfermería' : 'Técnico'}${w.area === 'micro' ? ' · Micro' : ''}</div>
+            </div>
+          </div>
+        `).join('')}
+        ${onNow.length === 0 ? '<div style="color:var(--text3);font-size:13px;padding:8px;">Sin personal asignado</div>' : ''}
+      </div>
+    </div>
+
+    <!-- Siguiente turno -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:${shiftColors[nextShift]};text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">⏭ Siguiente: ${nextLabel}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">
+        ${onNext.map(w => `
+          <div style="background:var(--bg);border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px;border:1px solid var(--border);">
+            <div style="width:28px;height:28px;border-radius:50%;background:${shiftColors[nextShift]}18;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:${shiftColors[nextShift]};">${escHtml(w.name.charAt(0))}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text2);">${escHtml(w.name)} <span style="font-size:9px;color:var(--text3);">${w.type === 'enf' ? 'ENF' : 'TEC'}</span></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- Ausencias hoy -->
+    ${absToday.length > 0 ? `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:#cc4444;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">🏥 Ausencias hoy (${absToday.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${absToday.map(a => `<span style="padding:6px 12px;border-radius:8px;background:rgba(204,68,68,0.08);font-size:12px;font-weight:500;color:var(--text2);">${escHtml(a.name.split(' ')[0])} <span style="color:#cc4444;font-weight:700;">${escHtml(a.code)}</span></span>`).join('')}
+      </div>
+    </div>
+    ` : ''}
+
+    <!-- Refuerzos disponibles -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:#e67e22;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">📞 Disponibles para refuerzo (${available.length})</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;">
+        ${available.map(w => `
+          <div style="background:var(--bg);border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px;border:1px solid var(--border);cursor:pointer;" title="Clic para asignar ${escHtml(w.name)} al turno actual">
+            <div style="width:28px;height:28px;border-radius:50%;background:rgba(230,126,34,0.12);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#e67e22;">${escHtml(w.name.charAt(0))}</div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text2);">${escHtml(w.name)}</div>
+              <div style="font-size:10px;color:var(--text3);">${w.type === 'enf' ? 'ENF' : 'TEC'}${w.area === 'micro' ? ' · Micro' : ''} · Descansando</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:12px;">
+      <button onclick="renderGuardia()" style="padding:8px 20px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;">↻ Actualizar</button>
+    </div>
+  </div>`;
+
+  container.innerHTML = html;
+}
+
+// ========== CALENDARIO VACACIONES GANTT ==========
+function renderVacacionesGantt() {
+  const container = document.getElementById('vacacionesContent');
+  if (!container) return;
+  const year = appState.currentMonth.getFullYear();
+  const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  // Collect vacation data per worker across all months
+  const vacData = [];
+  workers.forEach(w => {
+    const periods = [];
+    for (let m = 0; m < 12; m++) {
+      const sch = genSchedule(year, m);
+      const days = new Date(year, m + 1, 0).getDate();
+      if (!sch[w.id]) continue;
+      let inVac = false, start = 0;
+      for (let d = 0; d < days; d++) {
+        const s = (sch[w.id][d] || '').toString().trim();
+        if (s === 'VAC' && !inVac) { inVac = true; start = d; }
+        if (s !== 'VAC' && inVac) { periods.push({ month: m, start, end: d - 1 }); inVac = false; }
+      }
+      if (inVac) periods.push({ month: m, start, end: days - 1 });
+    }
+    if (periods.length > 0) vacData.push({ worker: w, periods, totalDays: periods.reduce((s, p) => s + (p.end - p.start + 1), 0) });
+  });
+
+  // Detect overlaps (3+ workers same day)
+  const overlapDays = [];
+  for (let m = 0; m < 12; m++) {
+    const days = new Date(year, m + 1, 0).getDate();
+    for (let d = 0; d < days; d++) {
+      let count = 0;
+      vacData.forEach(vd => {
+        vd.periods.forEach(p => {
+          if (p.month === m && d >= p.start && d <= p.end) count++;
+        });
+      });
+      if (count >= 3) overlapDays.push({ month: m, day: d, count });
+    }
+  }
+
+  let html = `
+  <div style="max-width:1100px;margin:0 auto;padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div>
+        <div style="font-size:20px;font-weight:800;color:var(--text1);">Calendario de Vacaciones ${year}</div>
+        <div style="font-size:12px;color:var(--text3);">${vacData.length} trabajadores con vacaciones · ${overlapDays.length > 0 ? '<span style="color:#cc4444;font-weight:600;">' + overlapDays.length + ' días con solapamiento peligroso (3+)</span>' : '<span style="color:#27ae60;">Sin solapamientos peligrosos</span>'}</div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead>
+          <tr style="background:var(--surface);">
+            <th style="text-align:left;padding:8px 12px;font-weight:700;color:var(--text2);border-bottom:2px solid var(--border);min-width:140px;position:sticky;left:0;background:var(--surface);z-index:2;">Trabajador</th>
+            ${monthNames.map((mn, mi) => `<th style="text-align:center;padding:6px 2px;font-weight:600;color:var(--text3);border-bottom:2px solid var(--border);min-width:80px;">${mn}</th>`).join('')}
+            <th style="text-align:center;padding:6px 8px;font-weight:700;color:var(--text2);border-bottom:2px solid var(--border);">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${vacData.sort((a, b) => b.totalDays - a.totalDays).map(vd => {
+            const typeColor = vd.worker.type === 'enf' ? '#2e8b7a' : '#4a9dd4';
+            return `<tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:6px 12px;font-weight:600;color:var(--text1);position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;">
+                ${escHtml(vd.worker.name.split(' ').slice(0, 2).join(' '))} <span style="font-size:9px;color:${typeColor};font-weight:700;">${vd.worker.type === 'enf' ? 'ENF' : 'TEC'}</span>
+              </td>
+              ${monthNames.map((_, mi) => {
+                const days = new Date(year, mi + 1, 0).getDate();
+                const monthPeriods = vd.periods.filter(p => p.month === mi);
+                if (monthPeriods.length === 0) return '<td style="padding:4px 2px;"><div style="height:14px;"></div></td>';
+                // Build mini-bar
+                let bar = '<td style="padding:4px 2px;"><div style="position:relative;height:14px;background:var(--surface);border-radius:3px;overflow:hidden;">';
+                monthPeriods.forEach(p => {
+                  const left = (p.start / days * 100);
+                  const width = ((p.end - p.start + 1) / days * 100);
+                  bar += '<div style="position:absolute;left:' + left + '%;width:' + width + '%;height:100%;background:#3498db;border-radius:2px;opacity:0.7;" title="' + (p.start + 1) + '-' + (p.end + 1) + ' ' + monthNames[mi] + '"></div>';
+                });
+                bar += '</div></td>';
+                return bar;
+              }).join('')}
+              <td style="text-align:center;padding:6px 8px;font-weight:700;color:var(--text1);">${vd.totalDays}d</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    ${overlapDays.length > 0 ? `
+    <div style="margin-top:20px;background:rgba(204,68,68,0.06);border:1px solid rgba(204,68,68,0.15);border-radius:12px;padding:16px;">
+      <div style="font-size:13px;font-weight:700;color:#cc4444;margin-bottom:8px;">⚠ Solapamientos peligrosos (3+ trabajadores el mismo día)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${overlapDays.slice(0, 20).map(od => `<span style="padding:3px 8px;border-radius:6px;background:rgba(204,68,68,0.1);font-size:11px;font-weight:600;color:#cc4444;">${od.day + 1} ${monthNames[od.month]} (${od.count} pers.)</span>`).join('')}
+        ${overlapDays.length > 20 ? `<span style="padding:3px 8px;font-size:11px;color:var(--text3);">+${overlapDays.length - 20} más</span>` : ''}
+      </div>
+    </div>` : ''}
+  </div>`;
+
+  container.innerHTML = html;
+}
+
+// ========== UNDO/REDO GLOBAL ==========
+const undoStack = [];
+const redoStack = [];
+const MAX_UNDO = 50;
+
+function pushUndo(action) {
+  undoStack.push(action);
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  redoStack.length = 0; // Clear redo on new action
+}
+
+function globalUndo() {
+  if (undoStack.length === 0) { showToast('Nada que deshacer', 'info', 1500); return; }
+  const action = undoStack.pop();
+  redoStack.push(action);
+
+  if (action.type === 'shift_change') {
+    const key = `${action.year}-${action.month}`;
+    if (scheduleData[key] && scheduleData[key][action.wId]) {
+      scheduleData[key][action.wId][action.dayIdx] = action.oldShift;
+      saveToStorage();
+      if (appState.currentView === 'schedule') renderSchedule();
+      if (appState.currentView === 'dashboard') renderDashboard();
+      const w = workers.find(x => x.id === action.wId);
+      showToast(`Deshecho: ${escHtml(w ? w.name : 'Trabajador')} dia ${action.dayIdx + 1} → ${action.oldShift || 'vacío'}`, 'info', 2000);
+    }
+  }
+}
+
+function globalRedo() {
+  if (redoStack.length === 0) { showToast('Nada que rehacer', 'info', 1500); return; }
+  const action = redoStack.pop();
+  undoStack.push(action);
+
+  if (action.type === 'shift_change') {
+    const key = `${action.year}-${action.month}`;
+    if (scheduleData[key] && scheduleData[key][action.wId]) {
+      scheduleData[key][action.wId][action.dayIdx] = action.newShift;
+      saveToStorage();
+      if (appState.currentView === 'schedule') renderSchedule();
+      if (appState.currentView === 'dashboard') renderDashboard();
+      const w = workers.find(x => x.id === action.wId);
+      showToast(`Rehecho: ${escHtml(w ? w.name : 'Trabajador')} dia ${action.dayIdx + 1} → ${action.newShift}`, 'info', 2000);
+    }
+  }
+}
+
+// ========== GESTIÓN DE FESTIVOS ==========
+function openFestivosEditor() {
+  const year = appState.currentMonth.getFullYear();
+  const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  // Collect festivos for current year
+  const yearFestivos = Object.entries(FESTIVOS).filter(([k]) => k.startsWith(year + '-')).map(([k, v]) => {
+    const parts = k.split('-');
+    return { key: k, month: parseInt(parts[1]) - 1, day: parseInt(parts[2]), name: v };
+  }).sort((a, b) => a.month - b.month || a.day - b.day);
+
+  let html = `<div style="position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;" id="festivosOverlay" onclick="if(event.target===this)this.remove()">
+    <div style="background:var(--bg);border-radius:16px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="margin:0;font-size:18px;font-weight:800;color:var(--text1);">📅 Festivos ${year}</h3>
+        <button onclick="document.getElementById('festivosOverlay').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3);">×</button>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <input type="date" id="newFestivoDate" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text1);" min="${year}-01-01" max="${year}-12-31">
+        <input type="text" id="newFestivoName" placeholder="Nombre del festivo" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text1);">
+        <button onclick="addFestivo()" style="padding:8px 14px;border-radius:8px;background:#2e8b7a;color:#fff;border:none;font-weight:600;font-size:12px;cursor:pointer;">+</button>
+      </div>
+
+      <div id="festivosList">
+        ${yearFestivos.map(f => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);">
+            <div>
+              <span style="font-weight:600;color:var(--text1);font-size:13px;">${f.day} ${monthNames[f.month]}</span>
+              <span style="color:var(--text3);font-size:12px;margin-left:8px;">${escHtml(f.name)}</span>
+            </div>
+            <button onclick="removeFestivo('${f.key}');openFestivosEditor();" style="background:none;border:none;color:#cc4444;cursor:pointer;font-size:16px;padding:2px 6px;">✕</button>
+          </div>
+        `).join('')}
+        ${yearFestivos.length === 0 ? '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px;">No hay festivos definidos para este año</div>' : ''}
+      </div>
+
+      <div style="margin-top:12px;font-size:11px;color:var(--text3);text-align:center;">Los festivos aplican cobertura reducida (1 ENF + 1 TEC por turno)</div>
+    </div>
+  </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function addFestivo() {
+  const dateInput = document.getElementById('newFestivoDate');
+  const nameInput = document.getElementById('newFestivoName');
+  if (!dateInput.value || !nameInput.value.trim()) { showToast('Indica fecha y nombre', 'warning', 2000); return; }
+
+  const parts = dateInput.value.split('-');
+  const key = `${parseInt(parts[0])}-${parseInt(parts[1])}-${parseInt(parts[2])}`;
+  FESTIVOS[key] = nameInput.value.trim();
+
+  // Save to localStorage
+  try { localStorage.setItem('shiftia_custom_festivos', JSON.stringify(FESTIVOS)); } catch(e) {}
+
+  showToast(`Festivo añadido: ${nameInput.value.trim()}`, 'success', 2000);
+  document.getElementById('festivosOverlay')?.remove();
+  openFestivosEditor();
+  if (appState.currentView === 'schedule') renderSchedule();
+  if (appState.currentView === 'dashboard') renderDashboard();
+}
+
+function removeFestivo(key) {
+  delete FESTIVOS[key];
+  try { localStorage.setItem('shiftia_custom_festivos', JSON.stringify(FESTIVOS)); } catch(e) {}
+  showToast('Festivo eliminado', 'info', 1500);
+  if (appState.currentView === 'schedule') renderSchedule();
+  if (appState.currentView === 'dashboard') renderDashboard();
+}
+
+// Load custom festivos on init
+try {
+  const customF = localStorage.getItem('shiftia_custom_festivos');
+  if (customF) {
+    const parsed = JSON.parse(customF);
+    Object.assign(FESTIVOS, parsed);
+  }
+} catch(e) {}
+
+// ========== COMPARATIVA MES A MES ==========
+function renderComparativa() {
+  const container = document.getElementById('metricsGrid');
+  if (!container) return;
+  const year = appState.currentMonth.getFullYear();
+  const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  const monthlyData = [];
+  for (let m = 0; m < 12; m++) {
+    const sch = genSchedule(year, m);
+    const days = new Date(year, m + 1, 0).getDate();
+    let totalConflicts = 0, totalCovered = 0, totalSlots = 0;
+
+    for (let d = 0; d < days; d++) {
+      const cov = getCoverageRules(year, m, d + 1);
+      ['M','T','N'].forEach(shift => {
+        const req = cov[shift] || { enf: 1, tec: 1 };
+        const totalReq = req.enf + req.tec;
+        let have = 0;
+        workers.forEach(w => {
+          const s = sch[w.id] ? (sch[w.id][d] || '').toString().trim() : '';
+          if (s === shift) have++;
+        });
+        totalSlots += totalReq;
+        totalCovered += Math.min(have, totalReq);
+        if (have < totalReq) totalConflicts++;
+      });
+    }
+
+    // Night equity
+    const nightCounts = [];
+    workers.forEach(w => {
+      const ws = sch[w.id] || [];
+      const n = ws.filter(s => s === 'N').length;
+      if (n > 0) nightCounts.push(n);
+    });
+    const avgN = nightCounts.length ? nightCounts.reduce((a, b) => a + b, 0) / nightCounts.length : 0;
+    const stdN = nightCounts.length ? Math.sqrt(nightCounts.reduce((sq, n) => sq + Math.pow(n - avgN, 2), 0) / nightCounts.length) : 0;
+    const equity = Math.max(0, Math.min(100, Math.round(100 - stdN * 12)));
+
+    const covPct = totalSlots > 0 ? Math.round(totalCovered / totalSlots * 100) : 100;
+    monthlyData.push({ month: m, covPct, conflicts: totalConflicts, equity, days });
+  }
+
+  // Build comparison chart as HTML bars
+  let compHtml = `<div class="mx-card" style="grid-column:1/-1;">
+    <div class="mx-card-title">📊 Comparativa Mensual ${year}</div>
+    <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px;margin-top:12px;">
+      ${monthlyData.map(md => {
+        const covColor = md.covPct >= 95 ? '#27ae60' : md.covPct >= 80 ? '#e67e22' : '#cc4444';
+        const eqColor = md.equity >= 75 ? '#27ae60' : md.equity >= 50 ? '#e67e22' : '#cc4444';
+        return `<div style="text-align:center;">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:4px;">${monthNames[md.month]}</div>
+          <div style="height:${Math.max(8, md.covPct * 0.6)}px;background:${covColor};border-radius:3px 3px 0 0;margin:0 4px;opacity:0.7;" title="Cobertura: ${md.covPct}%"></div>
+          <div style="height:${Math.max(8, md.equity * 0.6)}px;background:${eqColor};border-radius:0 0 3px 3px;margin:0 4px;opacity:0.5;" title="Equidad: ${md.equity}%"></div>
+          <div style="font-size:9px;color:var(--text3);margin-top:2px;">${md.covPct}%</div>
+          <div style="font-size:9px;color:${md.conflicts > 10 ? '#cc4444' : 'var(--text3)'};">${md.conflicts} conf</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:10px;color:var(--text3);">
+      <span>▓ Cobertura %</span> <span>░ Equidad noches</span>
+    </div>
+
+    <div style="overflow-x:auto;margin-top:16px;">
+      <table class="mx-data-table">
+        <thead><tr><th>Mes</th><th>Cobertura</th><th>Conflictos</th><th>Equidad</th></tr></thead>
+        <tbody>
+          ${monthlyData.map(md => {
+            const covColor = md.covPct >= 95 ? '#27ae60' : md.covPct >= 80 ? '#e67e22' : '#cc4444';
+            return `<tr>
+              <td style="font-weight:600;">${monthNames[md.month]}</td>
+              <td style="color:${covColor};font-weight:700;">${md.covPct}%</td>
+              <td style="color:${md.conflicts > 10 ? '#cc4444' : 'var(--text2)'};">${md.conflicts}</td>
+              <td style="font-weight:600;">${md.equity}%</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+
+  // Append to existing metrics
+  container.innerHTML += compHtml;
+}
+
+// ========== DRAG & DROP SHIFTS ==========
+let dragData = null;
+
+function dragShift(e, wId, dayIdx) {
+  dragData = { wId, dayIdx };
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', `${wId}-${dayIdx}`);
+  e.target.style.opacity = '0.4';
+}
+
+function dragOverShift(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function dragEnterShift(e) {
+  e.preventDefault();
+  e.target.closest('td')?.classList.add('drag-over');
+}
+
+function dragLeaveShift(e) {
+  e.target.closest('td')?.classList.remove('drag-over');
+}
+
+function dropShift(e, targetWId, targetDayIdx) {
+  e.preventDefault();
+  e.target.closest('td')?.classList.remove('drag-over');
+  if (!dragData) return;
+
+  const sourceWId = dragData.wId;
+  const sourceDayIdx = dragData.dayIdx;
+  dragData = null;
+
+  // Reset opacity on source
+  document.querySelectorAll('.shift-pill').forEach(p => p.style.opacity = '');
+
+  if (sourceWId === targetWId && sourceDayIdx === targetDayIdx) return;
+
+  const m = appState.currentMonth;
+  const year = m.getFullYear(), month = m.getMonth();
+  const key = `${year}-${month}`;
+  const sch = genSchedule(year, month);
+
+  const sourceShift = sch[sourceWId] ? (sch[sourceWId][sourceDayIdx] || '') : '';
+  const targetShift = sch[targetWId] ? (sch[targetWId][targetDayIdx] || '') : '';
+
+  const sourceW = workers.find(w => w.id === sourceWId);
+  const targetW = workers.find(w => w.id === targetWId);
+
+  if (sourceDayIdx === targetDayIdx && sourceWId !== targetWId) {
+    // Same day, different worker = SWAP
+    pushUndo({ type: 'shift_change', wId: sourceWId, dayIdx: sourceDayIdx, oldShift: sourceShift, newShift: targetShift, year, month });
+    pushUndo({ type: 'shift_change', wId: targetWId, dayIdx: targetDayIdx, oldShift: targetShift, newShift: sourceShift, year, month });
+
+    if (!sch[sourceWId]) sch[sourceWId] = [];
+    if (!sch[targetWId]) sch[targetWId] = [];
+    sch[sourceWId][sourceDayIdx] = targetShift;
+    sch[targetWId][targetDayIdx] = sourceShift;
+    scheduleData[key] = sch;
+
+    saveToStorage();
+    renderSchedule();
+    showToast(`Intercambio: ${escHtml(sourceW?.name || '')} ↔ ${escHtml(targetW?.name || '')} (día ${targetDayIdx + 1})`, 'success', 3000);
+  } else if (sourceWId === targetWId && sourceDayIdx !== targetDayIdx) {
+    // Same worker, different day = MOVE shift
+    pushUndo({ type: 'shift_change', wId: sourceWId, dayIdx: sourceDayIdx, oldShift: sourceShift, newShift: '', year, month });
+    pushUndo({ type: 'shift_change', wId: targetWId, dayIdx: targetDayIdx, oldShift: targetShift, newShift: sourceShift, year, month });
+
+    if (!sch[sourceWId]) sch[sourceWId] = [];
+    sch[sourceWId][sourceDayIdx] = targetShift;
+    sch[sourceWId][targetDayIdx] = sourceShift;
+    scheduleData[key] = sch;
+
+    saveToStorage();
+    renderSchedule();
+    showToast(`Movido ${sourceShift} de día ${sourceDayIdx + 1} → ${targetDayIdx + 1} (${escHtml(sourceW?.name || '')})`, 'info', 3000);
+  }
+}
+
+// ========== EXPORT WHATSAPP ==========
+function exportWhatsApp() {
+  const m = appState.currentMonth;
+  const year = m.getFullYear();
+  const month = m.getMonth();
+  const sch = genSchedule(year, month);
+  const now = new Date();
+  const today = now.getDate();
+  const dow = now.getDay();
+  // Calculate week range (Mon-Sun)
+  const mondayOffset = dow === 0 ? -6 : 1 - dow;
+  const monday = new Date(year, month, today + mondayOffset);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const shiftEmoji = { M: '☀️', T: '🌅', N: '🌙', D: '😴', VAC: '🏖️', BAJ: '🏥', FOR: '📚', LAC: '🍼', MTC: '👶', HS: '📋', CAA: '📝' };
+
+  let text = `📋 *TURNOS SEMANA ${monday.getDate()}-${sunday.getDate()} ${monthNames[sunday.getMonth()]} ${sunday.getFullYear()}*\n`;
+  text += `_Hospital de Jove — Laboratorio_\n\n`;
+
+  for (let d = new Date(monday); d <= sunday; d.setDate(d.getDate() + 1)) {
+    if (d.getMonth() !== month) continue;
+    const dayIdx = d.getDate() - 1;
+    const festivo = isFestivo(d.getFullYear(), d.getMonth(), d.getDate());
+    const dayLabel = `*${dayNames[d.getDay()]} ${d.getDate()}*` + (festivo ? ` 🔴 _${festivo}_` : '');
+    text += `${dayLabel}\n`;
+
+    const shifts = { M: [], T: [], N: [] };
+    const absences = [];
+    workers.forEach(w => {
+      const s = sch[w.id] ? (sch[w.id][dayIdx] || '').toString().trim() : '';
+      if (shifts[s] !== undefined) {
+        shifts[s].push(w.name.split(' ')[0]);
+      } else if (['VAC','BAJ','FOR','LAC','MTC','HS','CAA','INT'].includes(s)) {
+        absences.push(`${w.name.split(' ')[0]}(${s})`);
+      }
+    });
+
+    text += `  ${shiftEmoji.M || '☀️'} Mañana: ${shifts.M.length > 0 ? shifts.M.join(', ') : '—'}\n`;
+    text += `  ${shiftEmoji.T || '🌅'} Tarde: ${shifts.T.length > 0 ? shifts.T.join(', ') : '—'}\n`;
+    text += `  ${shiftEmoji.N || '🌙'} Noche: ${shifts.N.length > 0 ? shifts.N.join(', ') : '—'}\n`;
+    if (absences.length > 0) text += `  ⚠️ Ausencias: ${absences.join(', ')}\n`;
+    text += '\n';
+  }
+
+  text += `_Generado por Shiftia SARA — ${now.toLocaleDateString('es-ES')}_`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Turnos copiados — pega en WhatsApp', 'success', 3000);
+  }).catch(() => {
+    // Fallback: create temporary textarea
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    showToast('Turnos copiados al portapapeles', 'success', 3000);
+  });
 }
 
 // ========== EXPORT SCHEDULE ==========
@@ -18948,6 +19552,20 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 
+  // Ctrl/Cmd + Z: Undo
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey && !isInput) {
+    e.preventDefault();
+    globalUndo();
+    return;
+  }
+
+  // Ctrl/Cmd + Shift + Z: Redo
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z' && !isInput) {
+    e.preventDefault();
+    globalRedo();
+    return;
+  }
+
   // Ctrl/Cmd + S: Save
   if ((e.ctrlKey || e.metaKey) && e.key === 's') {
     e.preventDefault();
@@ -19289,6 +19907,62 @@ function renderMetrics() {
       <td>${s.rest}</td>
     </tr>`;
   });
+  html += `</tbody></table></div></div>`;
+
+  // ── HORAS EXTRAS PANEL ──
+  const MONTHLY_EXPECTED_HOURS = Math.round(RULES.ANNUAL_HOURS / 12);
+  const ANNUAL_OVERTIME_LIMIT = 80; // Legal limit Spain: 80h/year
+
+  html += `<div class="mx-card" style="grid-column:1/-1;">
+    <div class="mx-card-title">⏱ Control de Horas Extras</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Limite legal: ${ANNUAL_OVERTIME_LIMIT}h extras/año · Horas esperadas/mes: ~${MONTHLY_EXPECTED_HOURS}h · Anuales: ${RULES.ANNUAL_HOURS}h</div>
+    <div style="overflow-x:auto;">
+      <table class="mx-data-table">
+        <thead><tr>
+          <th style="text-align:left;">Trabajador</th>
+          <th>Horas mes</th>
+          <th>Esperadas</th>
+          <th>Extras mes</th>
+          <th>Extras acum. año</th>
+          <th>Limite</th>
+          <th>Estado</th>
+        </tr></thead>
+        <tbody>`;
+
+  // Calculate annual overtime per worker
+  active.forEach(s => {
+    let yearlyHours = 0;
+    for (let mo = 0; mo <= month; mo++) {
+      const mKey = `${year}-${mo}`;
+      const mSch = scheduleData[mKey] || {};
+      const ws = mSch[s.id] || [];
+      yearlyHours += ws.reduce((a, sh) => a + (RULES.SHIFT_HOURS[sh] || 0), 0);
+    }
+    const monthsElapsed = month + 1;
+    const expectedYearly = Math.round(RULES.ANNUAL_HOURS / 12 * monthsElapsed);
+    const overtimeYear = Math.max(0, Math.round(yearlyHours - expectedYearly));
+    const overtimeMonth = Math.max(0, Math.round(s.hours - MONTHLY_EXPECTED_HOURS));
+    const pct = Math.round(overtimeYear / ANNUAL_OVERTIME_LIMIT * 100);
+    const statusColor = pct >= 90 ? '#cc4444' : pct >= 60 ? '#e67e22' : '#27ae60';
+    const statusLabel = pct >= 90 ? '⚠ ALERTA' : pct >= 60 ? '⚡ Vigilar' : '✓ OK';
+    const typeColor = s.type === 'enf' ? '#2e8b7a' : '#4a9dd4';
+
+    html += `<tr>
+      <td style="text-align:left;font-weight:600;">${escHtml(s.name)} <span style="font-size:9px;color:${typeColor};font-weight:700;">${s.type === 'enf' ? 'ENF' : 'TEC'}</span></td>
+      <td style="font-weight:600;">${s.hours}h</td>
+      <td>${MONTHLY_EXPECTED_HOURS}h</td>
+      <td style="font-weight:600;color:${overtimeMonth > 0 ? '#e67e22' : 'var(--text3)'};">${overtimeMonth > 0 ? '+' + overtimeMonth + 'h' : '—'}</td>
+      <td style="font-weight:700;color:${statusColor};">${overtimeYear}h</td>
+      <td>
+        <div style="width:60px;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;">
+          <div style="width:${Math.min(100, pct)}%;height:100%;background:${statusColor};border-radius:3px;"></div>
+        </div>
+        <span style="font-size:10px;color:var(--text3);margin-left:4px;">${pct}%</span>
+      </td>
+      <td style="font-weight:700;color:${statusColor};font-size:11px;">${statusLabel}</td>
+    </tr>`;
+  });
+
   html += `</tbody></table></div></div>`;
 
   html += `</div>`; // close mx-grid
