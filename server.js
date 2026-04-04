@@ -1268,7 +1268,7 @@ async function sendDailySummary() {
     const users = await pool.query('SELECT id, email, name FROM users WHERE plan_status = $1', ['active']);
 
     for (const user of users.rows) {
-      const dataRes = await pool.query('SELECT data FROM user_data WHERE user_id = $1', [user.id]);
+      const dataRes = await pool.query('SELECT data FROM schedule_data WHERE user_id = $1', [user.id]);
       if (!dataRes.rows.length) continue;
 
       const data = dataRes.rows[0].data;

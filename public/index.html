@@ -10014,80 +10014,7 @@ function buildWhatIfPanel() {
   return html;
 }
 
-// FEATURE 2: Drag & Drop Shift Swapping
-let dragData = { wId: null, day: null, shift: '' };
-
-function dragShift(e, wId, day) {
-  const sch = genSchedule(appState.currentMonth.getFullYear(), appState.currentMonth.getMonth());
-  const shift = sch[wId] ? sch[wId][day] : '';
-  dragData = { wId, day, shift };
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', shift);
-  setTimeout(() => e.target.classList.add('dragging'), 0);
-}
-
-function dragOverShift(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-}
-
-function dragEnterShift(e) {
-  e.preventDefault();
-  const pill = e.target.closest('.shift-pill');
-  if (pill) pill.classList.add('drag-over');
-}
-
-function dragLeaveShift(e) {
-  const pill = e.target.closest('.shift-pill');
-  if (pill) pill.classList.remove('drag-over');
-}
-
-function dropShift(e, targetWId, targetDay) {
-  e.preventDefault();
-  const pill = e.target.closest('.shift-pill');
-  if (pill) pill.classList.remove('drag-over');
-
-  if (!dragData.wId || dragData.day === null) return;
-  if (dragData.wId === targetWId && dragData.day === targetDay) return;
-
-  // Only allow swap on same day
-  if (dragData.day !== targetDay) {
-    showToast('Solo puedes intercambiar turnos del mismo dia', 'warning');
-    return;
-  }
-
-  const key = appState.currentMonth.getFullYear() + '-' + appState.currentMonth.getMonth();
-  const sch = scheduleData[key];
-  if (!sch) return;
-
-  const sourceShift = sch[dragData.wId] ? sch[dragData.wId][dragData.day] : '';
-  const targetShift = sch[targetWId] ? sch[targetWId][targetDay] : '';
-
-  const w1 = workers.find(w => w.id === dragData.wId);
-  const w2 = workers.find(w => w.id === targetWId);
-  if (!w1 || !w2) return;
-
-  if (!confirm(`Intercambiar turnos dia ${targetDay + 1}:\n${w1.name}: ${sourceShift || 'libre'} → ${targetShift || 'libre'}\n${w2.name}: ${targetShift || 'libre'} → ${sourceShift || 'libre'}\n\n¿Confirmar?`)) return;
-
-  // Perform swap
-  if (sch[dragData.wId]) sch[dragData.wId][dragData.day] = targetShift;
-  if (sch[targetWId]) sch[targetWId][targetDay] = sourceShift;
-
-  // Log incident
-  incidents.unshift({
-    date: new Date().toISOString(),
-    type: 'swap',
-    desc: `Intercambio drag&drop dia ${targetDay+1}: ${w1.name} (${sourceShift}↔${targetShift}) con ${w2.name}`,
-    auto: false
-  });
-
-  saveToStorage();
-  detectConflicts();
-  renderSchedule();
-  showToast(`Turnos intercambiados: ${w1.name} ↔ ${w2.name}`, 'success');
-
-  dragData = { wId: null, day: null, shift: '' };
-}
+// FEATURE 2: Drag & Drop — see unified implementation below (search "DRAG & DROP SHIFTS")
 
 // FEATURE 3: Compact/Expanded Mode
 function setScheduleMode(mode) {
@@ -11226,7 +11153,7 @@ function findConflictSolution(data) {
         replacementStats: best.stats,
         originalShift: currentShift,
         year, month, day,
-        description: `${escHtml(w.name)} → D (descanso), ${best.w.name} → ${currentShift}`
+        description: `${escHtml(w.name)} → D (descanso), ${escHtml(best.w.name)} → ${currentShift}`
       };
     }
     return { found: false, reason: `No hay ${w.type === 'enf' ? 'enfermeros' : 'tecnicos'} disponibles para cubrir el ${currentShift} de ${escHtml(w.name)}.` };
@@ -11254,7 +11181,7 @@ function findConflictSolution(data) {
         replacementStats: best.stats,
         originalShift: currentShift,
         year, month, day,
-        description: `${escHtml(w.name)} → D, ${best.w.name} → ${currentShift}`
+        description: `${escHtml(w.name)} → D, ${escHtml(best.w.name)} → ${currentShift}`
       };
     }
     return { found: false, reason: `No hay trabajadores disponibles para sustituir a ${escHtml(w.name)}.` };
@@ -14082,7 +14009,7 @@ function detectConflicts() {
               date: dayStr, year, month, day: d, severity: 'medium', type: 'coverage', shift: 'M',
               title: `Micro corta: reubicar 1 tec de lab${covLabel}`,
               desc: `Lab tiene ${mTecLab} tec (sobra${mTecLab > 3 ? 'n' : ''}) · Micro tiene ${mTecMicro} tec (min 3) — mover 1 de lab a micro`,
-              ai: `Microbiologia solo tiene ${mTecMicro} de 3 tecnicos necesarios, pero lab tiene ${mTecLab} (necesita min ${COV.M.tec}). Se puede reubicar a ${best.w.name} (${best.stats.h}h acumuladas) de lab a micro. Beatriz NO es reubicable (lab externo).`
+              ai: `Microbiologia solo tiene ${mTecMicro} de 3 tecnicos necesarios, pero lab tiene ${mTecLab} (necesita min ${COV.M.tec}). Se puede reubicar a ${escHtml(best.w.name)} (${best.stats.h}h acumuladas) de lab a micro. Beatriz NO es reubicable (lab externo).`
             });
             // If after rebalancing micro still < 3, also suggest hiring
             if (microAfter < MCOV.M) {
