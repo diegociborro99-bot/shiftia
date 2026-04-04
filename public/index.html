@@ -12580,6 +12580,8 @@ async function handleImport(files) {
       <div style="font-size:16px;font-weight:500;color:var(--success);margin-bottom:4px;">Importación completada</div>
       <div style="font-size:12px;color:var(--text2);">${fileArray.length} planilla${fileArray.length>1?'s':''} procesada${fileArray.length>1?'s':''} — Turnos volcados al calendario</div>
     </div>`;
+    // Persist imported data to localStorage + server
+    saveToStorage();
     // Refresh ALL views with new data
     renderDashboard();
     renderSchedule();
@@ -12975,6 +12977,8 @@ function saveShiftChange() {
   // Log shift change to history
   logShiftChange(wId, day, m.getMonth(), m.getFullYear(), originalShift, selectedShift, 'manual');
 
+  // Persist changes to localStorage + server
+  saveToStorage();
   // Close editor and re-render
   closeShiftEditor();
   renderSchedule();
