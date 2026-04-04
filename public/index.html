@@ -276,10 +276,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 /* Navigation */
 .topbar {
   background: rgba(255,255,255,0.85);
-  padding: 14px 40px;
+  padding: 14px 24px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 12px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   margin-bottom: 24px;
   transition: background 0.3s ease, box-shadow 0.3s ease, padding 0.3s ease;
@@ -300,11 +300,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .topbar-left {
-  position: absolute;
-  left: 40px;
   display: flex;
   align-items: center;
   gap: 28px;
+  flex-shrink: 0;
 }
 
 .logo {
@@ -318,9 +317,15 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 .nav-tabs {
   display: flex;
-  gap: 36px;
+  gap: 20px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   justify-content: center;
 }
+.nav-tabs::-webkit-scrollbar { display: none; }
 
 .nav-tab {
   background: none;
@@ -334,6 +339,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
   letter-spacing: 0.2px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .nav-tab:active {
@@ -366,11 +373,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .topbar-right {
-  position: absolute;
-  right: 40px;
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .theme-btn {
