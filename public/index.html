@@ -8160,7 +8160,7 @@ table.schedule tbody tr:hover {
   .global-search-box { width: 96%; border-radius: 12px; }
 }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" async defer></script>
 </head>
 <body>
 
@@ -16780,6 +16780,7 @@ function buildAICoverageAnalysis(w, days, action) {
         <div class="es-label">Sustitutos</div>
       </div>`;
     }
+    html += `
       <div class="exec-stat ${confClass}">
         <div class="es-val" style="position:relative;width:48px;height:48px;margin:0 auto;">
           <svg viewBox="0 0 66 66" style="width:48px;height:48px;transform:rotate(-90deg);">
@@ -20378,15 +20379,15 @@ function updateFilterBadge() {
   } catch(e) {
     console.warn('[Shiftia] Async load failed, using localStorage fallback');
   }
-  cleanOrphanedImports();
-  detectConflicts();
-  renderDashboard();
-  updateImportBadge();
+  try { cleanOrphanedImports(); } catch(e) { console.warn('[Shiftia] cleanOrphanedImports error:', e); }
+  try { detectConflicts(); } catch(e) { console.warn('[Shiftia] detectConflicts error:', e); }
+  try { renderDashboard(); } catch(e) { console.warn('[Shiftia] renderDashboard error:', e); }
+  try { updateImportBadge(); } catch(e) { console.warn('[Shiftia] updateImportBadge error:', e); }
 
   // Check for onboarding
   const onboarded = localStorage.getItem('shiftia_onboarded');
   if (!onboarded) {
-    setTimeout(() => showOnboarding(), 500);
+    setTimeout(() => { try { showOnboarding(); } catch(e) {} }, 500);
   }
 
   console.log('[Shiftia v5.3] Iniciado correctamente');
@@ -20413,32 +20414,56 @@ function updateFilterBadge() {
 
   // Dismiss splash → show login or app
   setTimeout(async () => {
-    const splash = document.getElementById('splashScreen');
-    if (splash) splash.classList.add('hidden');
+    try {
+      const splash = document.getElementById('splashScreen');
+      if (splash) splash.classList.add('hidden');
 
-    let hasSession = false;
-    try { hasSession = await checkSession(); } catch(e) { console.warn('[Shiftia] checkSession error:', e); }
-    if (hasSession) {
-      // Show skeleton while data loads
-      document.getElementById('loginScreen').classList.add('hidden');
-      const skeleton = document.getElementById('skeletonScreen');
-      if (skeleton) skeleton.classList.remove('hidden');
+      let hasSession = false;
+      try { hasSession = await checkSession(); } catch(e) { console.warn('[Shiftia] checkSession error:', e); }
+      if (hasSession) {
+        // Show skeleton while data loads
+        document.getElementById('loginScreen').classList.add('hidden');
+        const skeleton = document.getElementById('skeletonScreen');
+        if (skeleton) skeleton.classList.remove('hidden');
 
-      await loadFromStorage();
-      renderDashboard();
+        try { await loadFromStorage(); } catch(e) { console.warn('[Shiftia] loadFromStorage error:', e); }
+        try { renderDashboard(); } catch(e) { console.warn('[Shiftia] renderDashboard error:', e); }
 
-      // Hide skeleton, show app
-      if (skeleton) skeleton.classList.add('hidden');
-      if (currentUser) {
-        const ud = document.getElementById('userDisplay');
-        if (ud) ud.textContent = currentUser.name || currentUser.email;
+        // Hide skeleton, show app
+        if (skeleton) skeleton.classList.add('hidden');
+        if (currentUser) {
+          const ud = document.getElementById('userDisplay');
+          if (ud) ud.textContent = currentUser.name || currentUser.email;
+        }
+        document.getElementById('mainApp').style.display = '';
+      } else {
+        // Show login
+        showLoginScreen();
       }
-      document.getElementById('mainApp').style.display = '';
-    } else {
-      // Show login
-      showLoginScreen();
+    } catch(fatalErr) {
+      console.error('[Shiftia] Fatal init error:', fatalErr);
+      // Guarantee login screen shows even on error
+      try {
+        const splash = document.getElementById('splashScreen');
+        if (splash) splash.classList.add('hidden');
+        showLoginScreen();
+      } catch(e2) {}
     }
   }, 3200);
+
+  // Safety net: if nothing is visible after 6 seconds, force-show login
+  setTimeout(() => {
+    const mainApp = document.getElementById('mainApp');
+    const loginScreen = document.getElementById('loginScreen');
+    const splash = document.getElementById('splashScreen');
+    const mainVisible = mainApp && mainApp.style.display !== 'none';
+    const loginVisible = loginScreen && loginScreen.classList.contains('active');
+    if (!mainVisible && !loginVisible) {
+      console.warn('[Shiftia] Safety net: nothing visible after 6s, forcing login screen');
+      if (splash) splash.classList.add('hidden');
+      showLoginScreen();
+    }
+  }, 6000);
 })();
 
 // ===============================================================
