@@ -14183,7 +14183,118 @@ function getWorkerStats(wId, filterMonths) {
   return {m,t,n,d,h,vac,baj,other,total:m+t+n,wknd};
 }
 
-// ========== AI ENGINE v3.0 HELPERS ==========
+// ========== AI ENGINE v4.1 HELPERS ==========
+
+// MEJORA 1+4: Multi-month equity — 3-month lookback for fair scoring
+function getMultiMonthEquity(wId, currentMonth, currentYear) {
+  const months = [];
+  for (let i = 0; i < 3; i++) {
+    let m = currentMonth - i, y = currentYear;
+    if (m < 0) { m += 12; y--; }
+    months.push(`${y}-${m}`);
+  }
+  const stats = getWorkerStats(wId, months);
+  const type = workers.find(w => w.id === wId)?.type || 'enf';
+
+  // Get team averages for same 3-month window
+  const teamWorkers = workers.filter(w => w.type === type && !w.rules?.noCover && !w.rules?.noSwap);
+  let teamN = 0, teamH = 0, teamWknd = 0, count = 0;
+  teamWorkers.forEach(tw => {
+    const ts = getWorkerStats(tw.id, months);
+    teamN += ts.n; teamH += ts.h; teamWknd += ts.wknd;
+    count++;
+  });
+  const avgN3m = count > 0 ? teamN / count : 0;
+  const avgH3m = count > 0 ? teamH / count : 0;
+  const avgWknd3m = count > 0 ? teamWknd / count : 0;
+
+  return {
+    nights: stats.n, hours: stats.h, weekends: stats.wknd,
+    avgN3m, avgH3m, avgWknd3m,
+    nightDiff3m: stats.n - avgN3m,
+    hourDiff3m: stats.h - avgH3m,
+    wkndDiff3m: stats.wknd - avgWknd3m,
+    // Historical trend: is this worker consistently overloaded?
+    isChronicallyOverloaded: stats.n > avgN3m * 1.3 && stats.h > avgH3m * 1.1,
+    isChronicallyUnderloaded: stats.n < avgN3m * 0.7 && count > 3
+  };
+}
+
+// MEJORA 5: Absence pattern detection
+function detectAbsencePatterns(wId) {
+  const patterns = [];
+  const absent = {};
+  // Analyze shiftHistory and incidents for this worker
+  const w = workers.find(x => x.id === wId);
+  if (!w) return patterns;
+
+  // Scan all months of scheduleData
+  Object.keys(scheduleData).forEach(key => {
+    const sch = scheduleData[key];
+    if (!sch || !sch[wId]) return;
+    const [yr, mo] = key.split('-').map(Number);
+    const shifts = sch[wId];
+    shifts.forEach((s, dayIdx) => {
+      if (['BAJ','INT','AE','CAA'].includes(s)) {
+        const dow = new Date(yr, mo, dayIdx + 1).getDay();
+        const dowNames = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+        const dayName = dowNames[dow];
+        if (!absent[dayName]) absent[dayName] = 0;
+        absent[dayName]++;
+      }
+    });
+  });
+
+  // Detect day-of-week patterns (3+ absences on same day)
+  Object.keys(absent).forEach(day => {
+    if (absent[day] >= 3) {
+      patterns.push({
+        type: 'dow_pattern',
+        day,
+        count: absent[day],
+        message: `${w.name} tiene ${absent[day]} ausencias en ${day} — posible patron`
+      });
+    }
+  });
+
+  return patterns;
+}
+
+// MEJORA 6: Smart vacation overlap checking
+function checkVacationOverlap(wId, days, shiftToAssign) {
+  if (!['VAC','VAA','VAN'].includes(shiftToAssign)) return { ok: true, overlaps: [] };
+  const w = workers.find(x => x.id === wId);
+  if (!w) return { ok: true, overlaps: [] };
+  const maxSimultaneous = { enf: 2, tec: 2 }; // Max same-type workers on VAC per day
+  const limit = maxSimultaneous[w.type] || 2;
+  const overlaps = [];
+
+  days.forEach(d => {
+    const key = `${d.year}-${d.month}`;
+    const sch = scheduleData[key] || genSchedule(d.year, d.month);
+    let vacCount = 0;
+    const vacWorkers = [];
+    workers.forEach(other => {
+      if (other.id === wId) return;
+      if (other.type !== w.type) return;
+      const s = sch[other.id] ? (sch[other.id][d.day - 1] || '') : '';
+      if (['VAC','VAA','VAN'].includes(s)) {
+        vacCount++;
+        vacWorkers.push(other.name);
+      }
+    });
+    if (vacCount >= limit) {
+      overlaps.push({
+        day: d.day, month: d.month, year: d.year,
+        count: vacCount + 1, // +1 counting this worker
+        workers: vacWorkers,
+        message: `Dia ${d.day}: ya ${vacCount} ${w.type === 'enf' ? 'enfermeros' : 'tecnicos'} de VAC (${vacWorkers.join(', ')})`
+      });
+    }
+  });
+
+  return { ok: overlaps.length === 0, overlaps };
+}
 
 // Accumulated fatigue: analyze last 6 weeks of workload across months
 function getAccumulatedFatigue(wId, currentDay, currentMonth, currentYear) {
@@ -14627,8 +14738,24 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
       scoreBreakdown.push(`${fatigue.nightsLast2Weeks}N en ultimas 2 sem`);
     }
 
+    // (9) MEJORA 1+4: Multi-month equity — 3-month fairness tracking
+    const equity3m = getMultiMonthEquity(w.id, month, year);
+    if (equity3m.isChronicallyOverloaded) {
+      score += 12;
+      scoreBreakdown.push(`Sobrecargado 3 meses: +${equity3m.nightDiff3m.toFixed(1)}N, +${equity3m.hourDiff3m.toFixed(0)}h vs media`);
+    } else if (equity3m.isChronicallyUnderloaded) {
+      score -= 8;
+      scoreBreakdown.push(`Infracargado 3 meses: ${equity3m.nightDiff3m.toFixed(1)}N vs media — candidato ideal`);
+    } else if (equity3m.nightDiff3m > 3) {
+      score += 5;
+      scoreBreakdown.push(`+${equity3m.nightDiff3m.toFixed(1)}N acumuladas en 3 meses`);
+    } else if (equity3m.nightDiff3m < -3) {
+      score -= 4;
+      scoreBreakdown.push(`${equity3m.nightDiff3m.toFixed(1)}N menos que media 3m`);
+    }
+
     candidates.push({
-      w, currentShift, stats, score, scoreBreakdown,
+      w, currentShift, stats, score, scoreBreakdown, equity3m,
       reason: currentShift === 'D' ? 'Descanso' : 'Libre',
       nightsVsAvg: (stats.n - avgN).toFixed(1),
       hoursVsAvg: (stats.h - avgH).toFixed(0),
@@ -15624,6 +15751,124 @@ function handleChatQuery(query) {
 }
 
 // ========== MODO JEFE DE GUARDIA ==========
+let guardiaAutoRefreshInterval = null;
+let guardiaHandoffNotes = {}; // { "2026-3-15-T": "Paciente en obs...", ... }
+// Load persisted handoff notes from localStorage
+try {
+  const saved = localStorage.getItem('shiftia_handoff_notes');
+  if (saved) guardiaHandoffNotes = JSON.parse(saved);
+} catch(e) { /* ignore */ }
+
+function saveHandoffNotes() {
+  try { localStorage.setItem('shiftia_handoff_notes', JSON.stringify(guardiaHandoffNotes)); } catch(e) { /* ignore */ }
+}
+
+function guardiaCallIn(wId, shift, dayIdx, year, month) {
+  const w = workers.find(x => x.id === wId);
+  if (!w) return;
+  const sch = genSchedule(year, month);
+  if (!sch[wId]) return;
+  const prev = (sch[wId][dayIdx] || '').toString().trim();
+  if (prev !== 'D' && prev !== '' && !prev) return;
+  // Assign worker to current shift
+  const key = year + '-' + month;
+  if (!scheduleData[key]) scheduleData[key] = {};
+  if (!scheduleData[key][wId]) scheduleData[key][wId] = [...(sch[wId] || [])];
+  scheduleData[key][wId][dayIdx] = shift;
+  saveToStorage();
+  renderGuardia();
+  renderSchedule();
+  // Show confirmation
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#27ae60;color:#fff;padding:12px 24px;border-radius:12px;font-size:13px;font-weight:600;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,0.15);';
+  toast.textContent = escHtml(w.name) + ' asignado al turno ' + shift;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function getGuardiaFatigueInfo(wId, dayIdx, sch) {
+  // Count consecutive work days ending at dayIdx
+  let streak = 0;
+  for (let d = dayIdx; d >= 0; d--) {
+    const s = sch[wId] ? (sch[wId][d] || '').toString().trim() : '';
+    if (['M','T','N','MR','M7H','M6R','M55'].includes(s)) streak++;
+    else break;
+  }
+  // Count consecutive nights
+  let nightStreak = 0;
+  for (let d = dayIdx; d >= 0; d--) {
+    const s = sch[wId] ? (sch[wId][d] || '').toString().trim() : '';
+    if (s === 'N') nightStreak++;
+    else break;
+  }
+  // Total hours this week (approx: M/T=7h, N=10h)
+  const weekStart = Math.max(0, dayIdx - (new Date().getDay() || 7) + 1);
+  let weekHours = 0;
+  for (let d = weekStart; d <= dayIdx; d++) {
+    const s = sch[wId] ? (sch[wId][d] || '').toString().trim() : '';
+    if (s === 'N') weekHours += 10;
+    else if (['M','T','MR','M7H','M6R','M55'].includes(s)) weekHours += 7;
+  }
+  const level = (streak >= 6 || nightStreak >= 3 || weekHours >= 50) ? 'high' : (streak >= 4 || nightStreak >= 2 || weekHours >= 40) ? 'medium' : 'low';
+  return { streak, nightStreak, weekHours, level };
+}
+
+function getGuardiaShiftTimes(shift) {
+  if (shift === 'M') return { start: 8, end: 15 };
+  if (shift === 'T') return { start: 15, end: 22 };
+  return { start: 22, end: 32 }; // N: 22:00 to 08:00 next day (32=8+24)
+}
+
+function getGuardiaCountdown(currentShift, now) {
+  const times = getGuardiaShiftTimes(currentShift);
+  const endHour = times.end >= 24 ? times.end - 24 : times.end;
+  const endDate = new Date(now);
+  if (times.end >= 24) { endDate.setDate(endDate.getDate() + 1); }
+  endDate.setHours(endHour, 0, 0, 0);
+  const diff = endDate - now;
+  if (diff <= 0) return { hours: 0, minutes: 0, text: 'Cambio inminente', pct: 100 };
+  const hours = Math.floor(diff / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  const totalMs = (times.end - times.start) * 3600000;
+  const elapsed = totalMs - diff;
+  const pct = Math.min(100, Math.max(0, Math.round((elapsed / totalMs) * 100)));
+  return { hours, minutes, text: hours + 'h ' + minutes + 'm', pct };
+}
+
+function getGuardiaCoverageRisk(year, month, day, sch) {
+  // Analyze next 3 shifts for coverage risk
+  const shifts = [];
+  const now = new Date();
+  const hour = now.getHours();
+  let currentShift = 'M';
+  if (hour >= 15 && hour < 22) currentShift = 'T';
+  if (hour >= 22 || hour < 8) currentShift = 'N';
+  const order = ['M', 'T', 'N'];
+  let sIdx = order.indexOf(currentShift);
+  let dIdx = day - 1;
+  // Skip current shift, get next 3
+  for (let i = 0; i < 3; i++) {
+    sIdx++;
+    if (sIdx >= 3) { sIdx = 0; dIdx++; }
+    if (dIdx >= 31) break;
+    const shift = order[sIdx];
+    const realDay = dIdx + 1;
+    const cov = getCoverageRules(year, month, realDay);
+    const covReq = cov[shift] || { enf: 1, tec: 1 };
+    const onShift = workers.filter(w => {
+      const s = sch[w.id] ? (sch[w.id][dIdx] || '').toString().trim() : '';
+      return s === shift;
+    });
+    const enfCount = onShift.filter(w => w.type === 'enf').length;
+    const tecCount = onShift.filter(w => w.type === 'tec').length;
+    const ok = enfCount >= covReq.enf && tecCount >= covReq.tec;
+    const shiftLabel = shift === 'M' ? 'Mañana' : shift === 'T' ? 'Tarde' : 'Noche';
+    const dayLabel = (dIdx === day - 1) ? 'Hoy' : (dIdx === day) ? 'Mañana' : new Date(year, month, dIdx + 1).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
+    shifts.push({ shift, dayLabel, shiftLabel, ok, enfCount, tecCount, covReq, onShift, dIdx });
+  }
+  return shifts;
+}
+
 function renderGuardia() {
   const container = document.getElementById('guardiaContent');
   if (!container) return;
@@ -15666,38 +15911,126 @@ function renderGuardia() {
   const tecNow = onNow.filter(w => w.type === 'tec').length;
   const covOk = enfNow >= covReq.enf && tecNow >= covReq.tec;
 
+  // Countdown
+  const countdown = getGuardiaCountdown(currentShift, now);
+
+  // Coverage risk for next 3 shifts
+  const riskShifts = getGuardiaCoverageRisk(year, month, day, sch);
+  const riskyCount = riskShifts.filter(s => !s.ok).length;
+
+  // Fatigue info for current workers
+  const fatigueData = onNow.map(w => ({
+    ...w,
+    fatigue: getGuardiaFatigueInfo(w.id, dayIdx, sch)
+  }));
+  const highFatigue = fatigueData.filter(w => w.fatigue.level === 'high');
+  const medFatigue = fatigueData.filter(w => w.fatigue.level === 'medium');
+
   // Absences today
   const absToday = workers.filter(w => {
     const s = sch[w.id] ? (sch[w.id][dayIdx] || '').toString().trim() : '';
     return ['VAC','BAJ','FOR','LAC','MTC','HS','CAA','INT'].includes(s);
   }).map(w => ({ name: w.name, code: (sch[w.id][dayIdx] || '').toString().trim() }));
 
+  // Handoff note key
+  const handoffKey = year + '-' + month + '-' + day + '-' + currentShift;
+  const existingNote = guardiaHandoffNotes[handoffKey] || '';
+
+  // Smart ranking for available workers: score by fatigue (less=better), type need
+  const needEnf = !covOk && enfNow < (covReq.enf || 0);
+  const needTec = !covOk && tecNow < (covReq.tec || 0);
+  const rankedAvailable = available.map(w => {
+    const fat = getGuardiaFatigueInfo(w.id, dayIdx, sch);
+    let priority = 0;
+    if (needEnf && w.type === 'enf') priority -= 10;
+    if (needTec && w.type === 'tec') priority -= 10;
+    if (fat.level === 'high') priority += 20;
+    else if (fat.level === 'medium') priority += 5;
+    priority += fat.streak; // prefer less fatigued
+    return { ...w, fatigue: fat, priority };
+  }).sort((a, b) => a.priority - b.priority);
+
   // Build HTML
   let html = `
-  <div style="max-width:700px;margin:0 auto;padding:20px;">
-    <div style="text-align:center;margin-bottom:24px;">
+  <div style="max-width:760px;margin:0 auto;padding:20px;">
+    <!-- Header with countdown -->
+    <div style="text-align:center;margin-bottom:20px;">
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);font-weight:600;">Modo Jefe de Guardia</div>
       <div style="font-size:28px;font-weight:800;color:var(--text1);margin:4px 0;">${shiftLabels[currentShift]}</div>
       <div style="font-size:13px;color:var(--text3);">${now.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long', year:'numeric' })} — ${now.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' })}</div>
+
+      <!-- Countdown bar -->
+      <div style="margin:12px auto;max-width:400px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:11px;color:var(--text3);">Cambio de turno en</span>
+          <span style="font-size:14px;font-weight:800;color:${shiftColors[currentShift]};" id="guardiaCountdownText">${countdown.text}</span>
+        </div>
+        <div style="height:6px;background:var(--surface);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${countdown.pct}%;background:${shiftColors[currentShift]};border-radius:3px;transition:width 60s linear;"></div>
+        </div>
+      </div>
+
+      <!-- Coverage status -->
       <div style="margin-top:8px;display:inline-block;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;background:${covOk ? 'rgba(39,174,96,0.12)' : 'rgba(204,68,68,0.12)'};color:${covOk ? '#27ae60' : '#cc4444'};">
         ${covOk ? '✓ Cobertura completa' : '⚠ Cobertura insuficiente — ENF ' + enfNow + '/' + covReq.enf + ' · TEC ' + tecNow + '/' + covReq.tec}
       </div>
     </div>
 
-    <!-- Turno actual -->
+    <!-- Alert strip: fatigue + risk -->
+    ${(highFatigue.length > 0 || riskyCount > 0) ? `
+    <div style="background:rgba(204,68,68,0.06);border:1px solid rgba(204,68,68,0.2);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
+      ${highFatigue.length > 0 ? `
+      <div style="font-size:12px;color:#cc4444;font-weight:600;margin-bottom:${riskyCount > 0 ? '6px' : '0'};">
+        ⚠ Fatiga alta: ${highFatigue.map(w => escHtml(w.name.split(' ')[0]) + ' (' + w.fatigue.streak + ' dias seguidos, ' + w.fatigue.weekHours + 'h/sem)').join(' · ')}
+      </div>` : ''}
+      ${riskyCount > 0 ? `
+      <div style="font-size:12px;color:#e67e22;font-weight:600;">
+        ⚡ ${riskyCount} de los proximos 3 turnos con cobertura insuficiente
+      </div>` : ''}
+    </div>` : ''}
+
+    <!-- Turno actual con fatigue badges -->
     <div style="background:var(--surface);border:1.5px solid ${shiftColors[currentShift]}33;border-radius:16px;padding:20px;margin-bottom:16px;">
-      <div style="font-size:13px;font-weight:700;color:${shiftColors[currentShift]};text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">🟢 Trabajando ahora</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">
-        ${onNow.map(w => `
-          <div style="background:var(--bg);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;border:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:700;color:${shiftColors[currentShift]};text-transform:uppercase;letter-spacing:1px;">🟢 Trabajando ahora (${onNow.length})</div>
+        <div style="font-size:11px;color:var(--text3);">ENF ${enfNow}/${covReq.enf} · TEC ${tecNow}/${covReq.tec}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
+        ${fatigueData.map(w => {
+          const fatColor = w.fatigue.level === 'high' ? '#cc4444' : w.fatigue.level === 'medium' ? '#e67e22' : '#27ae60';
+          const fatIcon = w.fatigue.level === 'high' ? '🔴' : w.fatigue.level === 'medium' ? '🟡' : '🟢';
+          return `
+          <div style="background:var(--bg);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;border:1px solid ${w.fatigue.level === 'high' ? 'rgba(204,68,68,0.3)' : 'var(--border)'};">
             <div style="width:36px;height:36px;border-radius:50%;background:${shiftColors[currentShift]}18;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:${shiftColors[currentShift]};">${escHtml(w.name.charAt(0))}</div>
-            <div>
+            <div style="flex:1;min-width:0;">
               <div style="font-size:13px;font-weight:600;color:var(--text1);">${escHtml(w.name)}</div>
               <div style="font-size:10px;color:var(--text3);text-transform:uppercase;">${w.type === 'enf' ? 'Enfermería' : 'Técnico'}${w.area === 'micro' ? ' · Micro' : ''}</div>
+              <div style="font-size:9px;color:${fatColor};font-weight:600;margin-top:2px;">
+                ${fatIcon} ${w.fatigue.streak}d seguidos · ${w.fatigue.weekHours}h/sem${w.fatigue.nightStreak > 0 ? ' · ' + w.fatigue.nightStreak + 'N' : ''}
+              </div>
             </div>
-          </div>
-        `).join('')}
+          </div>`;
+        }).join('')}
         ${onNow.length === 0 ? '<div style="color:var(--text3);font-size:13px;padding:8px;">Sin personal asignado</div>' : ''}
+      </div>
+    </div>
+
+    <!-- Previsión próximos 3 turnos -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:var(--text1);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">📊 Previsión próximos turnos</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+        ${riskShifts.map(rs => {
+          const sColor = rs.shift === 'M' ? '#2e8b7a' : rs.shift === 'T' ? '#4a9dd4' : '#7c6bb1';
+          return `
+          <div style="background:var(--bg);border-radius:10px;padding:12px;border:1px solid ${rs.ok ? 'var(--border)' : 'rgba(204,68,68,0.3)'};">
+            <div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;margin-bottom:4px;">${escHtml(rs.dayLabel)}</div>
+            <div style="font-size:14px;font-weight:700;color:${sColor};margin-bottom:4px;">${escHtml(rs.shiftLabel)}</div>
+            <div style="font-size:11px;color:${rs.ok ? '#27ae60' : '#cc4444'};font-weight:600;">
+              ${rs.ok ? '✓' : '⚠'} ENF ${rs.enfCount}/${rs.covReq.enf} · TEC ${rs.tecCount}/${rs.covReq.tec}
+            </div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px;">${rs.onShift.length} personas</div>
+          </div>`;
+        }).join('')}
       </div>
     </div>
 
@@ -15705,12 +16038,18 @@ function renderGuardia() {
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;">
       <div style="font-size:13px;font-weight:700;color:${shiftColors[nextShift]};text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">⏭ Siguiente: ${nextLabel}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">
-        ${onNext.map(w => `
+        ${onNext.map(w => {
+          const fat = getGuardiaFatigueInfo(w.id, nextDayIdx, sch);
+          const fatColor = fat.level === 'high' ? '#cc4444' : fat.level === 'medium' ? '#e67e22' : 'var(--text3)';
+          return `
           <div style="background:var(--bg);border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px;border:1px solid var(--border);">
             <div style="width:28px;height:28px;border-radius:50%;background:${shiftColors[nextShift]}18;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:${shiftColors[nextShift]};">${escHtml(w.name.charAt(0))}</div>
-            <div style="font-size:12px;font-weight:600;color:var(--text2);">${escHtml(w.name)} <span style="font-size:9px;color:var(--text3);">${w.type === 'enf' ? 'ENF' : 'TEC'}</span></div>
-          </div>
-        `).join('')}
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text2);">${escHtml(w.name)} <span style="font-size:9px;color:var(--text3);">${w.type === 'enf' ? 'ENF' : 'TEC'}</span></div>
+              ${fat.level !== 'low' ? '<div style="font-size:9px;color:' + fatColor + ';font-weight:600;">' + fat.streak + 'd seguidos</div>' : ''}
+            </div>
+          </div>`;
+        }).join('')}
       </div>
     </div>
 
@@ -15724,28 +16063,87 @@ function renderGuardia() {
     </div>
     ` : ''}
 
-    <!-- Refuerzos disponibles -->
+    <!-- Refuerzos disponibles (ranked by priority) -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;">
-      <div style="font-size:13px;font-weight:700;color:#e67e22;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">📞 Disponibles para refuerzo (${available.length})</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;">
-        ${available.map(w => `
-          <div style="background:var(--bg);border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px;border:1px solid var(--border);cursor:pointer;" title="Clic para asignar ${escHtml(w.name)} al turno actual">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:700;color:#e67e22;text-transform:uppercase;letter-spacing:1px;">📞 Disponibles para refuerzo (${available.length})</div>
+        ${!covOk ? '<div style="font-size:10px;color:#cc4444;font-weight:600;">Se necesita: ' + (needEnf ? 'ENF ' : '') + (needTec ? 'TEC' : '') + '</div>' : ''}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">
+        ${rankedAvailable.map((w, idx) => {
+          const fatColor = w.fatigue.level === 'high' ? '#cc4444' : w.fatigue.level === 'medium' ? '#e67e22' : '#27ae60';
+          const isRecommended = idx < 3 && !covOk;
+          return `
+          <div style="background:var(--bg);border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px;border:1px solid ${isRecommended ? 'rgba(39,174,96,0.4)' : 'var(--border)'};">
             <div style="width:28px;height:28px;border-radius:50%;background:rgba(230,126,34,0.12);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#e67e22;">${escHtml(w.name.charAt(0))}</div>
-            <div>
-              <div style="font-size:12px;font-weight:600;color:var(--text2);">${escHtml(w.name)}</div>
-              <div style="font-size:10px;color:var(--text3);">${w.type === 'enf' ? 'ENF' : 'TEC'}${w.area === 'micro' ? ' · Micro' : ''} · Descansando</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:600;color:var(--text2);">
+                ${escHtml(w.name)} <span style="font-size:9px;color:var(--text3);">${w.type === 'enf' ? 'ENF' : 'TEC'}${w.area === 'micro' ? ' · Micro' : ''}</span>
+                ${isRecommended ? '<span style="font-size:8px;background:#27ae6020;color:#27ae60;padding:1px 6px;border-radius:4px;font-weight:700;margin-left:4px;">RECOMENDADO</span>' : ''}
+              </div>
+              <div style="font-size:9px;color:${fatColor};">${w.fatigue.streak > 0 ? w.fatigue.streak + 'd seguidos · ' : ''}${w.fatigue.weekHours}h/sem</div>
             </div>
-          </div>
-        `).join('')}
+            <button onclick="guardiaCallIn(${w.id},'${currentShift}',${dayIdx},${year},${month})" style="padding:4px 10px;border-radius:8px;border:1px solid #e67e2240;background:rgba(230,126,34,0.08);color:#e67e22;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;" title="Asignar al turno actual">
+              + Llamar
+            </button>
+          </div>`;
+        }).join('')}
+        ${available.length === 0 ? '<div style="color:var(--text3);font-size:12px;padding:8px;">No hay personal de descanso disponible</div>' : ''}
       </div>
     </div>
 
-    <div style="text-align:center;padding:12px;">
+    <!-- Notas de traspaso -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:var(--text1);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">📝 Notas de Traspaso</div>
+      <textarea id="guardiaHandoffNote" placeholder="Escribe notas para el siguiente turno (ej: paciente en observación, pendiente resultado lab, incidencia en equipo...)" style="width:100%;min-height:80px;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;font-family:inherit;background:var(--bg);color:var(--text1);resize:vertical;box-sizing:border-box;">${escHtml(existingNote)}</textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+        <div style="font-size:10px;color:var(--text3);">Turno: ${currentShift} — ${now.toLocaleDateString('es-ES')}</div>
+        <button onclick="(function(){
+          var note = document.getElementById('guardiaHandoffNote').value.trim();
+          guardiaHandoffNotes['${handoffKey}'] = note;
+          saveHandoffNotes();
+          var btn = this; this.textContent = '✓ Guardado';
+          setTimeout(function(){ btn.textContent = 'Guardar nota'; }, 1500);
+        }).call(this)" style="padding:6px 16px;border-radius:8px;border:1px solid var(--border);background:var(--primary);color:#fff;font-size:11px;font-weight:600;cursor:pointer;">Guardar nota</button>
+      </div>
+      ${(() => {
+        // Show previous shift's note if exists
+        const prevOrder = ['N','T','M'];
+        const prevShift = prevOrder[(prevOrder.indexOf(currentShift) + 1) % 3];
+        const prevDay = (currentShift === 'M') ? day - 1 : day;
+        const prevKey = year + '-' + month + '-' + prevDay + '-' + prevShift;
+        const prevNote = guardiaHandoffNotes[prevKey];
+        if (prevNote) {
+          return '<div style="margin-top:12px;padding:10px;background:rgba(74,157,212,0.06);border:1px solid rgba(74,157,212,0.2);border-radius:8px;">' +
+            '<div style="font-size:10px;color:#4a9dd4;font-weight:700;margin-bottom:4px;">📋 Nota del turno anterior (' + prevShift + '):</div>' +
+            '<div style="font-size:12px;color:var(--text2);">' + escHtml(prevNote) + '</div></div>';
+        }
+        return '';
+      })()}
+    </div>
+
+    <!-- Controls -->
+    <div style="display:flex;justify-content:center;gap:10px;padding:12px;">
       <button onclick="renderGuardia()" style="padding:8px 20px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;">↻ Actualizar</button>
+      <button id="guardiaAutoRefreshBtn" onclick="toggleGuardiaAutoRefresh()" style="padding:8px 20px;border-radius:10px;border:1px solid var(--border);background:${guardiaAutoRefreshInterval ? 'var(--primary)' : 'var(--surface)'};color:${guardiaAutoRefreshInterval ? '#fff' : 'var(--text2)'};font-size:12px;font-weight:600;cursor:pointer;">
+        ${guardiaAutoRefreshInterval ? '⏸ Auto-refresh ON' : '▶ Auto-refresh'}
+      </button>
     </div>
   </div>`;
 
   container.innerHTML = html;
+}
+
+function toggleGuardiaAutoRefresh() {
+  if (guardiaAutoRefreshInterval) {
+    clearInterval(guardiaAutoRefreshInterval);
+    guardiaAutoRefreshInterval = null;
+  } else {
+    guardiaAutoRefreshInterval = setInterval(() => {
+      if (appState.currentView === 'guardia') renderGuardia();
+    }, 60000); // Refresh every 60 seconds
+  }
+  renderGuardia();
 }
 
 // ========== CALENDARIO VACACIONES GANTT ==========
@@ -16591,6 +16989,14 @@ function onGestorWorkerChange() {
     </div>
     ${rules.length > 0 ? '<div style="margin-top:4px;color:var(--text3);">Reglas: ' + rules.join(' · ') + '</div>' : ''}
   `;
+
+  // MEJORA 5: Show absence patterns
+  const patterns = detectAbsencePatterns(gestorState.worker);
+  if (patterns.length > 0) {
+    summaryEl.innerHTML += `<div style="margin-top:6px;padding:6px 10px;background:rgba(212,136,58,0.08);border-radius:6px;font-size:11px;color:var(--for);">
+      🔍 ${patterns.map(p => escHtml(p.message)).join(' · ')}
+    </div>`;
+  }
 }
 
 function selectGestorAction(action, el) {
@@ -16828,10 +17234,21 @@ function analyzeGestor() {
   // Simulate brief thinking delay then run analysis
   setTimeout(() => {
     try {
+      // MEJORA 6: Check vacation overlap before proceeding
+      const vacOverlap = checkVacationOverlap(wId, gestorState.selectedDays, action === 'vacaciones' ? 'VAC' : action === 'libre' ? 'D' : action);
+      let overlapWarning = '';
+      if (!vacOverlap.ok) {
+        overlapWarning = `<div style="padding:12px 16px;background:rgba(204,68,68,0.08);border-radius:10px;border-left:3px solid var(--danger);margin-bottom:16px;font-size:12px;">
+          <strong style="color:var(--danger);">⚠ Solapamiento de vacaciones detectado</strong><br>
+          ${vacOverlap.overlaps.map(o => escHtml(o.message)).join('<br>')}
+          <div style="margin-top:4px;color:var(--text3);font-size:11px;">Considera redistribuir las fechas para mantener cobertura mínima.</div>
+        </div>`;
+      }
+
       if (action === 'cambio') {
-        resultsDiv.innerHTML = buildSwapAnalysis(w, daysToProcess[0]);
+        resultsDiv.innerHTML = overlapWarning + buildSwapAnalysis(w, daysToProcess[0]);
       } else {
-        resultsDiv.innerHTML = buildAICoverageAnalysis(w, daysToProcess, action);
+        resultsDiv.innerHTML = overlapWarning + buildAICoverageAnalysis(w, daysToProcess, action);
       }
       resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {
@@ -18162,7 +18579,8 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWor
     // === SMART REASSIGNMENT: If no free workers, check shift surplus ===
     if (available.length === 0) {
       const COV = getCoverageRules(da.year, da.month, da.dayDate.getDate());
-      const WORK_SHIFTS_CHECK = ['M', 'T'];  // Only check M and T as source shifts for reassignment
+      // MEJORA 3: Bidirectional reassignment — check all shift pairs, not just M→N and T→N
+      const WORK_SHIFTS_CHECK = ['M', 'T', 'N'];  // Check all work shifts as source for reassignment
 
       // Count current coverage per shift for this worker type (excluding absent)
       const covCount = {};
@@ -18381,6 +18799,48 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWor
   });
 
   assignments.sort((a, b) => a.dayAnalysis.dayDate - b.dayAnalysis.dayDate);
+
+  // === MEJORA 2: BACKTRACKING — retry uncovered days by swapping earlier assignments ===
+  const uncovered = assignments.filter(a => !a.candidate);
+  if (uncovered.length > 0 && uncovered.length < assignments.length) {
+    uncovered.forEach(unc => {
+      const uncDay = unc.dayAnalysis;
+      // Try swapping a worker from a covered day that has alternatives
+      const covered = assignments.filter(a => a.candidate && a.alternates && a.alternates.length > 0);
+      for (const coveredAssignment of covered) {
+        const freedWorker = coveredAssignment.candidate.w;
+        // Check if this freed worker could cover the uncovered day
+        const vSchBT = getVSch(uncDay.year, uncDay.month);
+        // Temporarily free the worker from covered day
+        const covDay = coveredAssignment.dayAnalysis;
+        const origShiftCov = vSchBT[freedWorker.id] ? vSchBT[freedWorker.id][covDay.dayIdx] : null;
+        if (origShiftCov) vSchBT[freedWorker.id][covDay.dayIdx] = 'D';
+
+        const legalForUnc = isLegalAssignment(freedWorker.id, uncDay.dayIdx, shiftNeeded, vSchBT, uncDay.year, uncDay.month);
+
+        if (legalForUnc.legal) {
+          // Check if the alternate can take the original covered day
+          const altName = coveredAssignment.alternates[0]?.name;
+          const altWorker = workers.find(wx => wx.name === altName);
+          if (altWorker) {
+            const legalForAlt = isLegalAssignment(altWorker.id, covDay.dayIdx, shiftNeeded, vSchBT, covDay.year, covDay.month);
+            if (legalForAlt.legal) {
+              // Backtrack: swap assignments
+              vSchBT[altWorker.id][covDay.dayIdx] = shiftNeeded;
+              vSchBT[freedWorker.id][uncDay.dayIdx] = shiftNeeded;
+              coveredAssignment.candidate = { w: altWorker, stats: getWorkerStats(altWorker.id), coversMultiple: false, coverageCount: 1, scoreBreakdown: ['Backtrack swap'], consecutiveDays: 0, extrasCoverage: 0, futureImpact: { impactScore: 0, details: [] }, wkndVsAvg: '0', scheduleContext: legalForAlt.scheduleContext || '' };
+              coveredAssignment.reason = 'Backtrack: liberó a ' + freedWorker.name + ' para dia ' + (uncDay.dayIdx + 1);
+              unc.candidate = { w: freedWorker, stats: getWorkerStats(freedWorker.id), coversMultiple: false, coverageCount: 1, scoreBreakdown: ['Recuperado por backtracking'], consecutiveDays: 0, extrasCoverage: 0, futureImpact: { impactScore: 0, details: [] }, wkndVsAvg: '0', scheduleContext: legalForUnc.scheduleContext || '' };
+              unc.reason = 'Backtrack: ' + freedWorker.name + ' liberado del dia ' + (covDay.dayIdx + 1);
+              break;
+            }
+          }
+        }
+        // Restore if no swap happened
+        if (origShiftCov) vSchBT[freedWorker.id][covDay.dayIdx] = origShiftCov;
+      }
+    });
+  }
 
   // Calculate plan score
   let totalScore = 100;
