@@ -16147,100 +16147,352 @@ function toggleGuardiaAutoRefresh() {
 }
 
 // ========== CALENDARIO VACACIONES GANTT ==========
-function renderVacacionesGantt() {
-  const container = document.getElementById('vacacionesContent');
-  if (!container) return;
-  const year = appState.currentMonth.getFullYear();
-  const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+let vacGanttYear = null; // null = use appState year
+let vacGanttFilter = 'all'; // 'all', 'enf', 'tec'
+let vacGanttSort = 'days'; // 'days', 'name', 'remaining', 'type'
 
-  // Collect vacation data per worker across all months
+function getVacationAnalysis(year) {
+  const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const VAC_QUOTA = 22; // Legal annual vacation days (Spain)
+
+  // Collect ALL absence data per worker across all months
   const vacData = [];
+  const dailyVacCount = {}; // "m-d" -> count of workers on VAC
+  const dailyAbsCount = {}; // "m-d" -> count of total absent workers
+  const monthlyVacByType = {}; // m -> { enf: count, tec: count }
+
   workers.forEach(w => {
     const periods = [];
+    const absences = { VAC: 0, VAA: 0, VAN: 0, LD: 0, CAA: 0 };
     for (let m = 0; m < 12; m++) {
       const sch = genSchedule(year, m);
       const days = new Date(year, m + 1, 0).getDate();
       if (!sch[w.id]) continue;
-      let inVac = false, start = 0;
+      let inVac = false, start = 0, vacType = 'VAC';
       for (let d = 0; d < days; d++) {
         const s = (sch[w.id][d] || '').toString().trim();
-        if (s === 'VAC' && !inVac) { inVac = true; start = d; }
-        if (s !== 'VAC' && inVac) { periods.push({ month: m, start, end: d - 1 }); inVac = false; }
+        // Count absences
+        if (absences[s] !== undefined) absences[s]++;
+        // Track daily counts
+        if (s === 'VAC' || s === 'VAA' || s === 'VAN') {
+          const dk = m + '-' + d;
+          dailyVacCount[dk] = (dailyVacCount[dk] || 0) + 1;
+          if (!monthlyVacByType[m]) monthlyVacByType[m] = { enf: 0, tec: 0 };
+          monthlyVacByType[m][w.type === 'enf' ? 'enf' : 'tec']++;
+        }
+        if (['VAC','VAA','VAN','BAJ','FOR','LAC','MTC','HS','CAA','INT','LD'].includes(s)) {
+          const dk2 = m + '-' + d;
+          dailyAbsCount[dk2] = (dailyAbsCount[dk2] || 0) + 1;
+        }
+        // Build period tracking
+        const isVacShift = (s === 'VAC' || s === 'VAA' || s === 'VAN');
+        if (isVacShift && !inVac) { inVac = true; start = d; vacType = s; }
+        if (!isVacShift && inVac) { periods.push({ month: m, start, end: d - 1, type: vacType }); inVac = false; }
       }
-      if (inVac) periods.push({ month: m, start, end: days - 1 });
+      if (inVac) periods.push({ month: m, start, end: new Date(year, m + 1, 0).getDate() - 1, type: vacType });
     }
-    if (periods.length > 0) vacData.push({ worker: w, periods, totalDays: periods.reduce((s, p) => s + (p.end - p.start + 1), 0) });
+    const totalVacDays = absences.VAC + absences.VAA + absences.VAN;
+    const remaining = Math.max(0, VAC_QUOTA - totalVacDays);
+    const ldDays = absences.LD + absences.CAA;
+    vacData.push({ worker: w, periods, totalDays: totalVacDays, remaining, ldDays, absences, quota: VAC_QUOTA });
   });
 
-  // Detect overlaps (3+ workers same day)
+  // Detect overlaps (configurable threshold)
   const overlapDays = [];
   for (let m = 0; m < 12; m++) {
     const days = new Date(year, m + 1, 0).getDate();
     for (let d = 0; d < days; d++) {
-      let count = 0;
-      vacData.forEach(vd => {
-        vd.periods.forEach(p => {
-          if (p.month === m && d >= p.start && d <= p.end) count++;
-        });
-      });
-      if (count >= 3) overlapDays.push({ month: m, day: d, count });
+      const dk = m + '-' + d;
+      const count = dailyVacCount[dk] || 0;
+      if (count >= 2) overlapDays.push({ month: m, day: d, count });
     }
   }
 
+  // Monthly coverage impact analysis
+  const monthlyCoverageImpact = [];
+  for (let m = 0; m < 12; m++) {
+    const sch = genSchedule(year, m);
+    const days = new Date(year, m + 1, 0).getDate();
+    let gapDays = 0;
+    for (let d = 0; d < days; d++) {
+      const cov = getCoverageRules(year, m, d + 1);
+      ['M','T','N'].forEach(shift => {
+        const req = cov[shift] || { enf: 1, tec: 1 };
+        let enfHave = 0, tecHave = 0;
+        workers.forEach(w2 => {
+          const s2 = sch[w2.id] ? (sch[w2.id][d] || '').toString().trim() : '';
+          if (s2 === shift) { if (w2.type === 'enf') enfHave++; else tecHave++; }
+        });
+        if (enfHave < req.enf || tecHave < req.tec) gapDays++;
+      });
+    }
+    monthlyCoverageImpact.push({ month: m, gapShifts: gapDays, vacByType: monthlyVacByType[m] || { enf: 0, tec: 0 } });
+  }
+
+  // Smart recommendations
+  const recommendations = [];
+  const noVacWorkers = vacData.filter(v => v.totalDays === 0);
+  if (noVacWorkers.length > 0) {
+    recommendations.push({ severity: 'high', text: noVacWorkers.length + ' trabajadores sin vacaciones planificadas: ' + noVacWorkers.slice(0, 4).map(v => v.worker.name.split(' ')[0]).join(', ') + (noVacWorkers.length > 4 ? '...' : '') });
+  }
+  const lowRemaining = vacData.filter(v => v.remaining > 0 && v.remaining <= 5 && v.totalDays > 0);
+  if (lowRemaining.length > 0) {
+    recommendations.push({ severity: 'medium', text: lowRemaining.length + ' trabajadores con menos de 5 dias pendientes' });
+  }
+  const overQuota = vacData.filter(v => v.totalDays > v.quota);
+  if (overQuota.length > 0) {
+    recommendations.push({ severity: 'high', text: overQuota.length + ' trabajadores superan la cuota de ' + VAC_QUOTA + ' dias: ' + overQuota.map(v => v.worker.name.split(' ')[0] + ' (' + v.totalDays + 'd)').join(', ') });
+  }
+  // Check for months with too many vacations
+  const heavyMonths = monthlyCoverageImpact.filter(m => m.gapShifts > 15);
+  if (heavyMonths.length > 0) {
+    recommendations.push({ severity: 'high', text: 'Meses con gaps de cobertura por exceso de vacaciones: ' + heavyMonths.map(m => monthNames[m.month] + ' (' + m.gapShifts + ' turnos sin cubrir)').join(', ') });
+  }
+  // Equity check: ENF vs TEC vacation balance
+  const enfVac = vacData.filter(v => v.worker.type === 'enf');
+  const tecVac = vacData.filter(v => v.worker.type === 'tec');
+  const avgEnfVac = enfVac.length ? enfVac.reduce((s, v) => s + v.totalDays, 0) / enfVac.length : 0;
+  const avgTecVac = tecVac.length ? tecVac.reduce((s, v) => s + v.totalDays, 0) / tecVac.length : 0;
+  if (Math.abs(avgEnfVac - avgTecVac) > 5) {
+    recommendations.push({ severity: 'medium', text: 'Desbalance entre tipos: ENF media ' + avgEnfVac.toFixed(1) + 'd vs TEC media ' + avgTecVac.toFixed(1) + 'd' });
+  }
+  // Summer concentration check
+  let summerVacDays = 0, totalVacDays = 0;
+  vacData.forEach(v => {
+    v.periods.forEach(p => {
+      const pDays = p.end - p.start + 1;
+      totalVacDays += pDays;
+      if (p.month >= 5 && p.month <= 8) summerVacDays += pDays; // Jun-Sep
+    });
+  });
+  if (totalVacDays > 0 && summerVacDays / totalVacDays > 0.7) {
+    recommendations.push({ severity: 'medium', text: Math.round(summerVacDays / totalVacDays * 100) + '% de las vacaciones concentradas en verano (Jun-Sep). Considerar redistribuir.' });
+  }
+
+  // Best windows: find weeks with fewest vacations
+  const bestWindows = [];
+  for (let m = 0; m < 12; m++) {
+    const days = new Date(year, m + 1, 0).getDate();
+    for (let startD = 0; startD <= days - 7; startD += 7) {
+      let weekVac = 0;
+      for (let d = startD; d < Math.min(startD + 7, days); d++) {
+        weekVac += (dailyVacCount[m + '-' + d] || 0);
+      }
+      bestWindows.push({ month: m, startDay: startD, avgVac: weekVac / 7 });
+    }
+  }
+  bestWindows.sort((a, b) => a.avgVac - b.avgVac);
+
+  return { vacData, overlapDays, monthlyCoverageImpact, recommendations, bestWindows, dailyVacCount, dailyAbsCount, VAC_QUOTA, avgEnfVac, avgTecVac };
+}
+
+function renderVacacionesGantt() {
+  const container = document.getElementById('vacacionesContent');
+  if (!container) return;
+  const year = vacGanttYear || appState.currentMonth.getFullYear();
+  const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  const analysis = getVacationAnalysis(year);
+  let { vacData, overlapDays, monthlyCoverageImpact, recommendations, bestWindows, dailyVacCount, VAC_QUOTA } = analysis;
+
+  // Apply filter
+  if (vacGanttFilter !== 'all') {
+    vacData = vacData.filter(v => v.worker.type === vacGanttFilter);
+  }
+
+  // Apply sort
+  if (vacGanttSort === 'name') vacData.sort((a, b) => a.worker.name.localeCompare(b.worker.name));
+  else if (vacGanttSort === 'remaining') vacData.sort((a, b) => b.remaining - a.remaining);
+  else if (vacGanttSort === 'type') vacData.sort((a, b) => a.worker.type.localeCompare(b.worker.type) || b.totalDays - a.totalDays);
+  else vacData.sort((a, b) => b.totalDays - a.totalDays);
+
+  // Summary stats
+  const totalWorkers = workers.length;
+  const withVac = vacData.filter(v => v.totalDays > 0).length;
+  const withoutVac = vacData.filter(v => v.totalDays === 0).length;
+  const avgDays = vacData.length ? (vacData.reduce((s, v) => s + v.totalDays, 0) / vacData.length).toFixed(1) : 0;
+  const dangerOverlaps = overlapDays.filter(o => o.count >= 3).length;
+
+  // Monthly heatmap data
+  const monthlyHeat = [];
+  for (let m = 0; m < 12; m++) {
+    const days = new Date(year, m + 1, 0).getDate();
+    let total = 0;
+    for (let d = 0; d < days; d++) total += (dailyVacCount[m + '-' + d] || 0);
+    monthlyHeat.push({ month: m, total, avg: (total / days).toFixed(1) });
+  }
+  const maxHeat = Math.max(...monthlyHeat.map(h => h.total), 1);
+
   let html = `
-  <div style="max-width:1100px;margin:0 auto;padding:20px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+  <div style="max-width:1200px;margin:0 auto;padding:20px;">
+    <!-- Header with year nav -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
       <div>
-        <div style="font-size:20px;font-weight:800;color:var(--text1);">Calendario de Vacaciones ${year}</div>
-        <div style="font-size:12px;color:var(--text3);">${vacData.length} trabajadores con vacaciones · ${overlapDays.length > 0 ? '<span style="color:#cc4444;font-weight:600;">' + overlapDays.length + ' días con solapamiento peligroso (3+)</span>' : '<span style="color:#27ae60;">Sin solapamientos peligrosos</span>'}</div>
+        <div style="font-size:20px;font-weight:800;color:var(--text1);">Calendario de Vacaciones</div>
+        <div style="font-size:12px;color:var(--text3);">${withVac} con vacaciones · ${withoutVac} sin planificar · Media: ${avgDays}d/persona</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button onclick="vacGanttYear=${year - 1};renderVacacionesGantt();" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;cursor:pointer;">◀ ${year - 1}</button>
+        <span style="font-size:16px;font-weight:800;color:var(--text1);padding:0 8px;">${year}</span>
+        <button onclick="vacGanttYear=${year + 1};renderVacacionesGantt();" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;cursor:pointer;">${year + 1} ▶</button>
       </div>
     </div>
 
+    <!-- Summary cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px;">
+      <div style="background:var(--surface);border-radius:12px;padding:14px;text-align:center;border:1px solid var(--border);">
+        <div style="font-size:22px;font-weight:800;color:var(--primary);">${VAC_QUOTA}</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;">Cuota anual</div>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;text-align:center;border:1px solid var(--border);">
+        <div style="font-size:22px;font-weight:800;color:#2e8b7a;">${avgDays}</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;">Media disfrutados</div>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;text-align:center;border:1px solid ${dangerOverlaps > 0 ? 'rgba(204,68,68,0.3)' : 'var(--border)'};">
+        <div style="font-size:22px;font-weight:800;color:${dangerOverlaps > 0 ? '#cc4444' : '#27ae60'};">${dangerOverlaps}</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;">Solapamientos 3+</div>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;text-align:center;border:1px solid ${withoutVac > 3 ? 'rgba(230,126,34,0.3)' : 'var(--border)'};">
+        <div style="font-size:22px;font-weight:800;color:${withoutVac > 3 ? '#e67e22' : 'var(--text1)'};">${withoutVac}</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;">Sin planificar</div>
+      </div>
+    </div>
+
+    <!-- Monthly heatmap -->
+    <div style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:20px;border:1px solid var(--border);">
+      <div style="font-size:13px;font-weight:700;color:var(--text1);margin-bottom:10px;">📊 Distribución mensual de vacaciones</div>
+      <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px;">
+        ${monthlyHeat.map(mh => {
+          const intensity = mh.total / maxHeat;
+          const bg = intensity > 0.7 ? 'rgba(204,68,68,0.2)' : intensity > 0.4 ? 'rgba(230,126,34,0.15)' : intensity > 0.1 ? 'rgba(52,152,219,0.12)' : 'var(--bg)';
+          const textColor = intensity > 0.7 ? '#cc4444' : intensity > 0.4 ? '#e67e22' : 'var(--text2)';
+          const impact = monthlyCoverageImpact[mh.month];
+          return `
+          <div style="text-align:center;padding:8px 2px;background:${bg};border-radius:8px;" title="${monthNames[mh.month]}: ${mh.total} dias-persona en vacaciones, ${impact.gapShifts} turnos sin cubrir">
+            <div style="font-size:9px;font-weight:600;color:var(--text3);margin-bottom:2px;">${monthNames[mh.month]}</div>
+            <div style="font-size:16px;font-weight:800;color:${textColor};">${mh.total}</div>
+            <div style="font-size:8px;color:var(--text3);">dias-pers</div>
+            ${impact.gapShifts > 0 ? '<div style="font-size:8px;color:#cc4444;font-weight:700;margin-top:2px;">' + impact.gapShifts + ' gaps</div>' : ''}
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:8px;font-size:9px;color:var(--text3);">
+        <span>🟦 Bajo</span><span>🟧 Medio</span><span>🟥 Alto</span>
+      </div>
+    </div>
+
+    <!-- Recommendations -->
+    ${recommendations.length > 0 ? `
+    <div style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:20px;border:1px solid var(--border);">
+      <div style="font-size:13px;font-weight:700;color:var(--text1);margin-bottom:10px;">💡 Recomendaciones inteligentes</div>
+      ${recommendations.map(r => {
+        const color = r.severity === 'high' ? '#cc4444' : r.severity === 'medium' ? '#e67e22' : '#27ae60';
+        const icon = r.severity === 'high' ? '🔴' : r.severity === 'medium' ? '🟡' : '🟢';
+        return '<div style="font-size:12px;padding:8px 12px;margin-bottom:6px;background:var(--bg);border-left:3px solid ' + color + ';border-radius:0 8px 8px 0;">' + icon + ' ' + escHtml(r.text) + '</div>';
+      }).join('')}
+      ${bestWindows.length > 0 ? `
+      <div style="margin-top:10px;padding:10px;background:rgba(39,174,96,0.06);border-radius:8px;">
+        <div style="font-size:11px;font-weight:700;color:#27ae60;margin-bottom:4px;">✅ Mejores semanas para planificar vacaciones:</div>
+        <div style="font-size:11px;color:var(--text2);">
+          ${bestWindows.slice(0, 3).map(bw => {
+            const endDay = Math.min(bw.startDay + 6, new Date(year, bw.month + 1, 0).getDate() - 1);
+            return (bw.startDay + 1) + '-' + (endDay + 1) + ' ' + monthNames[bw.month] + ' (' + bw.avgVac.toFixed(1) + ' media)';
+          }).join(' · ')}
+        </div>
+      </div>` : ''}
+    </div>` : ''}
+
+    <!-- Filter and sort controls -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:11px;color:var(--text3);font-weight:600;">Filtrar:</span>
+      <button onclick="vacGanttFilter='all';renderVacacionesGantt();" style="padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:${vacGanttFilter === 'all' ? 'var(--primary)' : 'var(--surface)'};color:${vacGanttFilter === 'all' ? '#fff' : 'var(--text2)'};font-size:11px;font-weight:600;cursor:pointer;">Todos</button>
+      <button onclick="vacGanttFilter='enf';renderVacacionesGantt();" style="padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:${vacGanttFilter === 'enf' ? '#2e8b7a' : 'var(--surface)'};color:${vacGanttFilter === 'enf' ? '#fff' : 'var(--text2)'};font-size:11px;font-weight:600;cursor:pointer;">ENF</button>
+      <button onclick="vacGanttFilter='tec';renderVacacionesGantt();" style="padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:${vacGanttFilter === 'tec' ? '#4a9dd4' : 'var(--surface)'};color:${vacGanttFilter === 'tec' ? '#fff' : 'var(--text2)'};font-size:11px;font-weight:600;cursor:pointer;">TEC</button>
+      <span style="margin-left:12px;font-size:11px;color:var(--text3);font-weight:600;">Ordenar:</span>
+      <select onchange="vacGanttSort=this.value;renderVacacionesGantt();" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:11px;">
+        <option value="days" ${vacGanttSort === 'days' ? 'selected' : ''}>Dias (mayor)</option>
+        <option value="remaining" ${vacGanttSort === 'remaining' ? 'selected' : ''}>Pendientes</option>
+        <option value="name" ${vacGanttSort === 'name' ? 'selected' : ''}>Nombre</option>
+        <option value="type" ${vacGanttSort === 'type' ? 'selected' : ''}>Tipo</option>
+      </select>
+    </div>
+
+    <!-- Gantt table -->
     <div style="overflow-x:auto;">
       <table style="width:100%;border-collapse:collapse;font-size:11px;">
         <thead>
           <tr style="background:var(--surface);">
             <th style="text-align:left;padding:8px 12px;font-weight:700;color:var(--text2);border-bottom:2px solid var(--border);min-width:140px;position:sticky;left:0;background:var(--surface);z-index:2;">Trabajador</th>
             ${monthNames.map((mn, mi) => `<th style="text-align:center;padding:6px 2px;font-weight:600;color:var(--text3);border-bottom:2px solid var(--border);min-width:80px;">${mn}</th>`).join('')}
-            <th style="text-align:center;padding:6px 8px;font-weight:700;color:var(--text2);border-bottom:2px solid var(--border);">Total</th>
+            <th style="text-align:center;padding:6px 8px;font-weight:700;color:var(--text2);border-bottom:2px solid var(--border);min-width:60px;">Usados</th>
+            <th style="text-align:center;padding:6px 8px;font-weight:700;color:var(--text2);border-bottom:2px solid var(--border);min-width:60px;">Pend.</th>
           </tr>
         </thead>
         <tbody>
-          ${vacData.sort((a, b) => b.totalDays - a.totalDays).map(vd => {
+          ${vacData.map(vd => {
             const typeColor = vd.worker.type === 'enf' ? '#2e8b7a' : '#4a9dd4';
+            const remainColor = vd.remaining === 0 ? '#27ae60' : vd.remaining <= 5 ? '#e67e22' : vd.totalDays === 0 ? '#cc4444' : 'var(--text1)';
+            const overQuota = vd.totalDays > vd.quota;
             return `<tr style="border-bottom:1px solid var(--border);">
               <td style="padding:6px 12px;font-weight:600;color:var(--text1);position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;">
                 ${escHtml(vd.worker.name.split(' ').slice(0, 2).join(' '))} <span style="font-size:9px;color:${typeColor};font-weight:700;">${vd.worker.type === 'enf' ? 'ENF' : 'TEC'}</span>
+                ${vd.ldDays > 0 ? '<span style="font-size:8px;color:var(--text3);margin-left:2px;" title="' + vd.ldDays + ' dias LD/CAA">+' + vd.ldDays + 'LD</span>' : ''}
               </td>
               ${monthNames.map((_, mi) => {
                 const days = new Date(year, mi + 1, 0).getDate();
                 const monthPeriods = vd.periods.filter(p => p.month === mi);
                 if (monthPeriods.length === 0) return '<td style="padding:4px 2px;"><div style="height:14px;"></div></td>';
-                // Build mini-bar
                 let bar = '<td style="padding:4px 2px;"><div style="position:relative;height:14px;background:var(--surface);border-radius:3px;overflow:hidden;">';
                 monthPeriods.forEach(p => {
                   const left = (p.start / days * 100);
                   const width = ((p.end - p.start + 1) / days * 100);
-                  bar += '<div style="position:absolute;left:' + left + '%;width:' + width + '%;height:100%;background:#3498db;border-radius:2px;opacity:0.7;" title="' + (p.start + 1) + '-' + (p.end + 1) + ' ' + monthNames[mi] + '"></div>';
+                  const pColor = p.type === 'VAA' ? '#e67e22' : p.type === 'VAN' ? '#9b59b6' : '#3498db';
+                  bar += '<div style="position:absolute;left:' + left + '%;width:' + width + '%;height:100%;background:' + pColor + ';border-radius:2px;opacity:0.7;" title="' + (p.start + 1) + '-' + (p.end + 1) + ' ' + monthNames[mi] + ' (' + p.type + ')"></div>';
                 });
                 bar += '</div></td>';
                 return bar;
               }).join('')}
-              <td style="text-align:center;padding:6px 8px;font-weight:700;color:var(--text1);">${vd.totalDays}d</td>
+              <td style="text-align:center;padding:6px 8px;font-weight:700;color:${overQuota ? '#cc4444' : 'var(--text1)'};">${vd.totalDays}d${overQuota ? ' ⚠' : ''}</td>
+              <td style="text-align:center;padding:6px 8px;font-weight:700;color:${remainColor};">${vd.remaining}d</td>
             </tr>`;
           }).join('')}
+          ${vacData.length === 0 ? '<tr><td colspan="15" style="text-align:center;padding:20px;color:var(--text3);">No hay datos de vacaciones</td></tr>' : ''}
         </tbody>
       </table>
     </div>
 
+    <!-- Legend -->
+    <div style="display:flex;gap:16px;margin-top:10px;font-size:10px;color:var(--text3);flex-wrap:wrap;">
+      <span><span style="display:inline-block;width:12px;height:8px;background:#3498db;border-radius:2px;opacity:0.7;margin-right:3px;"></span>VAC</span>
+      <span><span style="display:inline-block;width:12px;height:8px;background:#e67e22;border-radius:2px;opacity:0.7;margin-right:3px;"></span>VAA (año anterior)</span>
+      <span><span style="display:inline-block;width:12px;height:8px;background:#9b59b6;border-radius:2px;opacity:0.7;margin-right:3px;"></span>VAN</span>
+    </div>
+
     ${overlapDays.length > 0 ? `
     <div style="margin-top:20px;background:rgba(204,68,68,0.06);border:1px solid rgba(204,68,68,0.15);border-radius:12px;padding:16px;">
-      <div style="font-size:13px;font-weight:700;color:#cc4444;margin-bottom:8px;">⚠ Solapamientos peligrosos (3+ trabajadores el mismo día)</div>
+      <div style="font-size:13px;font-weight:700;color:#cc4444;margin-bottom:8px;">⚠ Solapamientos detectados (2+ trabajadores el mismo día)</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        ${overlapDays.slice(0, 20).map(od => `<span style="padding:3px 8px;border-radius:6px;background:rgba(204,68,68,0.1);font-size:11px;font-weight:600;color:#cc4444;">${od.day + 1} ${monthNames[od.month]} (${od.count} pers.)</span>`).join('')}
-        ${overlapDays.length > 20 ? `<span style="padding:3px 8px;font-size:11px;color:var(--text3);">+${overlapDays.length - 20} más</span>` : ''}
+        ${overlapDays.filter(o => o.count >= 3).slice(0, 25).map(od => `<span style="padding:3px 8px;border-radius:6px;background:rgba(204,68,68,0.15);font-size:11px;font-weight:600;color:#cc4444;">${od.day + 1} ${monthNames[od.month]} (${od.count})</span>`).join('')}
+        ${overlapDays.filter(o => o.count === 2).slice(0, 15).map(od => `<span style="padding:3px 8px;border-radius:6px;background:rgba(230,126,34,0.1);font-size:11px;font-weight:500;color:#e67e22;">${od.day + 1} ${monthNames[od.month]} (${od.count})</span>`).join('')}
+        ${overlapDays.length > 40 ? `<span style="padding:3px 8px;font-size:11px;color:var(--text3);">+${overlapDays.length - 40} más</span>` : ''}
       </div>
     </div>` : ''}
+
+    <!-- Coverage impact by month -->
+    <div style="margin-top:16px;background:var(--surface);border-radius:14px;padding:16px;border:1px solid var(--border);">
+      <div style="font-size:13px;font-weight:700;color:var(--text1);margin-bottom:10px;">🏥 Impacto en cobertura por mes</div>
+      <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px;">
+        ${monthlyCoverageImpact.map((ci, mi) => {
+          const danger = ci.gapShifts > 20 ? '#cc4444' : ci.gapShifts > 10 ? '#e67e22' : ci.gapShifts > 0 ? '#f0ad4e' : '#27ae60';
+          return `<div style="text-align:center;padding:6px 2px;">
+            <div style="font-size:9px;color:var(--text3);font-weight:600;">${monthNames[mi]}</div>
+            <div style="font-size:14px;font-weight:800;color:${danger};">${ci.gapShifts}</div>
+            <div style="font-size:8px;color:var(--text3);">gaps</div>
+            <div style="font-size:8px;color:var(--text3);margin-top:1px;">E${ci.vacByType.enf} T${ci.vacByType.tec}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
   </div>`;
 
   container.innerHTML = html;
