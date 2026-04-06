@@ -10169,20 +10169,24 @@ function renderCoverageHeatmap() {
 // Helper: Update tab badges with counts
 function updateTabBadges() {
   const conflictsTab = document.querySelector('[data-view="conflicts"]');
-  let badge = conflictsTab.querySelector('.tab-badge');
-  const conflictCount = predictedConflicts.filter(c => c.severity === 'high').length;
-  if (conflictCount > 0) {
-    if (!badge) { badge = document.createElement('span'); badge.className = 'tab-badge'; conflictsTab.appendChild(badge); }
-    badge.textContent = conflictCount;
-  } else if (badge) { badge.remove(); }
+  if (conflictsTab) {
+    let badge = conflictsTab.querySelector('.tab-badge');
+    const conflictCount = predictedConflicts.filter(c => c.severity === 'high').length;
+    if (conflictCount > 0) {
+      if (!badge) { badge = document.createElement('span'); badge.className = 'tab-badge'; conflictsTab.appendChild(badge); }
+      badge.textContent = conflictCount;
+    } else if (badge) { badge.remove(); }
+  }
 
   const importTab = document.querySelector('[data-view="import"]');
-  let ibadge = importTab.querySelector('.tab-badge');
-  const pendingCount = workers.filter(w => !w.scheduleImported).length;
-  if (pendingCount > 0) {
-    if (!ibadge) { ibadge = document.createElement('span'); ibadge.className = 'tab-badge warning'; importTab.appendChild(ibadge); }
-    ibadge.textContent = pendingCount;
-  } else if (ibadge) { ibadge.remove(); }
+  if (importTab) {
+    let ibadge = importTab.querySelector('.tab-badge');
+    const pendingCount = workers.filter(w => !w.scheduleImported).length;
+    if (pendingCount > 0) {
+      if (!ibadge) { ibadge = document.createElement('span'); ibadge.className = 'tab-badge warning'; importTab.appendChild(ibadge); }
+      ibadge.textContent = pendingCount;
+    } else if (ibadge) { ibadge.remove(); }
+  }
 }
 
 // Mini calendar state
@@ -10198,7 +10202,8 @@ function toggleMiniCal() {
 
 // Helper: Render mini calendar popup
 function renderMiniCal() {
-  const container = document.querySelector('.month-nav') || document.querySelector('[id="monthDisplay"]').parentElement;
+  const monthEl = document.querySelector('[id="monthDisplay"]');
+  const container = document.querySelector('.month-nav') || (monthEl ? monthEl.parentElement : null);
   if (!container) return;
   if (!container.style.position || container.style.position === 'static') {
     container.style.position = 'relative';
@@ -11389,8 +11394,9 @@ function chatQuickQuery(q) {
   sendChatMessage();
 }
 
-document.getElementById('chatBubble').addEventListener('click', () => {
+document.getElementById('chatBubble')?.addEventListener('click', () => {
   const panel = document.getElementById('chatPanel');
+  if (!panel) return;
   panel.classList.toggle('open');
   if (panel.classList.contains('open')) initChat();
 });
@@ -11412,19 +11418,28 @@ function sendChatMessage() {
     const followUps = getFollowUpSuggestions(msg);
     if (followUps.length > 0) {
       const content = document.getElementById('chatContent');
-      content.innerHTML += `<div class="chat-suggestions">${followUps.map(f => `<button class="chat-suggestion-btn" onclick="chatQuickQuery('${f}')">${f}</button>`).join('')}</div>`;
+      const sugDiv = document.createElement('div');
+      sugDiv.className = 'chat-suggestions';
+      followUps.forEach(f => {
+        const btn = document.createElement('button');
+        btn.className = 'chat-suggestion-btn';
+        btn.textContent = f;
+        btn.addEventListener('click', () => chatQuickQuery(f));
+        sugDiv.appendChild(btn);
+      });
+      content.appendChild(sugDiv);
       content.scrollTop = content.scrollHeight;
     }
   }, 400 + Math.random() * 300);
 }
 
-document.getElementById('chatSend').addEventListener('click', sendChatMessage);
-document.getElementById('chatInput').addEventListener('keydown', (e) => {
+document.getElementById('chatSend')?.addEventListener('click', sendChatMessage);
+document.getElementById('chatInput')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
 });
 
 // Event Listeners
-document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
 
 document.querySelectorAll('.nav-tab').forEach(tab => {
   tab.addEventListener('click', () => switchView(tab.dataset.view));
@@ -11505,26 +11520,26 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
   updateMoreBtnState();
 })();
 
-document.getElementById('prevMonth').addEventListener('click', () => {
+document.getElementById('prevMonth')?.addEventListener('click', () => {
   const m = appState.currentMonth;
   appState.currentMonth = new Date(m.getFullYear(), m.getMonth() - 1, 1);
   renderSchedule();
 });
 
-document.getElementById('nextMonth').addEventListener('click', () => {
+document.getElementById('nextMonth')?.addEventListener('click', () => {
   const m = appState.currentMonth;
   appState.currentMonth = new Date(m.getFullYear(), m.getMonth() + 1, 1);
   renderSchedule();
 });
 
-document.getElementById('todayBtn').addEventListener('click', () => {
+document.getElementById('todayBtn')?.addEventListener('click', () => {
   const now = new Date();
   appState.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   renderSchedule();
   setTimeout(() => scrollToToday(true), 150);
 });
 
-document.getElementById('workerSearch').addEventListener('input', (e) => {
+document.getElementById('workerSearch')?.addEventListener('input', (e) => {
   const term = e.target.value.toLowerCase().trim();
   let matchCount = 0;
   document.querySelectorAll('table.schedule tbody tr').forEach(row => {
@@ -11550,7 +11565,7 @@ document.getElementById('workerSearch').addEventListener('input', (e) => {
   else if (countEl) countEl.textContent = '';
 });
 
-document.getElementById('teamSearch').addEventListener('input', (e) => {
+document.getElementById('teamSearch')?.addEventListener('input', (e) => {
   const term = e.target.value.toLowerCase();
   document.querySelectorAll('.worker-card').forEach(card => {
     const name = card.querySelector('.worker-name').textContent.toLowerCase();

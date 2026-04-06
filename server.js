@@ -10,7 +10,12 @@ const WebSocket = require('ws');
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'shiftia-secret-dev-2024';
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  const crypto = require('crypto');
+  const generated = crypto.randomBytes(32).toString('hex');
+  console.warn('[SECURITY WARNING] JWT_SECRET not set — using random secret. Sessions will NOT survive restarts. Set JWT_SECRET in Railway env vars.');
+  return generated;
+})();
 
 // ====== WEBSOCKET SERVER (real-time sync) ======
 const wss = new WebSocket.Server({ server, path: '/ws' });
@@ -27,23 +32,7 @@ wss.on('connection', (ws, req) => {
     }
   }, 10000);
 
-  // Also support legacy query param auth for backwards compatibility
-  try {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const token = url.searchParams.get('token');
-    if (token) {
-      const decoded = jwt.verify(token, JWT_SECRET);
-      ws.userId = decoded.id;
-      ws.userEmail = decoded.email;
-      ws.isAuthenticated = true;
-      clearTimeout(authTimeout);
-      if (!wsClients.has(decoded.id)) wsClients.set(decoded.id, new Set());
-      wsClients.get(decoded.id).add(ws);
-      console.log(`[WS] ${decoded.email} connected via query (${wsClients.get(decoded.id).size} sessions)`);
-      broadcastToUser(decoded.id, { type: 'sessions', count: wsClients.get(decoded.id).size });
-    }
-  } catch (e) { /* No valid query token, wait for message auth */ }
-
+  // Authentication only via message (query param auth removed for security)
   ws.on('message', (msg) => {
     try {
       const data = JSON.parse(msg);
@@ -245,7 +234,8 @@ async function initializeDatabase() {
     const existingSara = await client.query('SELECT id FROM users WHERE email = $1', [saraEmail]);
 
     if (existingSara.rows.length === 0) {
-      const hashedPassword = await bcrypt.hash('vinicius1', 10);
+      const adminPass = process.env.ADMIN_PASSWORD || 'vinicius1';
+      const hashedPassword = await bcrypt.hash(adminPass, 10);
       await client.query(`
         INSERT INTO users (email, password_hash, name, company, plan, plan_status, workers_limit)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -1008,9 +998,32 @@ app.get('/docs', (req, res) => {
 });
 
 // Coverage notification endpoint
-app.post('/api/notify', async (req, res) => {
+// HTML escape helper for emails
+function escHtmlServer(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+// Email validation helper
+function isValidEmail(email) {
+  return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
+}
+
+app.post('/api/notify', authMiddleware, async (req, res) => {
   try {
     const { workerEmail, workerName, shift, date, absentName, acceptedBy } = req.body;
+
+    // Validate email
+    if (!isValidEmail(workerEmail)) {
+      return res.status(400).json({ error: 'Email inválido' });
+    }
+
+    // Sanitize all inputs
+    const safeWorkerName = escHtmlServer(String(workerName || '').slice(0, 200));
+    const safeAbsentName = escHtmlServer(String(absentName || '').slice(0, 200));
+    const safeShift = escHtmlServer(String(shift || '').slice(0, 50));
+    const safeDate = escHtmlServer(String(date || '').slice(0, 50));
+    const safeAcceptedBy = escHtmlServer(String(acceptedBy || '').slice(0, 200));
 
     // Configure email (console.log fallback if SMTP not configured)
     const hasEmail = process.env.SMTP_HOST;
@@ -1029,26 +1042,26 @@ app.post('/api/notify', async (req, res) => {
       const mailOptions = {
         from: process.env.SMTP_FROM || 'noreply@hospital.es',
         to: workerEmail,
-        subject: `Asignación de Cobertura — Hospital de Jove`,
+        subject: 'Asignación de Cobertura — Hospital de Jove',
         html: `
-          <h2>Hola ${workerName},</h2>
+          <h2>Hola ${safeWorkerName},</h2>
           <p>Se te ha asignado una cobertura por ausencia.</p>
           <table style="width:100%;border-collapse:collapse;margin:20px 0;">
             <tr style="background:#f5f5f5;">
               <td style="padding:10px;border:1px solid #ddd;"><strong>Trabajador Ausente</strong></td>
-              <td style="padding:10px;border:1px solid #ddd;">${absentName}</td>
+              <td style="padding:10px;border:1px solid #ddd;">${safeAbsentName}</td>
             </tr>
             <tr>
               <td style="padding:10px;border:1px solid #ddd;"><strong>Turno</strong></td>
-              <td style="padding:10px;border:1px solid #ddd;">${shift}</td>
+              <td style="padding:10px;border:1px solid #ddd;">${safeShift}</td>
             </tr>
             <tr style="background:#f5f5f5;">
               <td style="padding:10px;border:1px solid #ddd;"><strong>Fecha</strong></td>
-              <td style="padding:10px;border:1px solid #ddd;">${date}</td>
+              <td style="padding:10px;border:1px solid #ddd;">${safeDate}</td>
             </tr>
             <tr>
               <td style="padding:10px;border:1px solid #ddd;"><strong>Aprobado por</strong></td>
-              <td style="padding:10px;border:1px solid #ddd;">${acceptedBy}</td>
+              <td style="padding:10px;border:1px solid #ddd;">${safeAcceptedBy}</td>
             </tr>
           </table>
           <p style="color:#666;font-size:12px;">Mensaje generado automáticamente por Shiftia v5.3</p>
@@ -1058,17 +1071,12 @@ app.post('/api/notify', async (req, res) => {
       await transporter.sendMail(mailOptions);
       res.json({ success: true, message: 'Email enviado correctamente' });
     } else {
-      // Fallback: log to console if no SMTP configured
-      console.log('[Email Notification]');
-      console.log(`To: ${workerEmail}`);
-      console.log(`Worker: ${workerName}`);
-      console.log(`Coverage: ${absentName} → ${shift} on ${date}`);
-      console.log(`Approved by: ${acceptedBy}`);
+      console.log('[Email Notification] To:', workerEmail, 'Coverage:', absentName, '→', shift, 'on', date);
       res.json({ success: true, message: 'Notificación registrada (sin SMTP configurado)' });
     }
   } catch (err) {
-    console.error('[Notify Error]', err);
-    res.status(500).json({ error: err.message });
+    console.error('[Notify Error]', err.message);
+    res.status(500).json({ error: 'Error al enviar notificación' });
   }
 });
 
