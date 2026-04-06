@@ -128,8 +128,9 @@ pool.on('error', (err) => {
 
 // ====== DATABASE INITIALIZATION ======
 async function initializeDatabase() {
+  let client;
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
 
     // Create users table
     await client.query(`
@@ -246,6 +247,7 @@ async function initializeDatabase() {
     client.release();
   } catch (err) {
     console.error('Database initialization error:', err.message);
+    if (client) try { client.release(); } catch(e) {}
     process.exit(1);
   }
 }
@@ -658,14 +660,14 @@ app.post('/api/support', authMiddleware, async (req, res) => {
               </div>
               <div style="background: #f8fafc; padding: 32px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
-                  <tr><td style="padding: 10px 0; color: #64748b; font-weight: 600; width: 110px;">Nombre</td><td style="padding: 10px 0; color: #1e293b;">${user.name}</td></tr>
-                  <tr><td style="padding: 10px 0; color: #64748b; font-weight: 600;">Email</td><td style="padding: 10px 0;"><a href="mailto:${user.email}" style="color: #2980b9;">${user.email}</a></td></tr>
-                  ${user.company ? `<tr><td style="padding: 10px 0; color: #64748b; font-weight: 600;">Empresa</td><td style="padding: 10px 0; color: #1e293b;">${user.company}</td></tr>` : ''}
+                  <tr><td style="padding: 10px 0; color: #64748b; font-weight: 600; width: 110px;">Nombre</td><td style="padding: 10px 0; color: #1e293b;">${escHtmlServer(user.name)}</td></tr>
+                  <tr><td style="padding: 10px 0; color: #64748b; font-weight: 600;">Email</td><td style="padding: 10px 0;"><a href="mailto:${escHtmlServer(user.email)}" style="color: #2980b9;">${escHtmlServer(user.email)}</a></td></tr>
+                  ${user.company ? `<tr><td style="padding: 10px 0; color: #64748b; font-weight: 600;">Empresa</td><td style="padding: 10px 0; color: #1e293b;">${escHtmlServer(user.company)}</td></tr>` : ''}
                   <tr><td style="padding: 10px 0; color: #64748b; font-weight: 600;">Categoría</td><td style="padding: 10px 0; color: #1e293b;">${catLabels[cat] || cat}</td></tr>
                 </table>
                 <div style="padding: 20px; background: white; border-radius: 8px; border: 1px solid #e2e8f0;">
                   <p style="color: #64748b; font-weight: 600; margin-bottom: 12px;">Mensaje:</p>
-                  <p style="color: #1e293b; line-height: 1.6; margin: 0; white-space: pre-wrap;">${message}</p>
+                  <p style="color: #1e293b; line-height: 1.6; margin: 0; white-space: pre-wrap;">${escHtmlServer(message)}</p>
                 </div>
               </div>
             </div>
@@ -1172,7 +1174,8 @@ app.get('/api/workers', authMiddleware, async (req, res) => {
 // GET /api/audit — Get recent audit entries
 app.get('/api/audit', authMiddleware, async (req, res) => {
   try {
-    const limit = Math.min(Math.max(1, parseInt(req.query.limit, 10) || 50), 200);
+    const parsedLimit = parseInt(req.query.limit, 10);
+    const limit = Math.min(Math.max(1, isNaN(parsedLimit) ? 50 : parsedLimit), 200);
     const result = await pool.query(
       'SELECT id, action, details, ip_address, created_at FROM audit_logs WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2',
       [req.user.id, limit]
@@ -1291,9 +1294,9 @@ async function sendDailySummary() {
       const workersData = data.workers || [];
       workersData.forEach(w => {
         const s = sch[w.id]?.[dayIdx] || '';
-        if (shifts[s]) shifts[s].push(w.name);
+        if (shifts[s]) shifts[s].push(escHtmlServer(w.name));
         else if (['VAC','BAJ','FOR','LAC','MTC','HS','CAA','INT'].includes(s)) {
-          absences.push(`${w.name} (${s})`);
+          absences.push(`${escHtmlServer(w.name)} (${s})`);
         }
       });
 

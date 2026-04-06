@@ -10570,7 +10570,7 @@ function goToDay(year, month, day) {
   appState.currentMonth = new Date(year, month, 1);
   // Switch to schedule view
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.querySelector('[data-view="schedule"]').classList.add('active');
+  document.querySelector('[data-view="schedule"]')?.classList.add('active');
   document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('schedulePanel').classList.add('active');
   appState.currentView = 'schedule';
@@ -10597,7 +10597,7 @@ function goToWorkerSchedule(wId) {
   if (!w) return;
   // Switch to schedule view
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.querySelector('[data-view="schedule"]').classList.add('active');
+  document.querySelector('[data-view="schedule"]')?.classList.add('active');
   document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('schedulePanel').classList.add('active');
   appState.currentView = 'schedule';
@@ -11229,7 +11229,7 @@ function renderConflictProposal(conflictId, data, solution) {
       const nightDiff = a.stats.n - avgN;
       const hourDiff = a.stats.h - avgH;
       html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;">
-        <span style="font-weight:700;color:var(--text);flex:1;">${a.worker.name}</span>
+        <span style="font-weight:700;color:var(--text);flex:1;">${escHtml(a.worker.name)}</span>
         <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${a.type==='enf'?'#fde8e8;color:#cc4444':'#e8f0fd;color:#4a9dd4'};">${a.type==='enf'?'ENF':'TEC'}</span>
         <span style="font-size:11px;color:var(--text2);">→ ${a.shift}</span>
         <span style="font-size:10px;color:${nightDiff<=0?'#27ae60':'#e67e22'};">${nightDiff>=0?'+':''}${nightDiff.toFixed(1)}N</span>
@@ -11238,11 +11238,11 @@ function renderConflictProposal(conflictId, data, solution) {
     });
   } else if (solution.action === 'swap_rest' || solution.action === 'swap_restriction') {
     html += `<div style="padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;">
-      <div style="font-size:12px;"><strong>${solution.worker.name}</strong> → <span style="color:#cc4444;font-weight:600;">D (descanso)</span></div>
+      <div style="font-size:12px;"><strong>${escHtml(solution.worker.name)}</strong> → <span style="color:#cc4444;font-weight:600;">D (descanso)</span></div>
       <div style="font-size:11px;color:var(--text3);margin-top:2px;">Liberar de turno conflictivo</div>
     </div>`;
     html += `<div style="padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;">
-      <div style="font-size:12px;"><strong>${solution.replacement.name}</strong> → <span style="color:#2e8b7a;font-weight:600;">${solution.originalShift}</span></div>
+      <div style="font-size:12px;"><strong>${escHtml(solution.replacement.name)}</strong> → <span style="color:#2e8b7a;font-weight:600;">${escHtml(solution.originalShift)}</span></div>
       <div style="font-size:11px;color:var(--text3);margin-top:2px;">Cubre el turno (${solution.replacementStats.h}h acumuladas, ${solution.replacementStats.n} noches)</div>
     </div>`;
   }
@@ -11568,7 +11568,9 @@ document.getElementById('workerSearch')?.addEventListener('input', (e) => {
 document.getElementById('teamSearch')?.addEventListener('input', (e) => {
   const term = e.target.value.toLowerCase();
   document.querySelectorAll('.worker-card').forEach(card => {
-    const name = card.querySelector('.worker-name').textContent.toLowerCase();
+    const nameEl = card.querySelector('.worker-name');
+    if (!nameEl) return;
+    const name = nameEl.textContent.toLowerCase();
     card.style.display = name.includes(term) ? '' : 'none';
   });
 });
@@ -12283,8 +12285,8 @@ function renderImportManagement() {
       list.innerHTML += `<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--surface);border-radius:12px;box-shadow:var(--shadow);margin-bottom:8px;">
         <div style="width:40px;height:40px;border-radius:10px;background:rgba(196,149,106,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;">📄</div>
         <div style="flex:1;cursor:pointer;" onclick="showImportDetail(${idx})">
-          <div style="font-size:13px;font-weight:600;">${f.name}</div>
-          <div style="font-size:11px;color:var(--text3);">${f.file} · ${f.role}</div>
+          <div style="font-size:13px;font-weight:600;">${escHtml(f.name)}</div>
+          <div style="font-size:11px;color:var(--text3);">${escHtml(f.file)} · ${escHtml(f.role)}</div>
         </div>
         <div style="text-align:right;font-size:10px;color:var(--text2);line-height:1.6;">
           <div>${shifts.total} turnos · ${shifts.n} noches</div>
@@ -12346,8 +12348,8 @@ function showImportDetail(idx) {
     <div style="padding:24px;background:var(--surface);border-radius:14px;box-shadow:var(--shadow);margin-top:16px;">
       <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:20px;">
         <div>
-          <div style="font-size:16px;font-weight:600;margin-bottom:4px;">${f.name}</div>
-          <div style="font-size:12px;color:var(--text3);">${f.role} · ${f.file}</div>
+          <div style="font-size:16px;font-weight:600;margin-bottom:4px;">${escHtml(f.name)}</div>
+          <div style="font-size:12px;color:var(--text3);">${escHtml(f.role)} · ${escHtml(f.file)}</div>
         </div>
         <button onclick="this.closest('#importDetailPanel').style.display='none'" style="background:var(--surface2);border:none;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text2);">✕</button>
       </div>
@@ -14965,7 +14967,7 @@ function generateProactiveInsight() {
   // Check workload equity
   const analysis = getTeamWorkloadAnalysis();
   if (analysis && analysis.nightSpread > 10) {
-    insights.push(`Desigualdad de noches: ${analysis.mostNights[0]} tiene ${analysis.maxN} noches vs ${analysis.leastNights[0]} con ${analysis.minN}. Diferencia de ${analysis.nightSpread}.`);
+    insights.push(`Desigualdad de noches: ${escHtml(analysis.mostNights[0])} tiene ${analysis.maxN} noches vs ${escHtml(analysis.leastNights[0])} con ${analysis.minN}. Diferencia de ${analysis.nightSpread}.`);
   }
   // High severity conflicts
   detectConflicts();
