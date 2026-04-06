@@ -16391,6 +16391,8 @@ function openGestor() {
 
 function closeGestor() {
   document.getElementById('gestorOverlay').classList.remove('open');
+  // Reset state so next open starts clean
+  gestorState = { worker: null, action: null, selectedDays: [] };
 }
 
 let gestorCalState = { year: new Date().getFullYear(), month: new Date().getMonth() };
@@ -18908,6 +18910,20 @@ function applyGestorPlan(planDataStr, btn) {
     showToast(`Plan de cobertura aplicado: ${appliedCount} dias cubiertos para ${absent.name}`, 'success', 5000);
     renderSchedule();
     renderDashboard();
+
+    // Reset gestor state after successful apply so next interaction starts clean
+    setTimeout(() => {
+      gestorState = { worker: null, action: null, selectedDays: [] };
+      const sel = document.getElementById('gestorWorker');
+      if (sel) sel.value = '';
+      document.querySelectorAll('.gestor-action-card').forEach(c => c.classList.remove('selected'));
+      const summaryEl = document.getElementById('gestorWorkerSummary');
+      if (summaryEl) summaryEl.style.display = 'none';
+      document.getElementById('gestorSelectedDays').innerHTML = '';
+      document.getElementById('gestorSelectedCount').innerHTML = '';
+      document.getElementById('gestorAnalyzeBtn').disabled = true;
+      renderGestorCalendar();
+    }, 2000);
   } catch (e) {
     showToast('Error al aplicar el plan: ' + e.message, 'error');
     console.error(e);
@@ -18965,6 +18981,20 @@ function applyPartialPlan(planDataStr, btn) {
     showToast(`${actionLabel} registrada: ${appliedCount} días para ${absent.name}`, 'success', 5000);
     renderSchedule();
     renderDashboard();
+
+    // Reset gestor state after successful apply
+    setTimeout(() => {
+      gestorState = { worker: null, action: null, selectedDays: [] };
+      const sel = document.getElementById('gestorWorker');
+      if (sel) sel.value = '';
+      document.querySelectorAll('.gestor-action-card').forEach(c => c.classList.remove('selected'));
+      const summaryEl = document.getElementById('gestorWorkerSummary');
+      if (summaryEl) summaryEl.style.display = 'none';
+      document.getElementById('gestorSelectedDays').innerHTML = '';
+      document.getElementById('gestorSelectedCount').innerHTML = '';
+      document.getElementById('gestorAnalyzeBtn').disabled = true;
+      renderGestorCalendar();
+    }, 2000);
   } catch (e) {
     showToast('Error al registrar: ' + e.message, 'error');
     console.error(e);
