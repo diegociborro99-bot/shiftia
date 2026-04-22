@@ -4066,6 +4066,174 @@ table.schedule th.month-total-header {
   .sit-shifts { flex-wrap: wrap; }
 }
 
+/* === COVERAGE HEATMAP === */
+.cov-heatmap {
+  background: var(--surface);
+  border: 1px solid var(--surface2);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: 14px;
+}
+.cov-heatmap-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.heatmap-dow {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text3);
+  text-align: center;
+  padding: 2px 0;
+}
+.heatmap-cell {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  min-height: 28px;
+}
+.heatmap-cell:hover { transform: scale(1.15); z-index: 2; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.heatmap-cell.hm-empty { opacity: 0; pointer-events: none; }
+.heatmap-cell.hm-ok { background: rgba(39,174,96,0.15); color: #1a7a3a; }
+.heatmap-cell.hm-tight { background: rgba(230,126,34,0.15); color: #b5651d; }
+.heatmap-cell.hm-danger { background: rgba(204,68,68,0.2); color: #991a1a; }
+.heatmap-cell.hm-today { box-shadow: inset 0 0 0 2px var(--accent); }
+.heatmap-legend {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  justify-content: center;
+}
+.heatmap-legend-item {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 9px; color: var(--text3);
+}
+.heatmap-legend-dot {
+  width: 10px; height: 10px; border-radius: 3px;
+}
+
+/* === WHATSAPP MESSAGE === */
+.whatsapp-gen {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(37,211,102,0.06) 0%, rgba(37,211,102,0.02) 100%);
+  border: 1px solid rgba(37,211,102,0.2);
+  border-radius: 14px;
+}
+.whatsapp-gen-header {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 700; color: var(--text);
+  margin-bottom: 8px;
+}
+.whatsapp-gen-header svg { color: #25D366; }
+.whatsapp-msg-box {
+  background: var(--surface);
+  border: 1px solid var(--surface2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text2);
+  white-space: pre-wrap;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.whatsapp-actions {
+  display: flex; gap: 8px; margin-top: 10px;
+}
+.whatsapp-btn {
+  flex: 1;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.whatsapp-btn-copy {
+  background: var(--surface2);
+  color: var(--text);
+}
+.whatsapp-btn-copy:hover { background: var(--accent); color: white; }
+.whatsapp-btn-send {
+  background: #25D366;
+  color: white;
+}
+.whatsapp-btn-send:hover { background: #1da851; }
+
+/* === COVERAGE FORECAST === */
+.cov-forecast {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--surface2);
+  border-radius: 14px;
+}
+.cov-forecast-title {
+  font-size: 12px; font-weight: 700; color: var(--text);
+  margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+}
+.forecast-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 80px;
+  padding: 0 2px;
+}
+.forecast-bar {
+  flex: 1;
+  border-radius: 4px 4px 0 0;
+  min-height: 4px;
+  transition: all 0.3s;
+  cursor: pointer;
+  position: relative;
+}
+.forecast-bar:hover { opacity: 0.8; }
+.forecast-bar.fb-ok { background: linear-gradient(to top, #27ae60, #2ecc71); }
+.forecast-bar.fb-tight { background: linear-gradient(to top, #e67e22, #f39c12); }
+.forecast-bar.fb-danger { background: linear-gradient(to top, #cc4444, #e74c3c); }
+.forecast-bar.fb-today { box-shadow: inset 0 0 0 1.5px var(--text); }
+.forecast-labels {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+}
+.forecast-label {
+  flex: 1;
+  text-align: center;
+  font-size: 8px;
+  color: var(--text3);
+  font-weight: 600;
+}
+.forecast-summary {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.5;
+  padding: 8px 10px;
+  background: var(--surface2);
+  border-radius: 8px;
+}
+
 /* === COVERAGE TREE === */
 .coverage-tree {
   background: linear-gradient(135deg, var(--surface1) 0%, var(--surface2) 100%);
@@ -17752,6 +17920,12 @@ function renderSituationPanel() {
 
   html += `</div>`;
 
+  // Coverage forecast
+  html += renderCoverageForecast();
+
+  // Heatmap
+  html += renderCoverageHeatmap();
+
   // Coverage history
   html += renderCoverageHistory();
 
@@ -17844,6 +18018,272 @@ function toggleCoverageHistory() {
   if (!list || !btn) return;
   list.classList.toggle('open');
   btn.classList.toggle('open');
+}
+
+// ── COVERAGE HEATMAP: Monthly risk calendar ──
+function renderCoverageHeatmap() {
+  const now = new Date();
+  const year = gestorCalState.year;
+  const month = gestorCalState.month;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
+  const today = now.getDate();
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+  const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  let html = `<div class="cov-heatmap">`;
+  html += `<div class="cov-heatmap-title">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Mapa de riesgo — ${monthNames[month]} ${year}
+  </div>`;
+  html += `<div class="heatmap-grid">`;
+
+  // DOW headers
+  const dows = ['L','M','X','J','V','S','D'];
+  dows.forEach(d => { html += `<div class="heatmap-dow">${d}</div>`; });
+
+  // Empty cells before first day
+  for (let i = 0; i < firstDow; i++) {
+    html += `<div class="heatmap-cell hm-empty"></div>`;
+  }
+
+  // Day cells with risk color
+  const sch = genSchedule(year, month);
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dayIdx = d - 1;
+    const COV = getCoverageRules(year, month, d);
+    let totalGaps = 0;
+
+    ['M','T','N'].forEach(shift => {
+      const needEnf = COV[shift] ? COV[shift].enf : 0;
+      const needTec = COV[shift] ? COV[shift].tec : 0;
+      let haveEnf = 0, haveTec = 0;
+      workers.forEach(w => {
+        const s = sch[w.id] ? sch[w.id][dayIdx] : '';
+        const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+        if (eff === shift) {
+          if (w.type === 'enf') haveEnf++;
+          else if (w.area !== 'micro') haveTec++;
+        }
+      });
+      totalGaps += Math.max(0, needEnf - haveEnf) + Math.max(0, needTec - haveTec);
+    });
+
+    const riskClass = totalGaps === 0 ? 'hm-ok' : totalGaps <= 2 ? 'hm-tight' : 'hm-danger';
+    const todayClass = isCurrentMonth && d === today ? ' hm-today' : '';
+    const tooltip = totalGaps === 0 ? 'Cobertura OK' : totalGaps + ' hueco' + (totalGaps > 1 ? 's' : '');
+    html += `<div class="heatmap-cell ${riskClass}${todayClass}" title="${d}/${month+1}: ${tooltip}" onclick="toggleGestorDay(${year},${month},${d})">${d}</div>`;
+  }
+
+  html += `</div>`;
+  html += `<div class="heatmap-legend">
+    <div class="heatmap-legend-item"><div class="heatmap-legend-dot" style="background:rgba(39,174,96,0.3);"></div> OK</div>
+    <div class="heatmap-legend-item"><div class="heatmap-legend-dot" style="background:rgba(230,126,34,0.3);"></div> Ajustado</div>
+    <div class="heatmap-legend-item"><div class="heatmap-legend-dot" style="background:rgba(204,68,68,0.35);"></div> Critico</div>
+  </div>`;
+  html += `</div>`;
+  return html;
+}
+
+// ── COVERAGE FORECAST: 14-day risk projection ──
+function renderCoverageForecast() {
+  const now = new Date();
+  const forecasts = [];
+  let dangerDays = 0, tightDays = 0;
+
+  for (let offset = 0; offset < 14; offset++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const dayIdx = d.getDate() - 1;
+    const sch = genSchedule(year, month);
+    const COV = getCoverageRules(year, month, d.getDate());
+    const dayNames = ['D','L','M','X','J','V','S'];
+    let totalGaps = 0;
+    let absentCount = 0;
+    const absenceTypes = ['BAJ','VAC','LD','INT','MTC','LAC','FOR','HS','CAA','AE','EX','HF'];
+
+    ['M','T','N'].forEach(shift => {
+      const needEnf = COV[shift] ? COV[shift].enf : 0;
+      const needTec = COV[shift] ? COV[shift].tec : 0;
+      let haveEnf = 0, haveTec = 0;
+      workers.forEach(w => {
+        const s = sch[w.id] ? sch[w.id][dayIdx] : '';
+        const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+        if (eff === shift) {
+          if (w.type === 'enf') haveEnf++;
+          else if (w.area !== 'micro') haveTec++;
+        }
+        if (absenceTypes.includes(s)) absentCount++;
+      });
+      totalGaps += Math.max(0, needEnf - haveEnf) + Math.max(0, needTec - haveTec);
+    });
+
+    // Risk score: 0-100
+    const risk = Math.min(100, totalGaps * 25 + absentCount * 5);
+    const riskClass = risk <= 20 ? 'fb-ok' : risk <= 50 ? 'fb-tight' : 'fb-danger';
+    if (risk > 50) dangerDays++;
+    else if (risk > 20) tightDays++;
+
+    forecasts.push({
+      date: d,
+      dayLabel: dayNames[d.getDay()],
+      dayNum: d.getDate(),
+      risk,
+      riskClass,
+      totalGaps,
+      isToday: offset === 0
+    });
+  }
+
+  let html = `<div class="cov-forecast">`;
+  html += `<div class="cov-forecast-title">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    Forecast de cobertura — Proximos 14 dias
+  </div>`;
+
+  // Bar chart
+  html += `<div class="forecast-bars">`;
+  const maxRisk = Math.max(...forecasts.map(f => f.risk), 10);
+  forecasts.forEach(f => {
+    const height = Math.max(4, (f.risk / maxRisk) * 100);
+    const todayClass = f.isToday ? ' fb-today' : '';
+    html += `<div class="forecast-bar ${f.riskClass}${todayClass}" style="height:${height}%;" title="${f.dayLabel} ${f.dayNum}: Riesgo ${f.risk}% (${f.totalGaps} huecos)"></div>`;
+  });
+  html += `</div>`;
+
+  // Labels
+  html += `<div class="forecast-labels">`;
+  forecasts.forEach(f => {
+    html += `<div class="forecast-label">${f.dayLabel}<br>${f.dayNum}</div>`;
+  });
+  html += `</div>`;
+
+  // Summary
+  const okDays = 14 - dangerDays - tightDays;
+  let summaryIcon = '✓', summaryColor = '#27ae60', summaryText = '';
+  if (dangerDays >= 3) {
+    summaryIcon = '!'; summaryColor = '#cc4444';
+    summaryText = `<strong style="color:#cc4444;">${dangerDays} dias criticos</strong> en las proximas 2 semanas. Planifica coberturas con antelacion.`;
+  } else if (dangerDays > 0 || tightDays >= 3) {
+    summaryIcon = '⚠'; summaryColor = '#e67e22';
+    summaryText = `${dangerDays > 0 ? dangerDays + ' dia(s) critico(s)' : ''} ${tightDays > 0 ? (dangerDays > 0 ? ' y ' : '') + tightDays + ' dia(s) ajustado(s)' : ''}. Revisa los dias marcados en rojo/naranja.`;
+  } else {
+    summaryText = `Cobertura estable. ${okDays} de 14 dias con cobertura completa.`;
+  }
+  html += `<div class="forecast-summary"><span style="color:${summaryColor};font-weight:700;">${summaryIcon}</span> ${summaryText}</div>`;
+
+  html += `</div>`;
+  return html;
+}
+
+// ── WHATSAPP MESSAGE GENERATOR ──
+function generateWhatsAppMessage(planData, absentWorker) {
+  if (!planData || !planData.assignments || planData.assignments.length === 0) return '';
+
+  // Group assignments by replacement worker
+  const byWorker = {};
+  planData.assignments.forEach(a => {
+    if (!a.candidate) return;
+    const wId = a.candidate.w.id;
+    if (!byWorker[wId]) byWorker[wId] = { worker: a.candidate.w, days: [] };
+    const da = a.dayAnalysis;
+    const dayNames = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+    const d = da.dayDate;
+    byWorker[wId].days.push({
+      dayName: dayNames[d.getDay()],
+      dayNum: d.getDate(),
+      month: d.getMonth() + 1,
+      shift: da.workerShift || da.effShift
+    });
+  });
+
+  const actionLabels = { BAJ:'baja medica', VAC:'vacaciones', D:'dia libre', HS:'permiso sindical', FOR:'formacion', LAC:'lactancia', CAA:'asuntos propios', MTC:'maternidad/paternidad' };
+  const shiftLabels = { M:'Mañana', T:'Tarde', N:'Noche', MR:'Mañana reducida', M7H:'Mañana 7h', M6R:'Mañana 6h', M55:'Mañana 5.5h' };
+
+  let allMessages = [];
+
+  Object.values(byWorker).forEach(entry => {
+    const firstName = entry.worker.name.split(' ')[0];
+    const absentFirstName = absentWorker.name.split(' ')[0];
+    const actionLabel = actionLabels[planData.shiftToAssign] || planData.shiftToAssign;
+
+    let msg = `Hola ${firstName}, te escribo desde el servicio de Lab.\n\n`;
+    msg += `${absentFirstName} esta de ${actionLabel} y necesitamos cubrir su turno.\n\n`;
+
+    if (entry.days.length === 1) {
+      const d = entry.days[0];
+      const shiftLabel = shiftLabels[d.shift] || d.shift;
+      msg += `Te tocaria cubrir el ${d.dayName} ${d.dayNum}/${d.month} en turno de ${shiftLabel}.\n`;
+    } else {
+      msg += `Te tocaria cubrir estos dias:\n`;
+      entry.days.forEach(d => {
+        const shiftLabel = shiftLabels[d.shift] || d.shift;
+        msg += `  - ${d.dayName} ${d.dayNum}/${d.month} → ${shiftLabel}\n`;
+      });
+    }
+
+    msg += `\nPor favor confirma si te viene bien. Gracias!`;
+    allMessages.push({ worker: entry.worker, message: msg });
+  });
+
+  return allMessages;
+}
+
+function renderWhatsAppSection(plans, absentWorker, shiftToAssign) {
+  if (!plans || plans.length === 0) return '';
+  const bestPlan = plans[0];
+  if (bestPlan.isPartial || !bestPlan.assignments.some(a => a.candidate)) return '';
+
+  const planData = {
+    shiftToAssign,
+    assignments: bestPlan.assignments
+  };
+  const messages = generateWhatsAppMessage(planData, absentWorker);
+  if (messages.length === 0) return '';
+
+  const msgId = 'wa_msg_' + Math.random().toString(36).substring(7);
+
+  let html = `<div class="whatsapp-gen">`;
+  html += `<div class="whatsapp-gen-header">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    Notificar a sustitutos
+  </div>`;
+
+  messages.forEach((m, i) => {
+    const escapedMsg = m.message.replace(/'/g, "\\'").replace(/\n/g, "\\n");
+    html += `<div style="margin-bottom:${i < messages.length - 1 ? '10px' : '0'};">`;
+    html += `<div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:4px;">${escHtml(m.worker.name)}</div>`;
+    html += `<div class="whatsapp-msg-box" id="${msgId}_${i}">${escHtml(m.message)}</div>`;
+    html += `<div class="whatsapp-actions">`;
+    html += `<button class="whatsapp-btn whatsapp-btn-copy" onclick="copyWhatsAppMsg('${msgId}_${i}', this)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      Copiar
+    </button>`;
+    const phoneEncoded = encodeURIComponent(m.message);
+    html += `<button class="whatsapp-btn whatsapp-btn-send" onclick="window.open('https://wa.me/?text=${phoneEncoded}','_blank')">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      Enviar WhatsApp
+    </button>`;
+    html += `</div></div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+function copyWhatsAppMsg(elementId, btn) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const text = el.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const origText = btn.innerHTML;
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copiado!';
+    btn.style.color = '#27ae60';
+    setTimeout(() => { btn.innerHTML = origText; btn.style.color = ''; }, 2000);
+  }).catch(() => {
+    showToast('No se pudo copiar al portapapeles', 'error');
+  });
 }
 
 // ── FAB BADGE: Show coverage gaps count ──
@@ -19451,6 +19891,9 @@ function buildAICoverageAnalysis(w, days, action) {
     html += `<div class="ai-reasoning-content" id="gestorDayDetails">`;
     html += buildDetailedDayAnalysis(w, dayAnalyses, shiftToAssign, avgN, avgH, avgWknd);
     html += `</div>`;
+
+    // ── SECTION 9: WhatsApp notification generator ──
+    html += renderWhatsAppSection(plans, w, shiftToAssign);
 
   } else if (daysNeedingCoverage.length === 0) {
     html += `<div style="padding:24px;text-align:center;color:var(--text3);">
