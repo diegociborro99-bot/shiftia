@@ -6812,7 +6812,7 @@ html {
 @media (max-width: 768px) {
   .topbar, .nav-tab, .shift-pill, .stat-pill, .worker-card, .conflict-card,
   .gestor-modal, .chat-panel, .shift-editor, .briefing-card,
-  .gestor-fab, .chat-bubble, .toast, .plan-preview-content {
+  .chat-bubble, .toast, .plan-preview-content {
     will-change: transform;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
@@ -8154,30 +8154,14 @@ table.schedule tbody tr:hover {
   transition-duration: 0.1s;
 }
 
-/* FAB entrance animation */
+/* FAB entrance animation — uses opacity only to avoid breaking position:fixed */
 @keyframes fabEntrance {
-  from { opacity: 0; transform: scale(0.6) translateY(20px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .gestor-fab {
-  animation: fabEntrance 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+  animation: fabEntrance 0.4s ease 0.3s both;
 }
-
-/* FAB pulse ring on idle */
-.gestor-fab::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 28px;
-  border: 2px solid rgba(78,205,196,0.3);
-  animation: fabPulseRing 3s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes fabPulseRing {
-  0%, 100% { opacity: 0; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.08); }
-}
-.gestor-fab:hover::after { animation: none; opacity: 0; }
 
 /* Chat bubble: breathing glow */
 .chat-bubble::after {
@@ -18302,7 +18286,6 @@ function updateGestorFabBadge() {
       const badge = document.createElement('span');
       badge.className = 'fab-badge';
       badge.textContent = alertCount > 9 ? '9+' : alertCount;
-      fab.style.position = 'relative';
       fab.appendChild(badge);
     }
   } catch(e) { /* silently ignore */ }
