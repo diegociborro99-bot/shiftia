@@ -3809,6 +3809,263 @@ table.schedule th.month-total-header {
   .rank-plan-col { width: 100%; }
 }
 
+/* === GESTOR SITUATION PANEL === */
+.gestor-situation {
+  background: linear-gradient(135deg, rgba(78,205,196,0.06) 0%, rgba(41,128,185,0.06) 100%);
+  border: 1px solid rgba(78,205,196,0.15);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  animation: sitPanelIn 0.4s ease;
+}
+@keyframes sitPanelIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
+.sit-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+.sit-header .sit-live {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #27ae60;
+  animation: sitLivePulse 2s ease infinite;
+  flex-shrink: 0;
+}
+@keyframes sitLivePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(39,174,96,0.4); } 50% { box-shadow: 0 0 0 6px rgba(39,174,96,0); } }
+
+.sit-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.sit-metric {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: center;
+  border: 1px solid var(--surface2);
+}
+.sit-metric-val { font-size: 18px; font-weight: 800; color: var(--text); line-height: 1.2; }
+.sit-metric-label { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.sit-metric.sit-danger .sit-metric-val { color: #cc4444; }
+.sit-metric.sit-warn .sit-metric-val { color: #e67e22; }
+.sit-metric.sit-ok .sit-metric-val { color: #27ae60; }
+
+/* Absent workers alert cards */
+.sit-absences {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sit-absent-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-radius: 10px;
+  border-left: 3px solid #cc4444;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 12px;
+}
+.sit-absent-card:hover {
+  background: rgba(204,68,68,0.04);
+  transform: translateX(3px);
+}
+.sit-absent-card .sac-name { font-weight: 700; color: var(--text); flex: 1; }
+.sit-absent-card .sac-shift {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+.sit-absent-card .sac-action {
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4ecdc4, #2980b9);
+  color: white;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.sit-absent-card .sac-action:hover { transform: scale(1.05); }
+
+/* Coverage gaps indicator */
+.sit-shifts {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.sit-shift-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.sit-shift-pill.shift-m { background: rgba(46,139,122,0.1); color: #2e8b7a; }
+.sit-shift-pill.shift-t { background: rgba(74,157,212,0.1); color: #4a9dd4; }
+.sit-shift-pill.shift-n { background: rgba(142,68,173,0.1); color: #8e44ad; }
+.sit-shift-pill .ssp-status { font-size: 9px; opacity: 0.7; }
+
+/* Coverage history log */
+.gestor-history {
+  margin-top: 16px;
+  border-top: 1px solid var(--surface2);
+  padding-top: 12px;
+}
+.history-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text2);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 6px 0;
+  font-family: inherit;
+  transition: color 0.2s;
+}
+.history-toggle:hover { color: var(--accent); }
+.history-toggle svg { transition: transform 0.2s; }
+.history-toggle.open svg { transform: rotate(180deg); }
+
+.history-list {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+.history-list.open { display: flex; }
+
+.history-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-radius: 10px;
+  font-size: 11px;
+  border: 1px solid var(--surface2);
+  animation: histEntryIn 0.3s ease;
+}
+@keyframes histEntryIn { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+
+.history-entry .he-icon {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.history-entry .he-icon.he-cover { background: rgba(39,174,96,0.1); }
+.history-entry .he-icon.he-partial { background: rgba(52,152,219,0.1); }
+.history-entry .he-icon.he-undo { background: rgba(230,126,34,0.1); }
+.history-entry .he-body { flex: 1; line-height: 1.4; }
+.history-entry .he-time { font-size: 9px; color: var(--text3); white-space: nowrap; }
+.history-entry .he-workers { font-weight: 700; color: var(--accent); }
+.history-entry .he-action { color: var(--text2); }
+
+/* FAB badge */
+.gestor-fab .fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #cc4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  animation: fabBadgePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 6px rgba(204,68,68,0.4);
+}
+@keyframes fabBadgePop { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* IA analysis enhanced loading */
+.gestor-ai-analyzing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px 20px;
+  animation: aiAnalyzeIn 0.3s ease;
+}
+@keyframes aiAnalyzeIn { from { opacity:0; } to { opacity:1; } }
+
+.ai-analyze-ring {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  border: 3px solid var(--surface2);
+  border-top-color: var(--accent);
+  animation: aiRingSpin 1s linear infinite;
+  position: relative;
+}
+@keyframes aiRingSpin { to { transform: rotate(360deg); } }
+
+.ai-analyze-ring::after {
+  content: '🧠';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  animation: aiBrainPulse 1.5s ease infinite;
+}
+@keyframes aiBrainPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+
+.ai-analyze-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 300px;
+}
+.ai-analyze-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text3);
+  transition: all 0.3s;
+}
+.ai-analyze-step.active { color: var(--text); font-weight: 600; }
+.ai-analyze-step.done { color: #27ae60; }
+.ai-analyze-step .aas-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--surface2);
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.ai-analyze-step.active .aas-dot { background: var(--accent); box-shadow: 0 0 8px rgba(78,205,196,0.5); }
+.ai-analyze-step.done .aas-dot { background: #27ae60; }
+
+@media (max-width: 600px) {
+  .sit-metrics { grid-template-columns: repeat(2, 1fr); }
+  .sit-shifts { flex-wrap: wrap; }
+}
+
 /* === COVERAGE TREE === */
 .coverage-tree {
   background: linear-gradient(135deg, var(--surface1) 0%, var(--surface2) 100%);
@@ -8914,12 +9171,14 @@ table.schedule tbody tr:hover {
   <div class="gestor-overlay" id="gestorOverlay" onclick="if(event.target===this)closeGestor()" role="dialog" aria-modal="true" aria-label="Gestor de cobertura">
     <div class="gestor-modal">
       <div class="gestor-header">
-        <h2><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> Gestor de Cobertura <span>IA 2.0</span>
+        <h2><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> Gestor de Cobertura <span>IA 5.0</span>
           <button id="simulationModeBtn" onclick="toggleSimulationMode()" style="margin-left:8px;padding:4px 12px;border:1px solid #3498db;background:transparent;color:#3498db;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">🔮 Simular</button>
         </h2>
         <button class="gestor-close" onclick="closeGestor()">&times;</button>
       </div>
       <div class="gestor-body" id="gestorBody">
+        <!-- Situation Panel -->
+        <div id="gestorSituationPanel"></div>
         <!-- Step 1: Worker -->
         <div class="gestor-step">
           <div class="gestor-step-label"><span class="step-num">1</span> Trabajador afectado</div>
@@ -17378,6 +17637,237 @@ function exportSchedulePDF() {
 // ========== GESTOR DE COBERTURA ==========
 let gestorState = { worker: null, action: null, selectedDays: [] };
 
+// ── SITUATION PANEL: Real-time coverage status ──
+function getTodaySituation() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const dayIdx = now.getDate() - 1;
+  const sch = genSchedule(year, month);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const COV = getCoverageRules(year, month, now.getDate());
+
+  // Count current coverage per shift
+  const coverage = { M: { enf: 0, tec: 0 }, T: { enf: 0, tec: 0 }, N: { enf: 0, tec: 0 } };
+  const absentToday = [];
+  const absenceTypes = ['BAJ','VAC','LD','INT','MTC','LAC','FOR','HS','CAA','AE','EX','HF'];
+
+  workers.forEach(w => {
+    const s = sch[w.id] ? sch[w.id][dayIdx] : '';
+    const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+    const isMicro = w.area === 'micro';
+
+    if (absenceTypes.includes(s)) {
+      absentToday.push({ worker: w, shift: s, originalShift: null });
+    } else if (['M','T','N'].includes(eff)) {
+      if (w.type === 'enf') coverage[eff].enf++;
+      else if (!isMicro) coverage[eff].tec++;
+    }
+  });
+
+  // Determine gaps
+  const gaps = { M: 0, T: 0, N: 0, total: 0 };
+  ['M','T','N'].forEach(shift => {
+    const needEnf = COV[shift] ? COV[shift].enf : 0;
+    const needTec = COV[shift] ? COV[shift].tec : 0;
+    const gapEnf = Math.max(0, needEnf - coverage[shift].enf);
+    const gapTec = Math.max(0, needTec - coverage[shift].tec);
+    gaps[shift] = gapEnf + gapTec;
+    gaps.total += gaps[shift];
+  });
+
+  // Look ahead — absences this week
+  const weekAbsences = [];
+  for (let d = dayIdx; d < Math.min(dayIdx + 7, daysInMonth); d++) {
+    workers.forEach(w => {
+      const s = sch[w.id] ? sch[w.id][d] : '';
+      if (absenceTypes.includes(s) && !weekAbsences.find(a => a.worker.id === w.id)) {
+        weekAbsences.push({ worker: w, shift: s, dayIdx: d });
+      }
+    });
+  }
+
+  return { coverage, absentToday, gaps, weekAbsences, COV, year, month, dayIdx };
+}
+
+function renderSituationPanel() {
+  const container = document.getElementById('gestorSituationPanel');
+  if (!container) return;
+
+  const sit = getTodaySituation();
+  const now = new Date();
+  const dayNames = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
+  const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+
+  let html = `<div class="gestor-situation">`;
+  html += `<div class="sit-header"><div class="sit-live"></div> Situacion en tiempo real — ${dayNames[now.getDay()]} ${now.getDate()} ${monthNames[now.getMonth()]} · ${timeStr}</div>`;
+
+  // Metrics row
+  const gapClass = sit.gaps.total === 0 ? 'sit-ok' : sit.gaps.total <= 2 ? 'sit-warn' : 'sit-danger';
+  const absentClass = sit.absentToday.length === 0 ? 'sit-ok' : sit.absentToday.length <= 2 ? 'sit-warn' : 'sit-danger';
+  html += `<div class="sit-metrics">
+    <div class="sit-metric ${gapClass}"><div class="sit-metric-val">${sit.gaps.total}</div><div class="sit-metric-label">Huecos hoy</div></div>
+    <div class="sit-metric ${absentClass}"><div class="sit-metric-val">${sit.absentToday.length}</div><div class="sit-metric-label">Ausentes hoy</div></div>
+    <div class="sit-metric"><div class="sit-metric-val">${sit.weekAbsences.length}</div><div class="sit-metric-label">Ausencias 7d</div></div>
+    <div class="sit-metric"><div class="sit-metric-val">${workers.length}</div><div class="sit-metric-label">Plantilla</div></div>
+  </div>`;
+
+  // Shift coverage pills
+  html += `<div class="sit-shifts">`;
+  ['M','T','N'].forEach(shift => {
+    const cls = shift === 'M' ? 'shift-m' : shift === 'T' ? 'shift-t' : 'shift-n';
+    const label = shift === 'M' ? 'Mañana' : shift === 'T' ? 'Tarde' : 'Noche';
+    const have = sit.coverage[shift].enf + sit.coverage[shift].tec;
+    const needEnf = sit.COV[shift] ? sit.COV[shift].enf : 0;
+    const needTec = sit.COV[shift] ? sit.COV[shift].tec : 0;
+    const need = needEnf + needTec;
+    const icon = have >= need ? '✓' : '!';
+    html += `<div class="sit-shift-pill ${cls}">
+      <span>${label}</span>
+      <strong>${have}/${need}</strong>
+      <span class="ssp-status">${icon}</span>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Absent today — quick action cards
+  if (sit.absentToday.length > 0) {
+    html += `<div style="margin-top:10px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Ausentes hoy</div>`;
+    html += `<div class="sit-absences">`;
+    sit.absentToday.forEach(a => {
+      const absLabels = { BAJ:'Baja', VAC:'Vacaciones', LD:'Libre disp.', INT:'Interinidad', MTC:'Maternidad', LAC:'Lactancia', FOR:'Formación', HS:'Sindical', CAA:'Asuntos prop.', AE:'Asuntos ext.', EX:'Exceso jornada', HF:'Horas formación' };
+      const label = absLabels[a.shift] || a.shift;
+      const bgCol = a.shift === 'BAJ' || a.shift === 'INT' ? 'rgba(204,68,68,0.08)' : a.shift === 'VAC' ? 'rgba(52,152,219,0.08)' : 'rgba(230,126,34,0.08)';
+      html += `<div class="sit-absent-card" onclick="quickGestorForWorker(${a.worker.id}, '${a.shift}')">
+        <span class="sac-name">${escHtml(a.worker.name)}</span>
+        <span class="sac-shift" style="background:${bgCol};color:var(--text2);">${label}</span>
+        <button class="sac-action" onclick="event.stopPropagation();quickGestorForWorker(${a.worker.id}, '${a.shift}')">Cubrir →</button>
+      </div>`;
+    });
+    html += `</div>`;
+  } else {
+    html += `<div style="margin-top:10px;padding:8px 12px;background:rgba(39,174,96,0.06);border-radius:8px;font-size:11px;color:#27ae60;text-align:center;font-weight:600;">✓ Sin ausencias — cobertura completa hoy</div>`;
+  }
+
+  html += `</div>`;
+
+  // Coverage history
+  html += renderCoverageHistory();
+
+  container.innerHTML = html;
+}
+
+function quickGestorForWorker(workerId, absenceCode) {
+  // Auto-select worker, action, and today's date in the gestor
+  const w = workers.find(x => x.id === workerId);
+  if (!w) return;
+
+  // Map absence code to gestor action
+  const codeToAction = { BAJ:'baja', VAC:'vacaciones', D:'liberar', HS:'sindical', FOR:'formacion', LAC:'lactancia', CAA:'caaa', MTC:'maternidad', INT:'baja', LD:'liberar' };
+  const action = codeToAction[absenceCode] || 'baja';
+
+  // Set worker
+  const sel = document.getElementById('gestorWorker');
+  sel.value = workerId.toString();
+  gestorState.worker = workerId;
+  onGestorWorkerChange();
+
+  // Set action
+  gestorState.action = action;
+  document.querySelectorAll('.gestor-action-card').forEach(c => c.classList.remove('selected'));
+  const actionCards = document.querySelectorAll('.gestor-action-card');
+  const actionOrder = ['baja','vacaciones','liberar','cambio','maternidad','lactancia','formacion','sindical','caaa'];
+  const actionIdx = actionOrder.indexOf(action);
+  if (actionIdx >= 0 && actionCards[actionIdx]) actionCards[actionIdx].classList.add('selected');
+
+  // Set today as selected day
+  const now = new Date();
+  gestorState.selectedDays = [{ year: now.getFullYear(), month: now.getMonth(), day: now.getDate() }];
+  gestorCalState = { year: now.getFullYear(), month: now.getMonth() };
+  renderGestorCalendar();
+  checkGestorReady();
+
+  // Scroll to analyze button
+  document.getElementById('gestorAnalyzeBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function renderCoverageHistory() {
+  // Build from incidents that are coverage-related
+  const coverageIncidents = incidents.filter(inc => inc.type === 'Cobertura IA' || inc.type === 'Registro parcial').slice(-15).reverse();
+  if (coverageIncidents.length === 0) return '';
+
+  let html = `<div class="gestor-history">`;
+  html += `<button class="history-toggle" id="historyToggleBtn" onclick="toggleCoverageHistory()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    Historial de coberturas (${coverageIncidents.length})
+  </button>`;
+  html += `<div class="history-list" id="coverageHistoryList">`;
+
+  coverageIncidents.forEach(inc => {
+    const isPartial = inc.type === 'Registro parcial';
+    const iconClass = isPartial ? 'he-partial' : 'he-cover';
+    const icon = isPartial ? '📋' : '✓';
+    const timeAgo = getTimeAgo(new Date(inc.date));
+    const replacedBy = inc.replacedBy ? ` → cubierto por <span class="he-workers">${escHtml(inc.replacedBy)}</span>` : ' (sin sustitución)';
+
+    html += `<div class="history-entry">
+      <div class="he-icon ${iconClass}">${icon}</div>
+      <div class="he-body">
+        <span class="he-workers">${escHtml(inc.worker)}</span>
+        <span class="he-action">${escHtml(inc.action)}${replacedBy}</span>
+      </div>
+      <span class="he-time">${timeAgo}</span>
+    </div>`;
+  });
+
+  html += `</div></div>`;
+  return html;
+}
+
+function getTimeAgo(date) {
+  const now = new Date();
+  const diff = now - date;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'ahora';
+  if (mins < 60) return mins + 'min';
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return hours + 'h';
+  const days = Math.floor(hours / 24);
+  if (days < 7) return days + 'd';
+  return Math.floor(days / 7) + 'sem';
+}
+
+function toggleCoverageHistory() {
+  const list = document.getElementById('coverageHistoryList');
+  const btn = document.getElementById('historyToggleBtn');
+  if (!list || !btn) return;
+  list.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+// ── FAB BADGE: Show coverage gaps count ──
+function updateGestorFabBadge() {
+  const fab = document.getElementById('gestorFab');
+  if (!fab) return;
+
+  // Remove existing badge
+  const oldBadge = fab.querySelector('.fab-badge');
+  if (oldBadge) oldBadge.remove();
+
+  try {
+    const sit = getTodaySituation();
+    const alertCount = sit.gaps.total + sit.absentToday.length;
+    if (alertCount > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'fab-badge';
+      badge.textContent = alertCount > 9 ? '9+' : alertCount;
+      fab.style.position = 'relative';
+      fab.appendChild(badge);
+    }
+  } catch(e) { /* silently ignore */ }
+}
+
 function openGestor() {
   gestorState = { worker: null, action: null, selectedDays: [] };
   gestorCalState = { year: new Date().getFullYear(), month: new Date().getMonth() };
@@ -17396,7 +17886,8 @@ function openGestor() {
   document.getElementById('gestorSelectedDays').innerHTML = '';
   document.getElementById('gestorSelectedCount').innerHTML = '';
 
-  // Render calendar
+  // Render situation panel + calendar
+  renderSituationPanel();
   renderGestorCalendar();
 
   document.getElementById('gestorOverlay').classList.add('open');
@@ -17828,24 +18319,43 @@ function analyzeGestor() {
   // Convert selected days to Date objects
   const daysToProcess = gestorState.selectedDays.map(sd => new Date(sd.year, sd.month, sd.day));
 
-  // Show loading animation
-  resultsDiv.innerHTML = `<div class="gestor-ai-thinking">
-    <div class="gestor-ai-header">
-      <div class="ai-brain-icon">🧠</div>
-      <div>
-        <div class="ai-title">Motor de Razonamiento IA</div>
-        <div class="ai-subtitle">Analizando ${daysToProcess.length} dia${daysToProcess.length > 1 ? 's' : ''} para ${escHtml(w.name)}...</div>
-      </div>
+  // Show enhanced loading animation with step-by-step progress
+  const analyzeSteps = [
+    'Escaneando turnos actuales...',
+    'Evaluando candidatos disponibles...',
+    'Calculando scoring IA (10 factores)...',
+    'Detectando conflictos y cascadas...',
+    'Optimizando planes A/B...',
+    'Generando recomendacion final...'
+  ];
+  resultsDiv.innerHTML = `<div class="gestor-ai-analyzing">
+    <div class="ai-analyze-ring"></div>
+    <div style="text-align:center;">
+      <div style="font-size:15px;font-weight:700;color:var(--text);">Motor de Razonamiento IA v4.1</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px;">Analizando ${daysToProcess.length} dia${daysToProcess.length > 1 ? 's' : ''} para ${escHtml(w.name)}</div>
     </div>
-    <div class="gestor-ai-loader">
-      <div class="ai-loader-dots"><span></span><span></span><span></span></div>
-      <div class="ai-loader-text">Calculando cobertura, restricciones y equilibrio de equipo...</div>
+    <div class="ai-analyze-steps" id="aiAnalyzeSteps">
+      ${analyzeSteps.map((s, i) => `<div class="ai-analyze-step" id="aiStep${i}"><div class="aas-dot"></div>${s}</div>`).join('')}
     </div>
   </div>`;
   resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  // Simulate brief thinking delay then run analysis
+  // Animate steps progressively
+  let stepIdx = 0;
+  const stepInterval = setInterval(() => {
+    if (stepIdx > 0) {
+      const prev = document.getElementById('aiStep' + (stepIdx - 1));
+      if (prev) { prev.classList.remove('active'); prev.classList.add('done'); }
+    }
+    const curr = document.getElementById('aiStep' + stepIdx);
+    if (curr) curr.classList.add('active');
+    stepIdx++;
+    if (stepIdx >= analyzeSteps.length) clearInterval(stepInterval);
+  }, 180);
+
+  // Run analysis after animation completes
   setTimeout(() => {
+    clearInterval(stepInterval);
     try {
       // MEJORA 6: Check vacation overlap before proceeding
       const vacOverlap = checkVacationOverlap(wId, gestorState.selectedDays, action === 'vacaciones' ? 'VAC' : action === 'libre' ? 'D' : action);
@@ -20192,6 +20702,8 @@ function applyGestorPlan(planDataStr, btn) {
     showToast(`Plan de cobertura aplicado: ${appliedCount} dias cubiertos para ${absent.name}`, 'success', 5000);
     renderSchedule();
     renderDashboard();
+    updateGestorFabBadge();
+    renderSituationPanel();
 
     // Reset gestor state after successful apply so next interaction starts clean
     setTimeout(() => {
@@ -20263,6 +20775,8 @@ function applyPartialPlan(planDataStr, btn) {
     showToast(`${actionLabel} registrada: ${appliedCount} días para ${absent.name}`, 'success', 5000);
     renderSchedule();
     renderDashboard();
+    updateGestorFabBadge();
+    renderSituationPanel();
 
     // Reset gestor state after successful apply
     setTimeout(() => {
@@ -22340,6 +22854,10 @@ function updateFilterBadge() {
   try { detectConflicts(); } catch(e) { console.warn('[Shiftia] detectConflicts error:', e); }
   try { renderDashboard(); } catch(e) { console.warn('[Shiftia] renderDashboard error:', e); }
   try { updateImportBadge(); } catch(e) { console.warn('[Shiftia] updateImportBadge error:', e); }
+  try { updateGestorFabBadge(); } catch(e) { console.warn('[Shiftia] updateGestorFabBadge error:', e); }
+
+  // Refresh FAB badge every 5 minutes
+  setInterval(() => { try { updateGestorFabBadge(); } catch(e) {} }, 300000);
 
   // Check for onboarding
   const onboarded = localStorage.getItem('shiftia_onboarded');
