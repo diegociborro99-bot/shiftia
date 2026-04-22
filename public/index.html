@@ -3809,6 +3809,180 @@ table.schedule th.month-total-header {
   .rank-plan-col { width: 100%; }
 }
 
+/* === COVERAGE TREE === */
+.coverage-tree {
+  background: linear-gradient(135deg, var(--surface1) 0%, var(--surface2) 100%);
+  border-radius: 14px;
+  padding: 20px 16px 16px;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.coverage-tree::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, #cc4444, #27ae60, #3498db);
+  border-radius: 14px 14px 0 0;
+}
+.ct-root {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: #cc4444;
+  color: #fff;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  margin: 0 auto 0;
+  box-shadow: 0 4px 16px rgba(204,68,68,0.25);
+  animation: ctPulse 2s infinite;
+  position: relative; z-index: 2;
+}
+.ct-root-name {
+  font-size: 11px; font-weight: 800;
+  text-align: center; line-height: 1.2;
+  max-width: 68px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.ct-root-info {
+  font-size: 7px; opacity: 0.85;
+  text-align: center; margin-top: 2px;
+  max-width: 72px; line-height: 1.3;
+}
+.ct-trunk {
+  width: 3px; height: 24px;
+  background: var(--text3);
+  margin: 0 auto;
+  opacity: 0.3;
+}
+.ct-branches {
+  display: flex; gap: 12px;
+  justify-content: center;
+  align-items: flex-start;
+}
+.ct-branch {
+  flex: 1; max-width: 320px;
+  background: var(--surface1);
+  border-radius: 12px;
+  border: 2px solid var(--surface2);
+  padding: 12px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.ct-branch:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+.ct-branch.plan-a:hover { border-color: rgba(39,174,96,0.3); }
+.ct-branch.plan-b:hover { border-color: rgba(52,152,219,0.3); }
+.ct-branch-header {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 800;
+  margin-bottom: 10px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--surface2);
+}
+.ct-branch-header::before {
+  content: '';
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ct-branch.plan-a .ct-branch-header { color: #27ae60; }
+.ct-branch.plan-a .ct-branch-header::before { background: #27ae60; }
+.ct-branch.plan-b .ct-branch-header { color: #3498db; }
+.ct-branch.plan-b .ct-branch-header::before { background: #3498db; }
+.ct-branch-connector {
+  width: 2px; height: 8px;
+  background: var(--text3);
+  margin: 0 auto;
+  opacity: 0.2;
+}
+.ct-day-nodes {
+  display: flex; flex-direction: column; gap: 0;
+}
+.ct-day-node {
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent);
+  animation: ctSlideIn 0.3s ease-out both;
+}
+.ct-day-date {
+  font-size: 10px; font-weight: 700;
+  color: var(--text2);
+}
+.ct-day-shift {
+  display: inline-block;
+  font-size: 9px; font-weight: 800;
+  padding: 1px 6px; border-radius: 4px;
+  margin-left: 6px;
+}
+.ct-day-arrow {
+  color: var(--text3); font-size: 11px;
+  margin: 0 4px;
+}
+.ct-day-worker {
+  display: inline;
+}
+.ct-day-worker-name {
+  font-size: 11px; font-weight: 700;
+  color: var(--text);
+}
+.ct-day-worker-stats {
+  font-size: 9px; color: var(--text3);
+  margin-top: 2px;
+}
+.ct-day-node.uncovered {
+  border-left-color: #cc4444;
+  border: 2px dashed #cc4444;
+  border-left-width: 3px;
+  background: rgba(204,68,68,0.04);
+}
+.ct-day-node.partial {
+  border-left-color: var(--text3);
+  border: 2px dotted var(--text3);
+  border-left-width: 3px;
+  opacity: 0.8;
+}
+.ct-node-connector {
+  width: 3px; height: 10px;
+  border-left: 2px dashed var(--text3);
+  margin: 0 0 0 16px;
+  opacity: 0.25;
+}
+.ct-branch-score {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700;
+  padding: 4px 10px; border-radius: 8px;
+  background: var(--surface2);
+  margin-top: 10px;
+}
+.ct-branch-apply {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 10px;
+  border: none; border-radius: 10px;
+  font-size: 12px; font-weight: 700;
+  color: #fff; cursor: pointer;
+  margin-top: 8px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.ct-branch-apply:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.ct-branch.plan-a .ct-branch-apply { background: #27ae60; }
+.ct-branch.plan-b .ct-branch-apply { background: #3498db; }
+
+@keyframes ctPulse {
+  0%, 100% { box-shadow: 0 4px 16px rgba(204,68,68,0.25), 0 0 0 0 rgba(204,68,68,0.3); }
+  50% { box-shadow: 0 4px 16px rgba(204,68,68,0.25), 0 0 0 8px rgba(204,68,68,0); }
+}
+@keyframes ctSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .ct-branches { flex-direction: column; align-items: stretch; }
+  .ct-branch { max-width: 100%; }
+}
+
 /* === PLAN TIMELINE === */
 .plan-timeline {
   display: flex;
@@ -18231,131 +18405,173 @@ function buildAICoverageAnalysis(w, days, action) {
       </div>`;
     }
 
-    // ── SECTION 2: PLAN HERO — Main plan assignments ──
+    // ── SECTION 2: COVERAGE TREE ──
     const stratNames = { multiday: 'Min. disrupcion', balance: 'Equilibrio', impact: 'Min. impacto', basic: 'Basico', emergencia: 'Emergencia', 'chain-swap': 'Cadena cambios', partial: 'Parcial (sin sust.)' };
 
-    html += `<div style="margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-size:14px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px;">
-        Plan recomendado
-        <span style="font-size:9px;font-weight:600;padding:3px 8px;border-radius:6px;background:rgba(39,174,96,0.1);color:#27ae60;">${stratNames[bestPlan.strategy] || 'IA'}</span>
-      </div>
-    </div>`;
+    // Helper: render day nodes for a plan branch
+    const renderTreeDayNodes = (plan, planIdx) => {
+      let nodesHtml = '<div class="ct-day-nodes">';
+      plan.assignments.forEach((a, ai) => {
+        const da = a.dayAnalysis;
+        const shiftColor = da.effShift === 'M' ? '#2e8b7a' : da.effShift === 'T' ? '#4a9dd4' : da.effShift === 'N' ? '#8e44ad' : 'var(--text3)';
+        const shiftLabel = da.effShift || da.workerShift || '?';
 
-    // Group assignments by consecutive same-candidate
-    const grouped = [];
-    bestPlan.assignments.forEach(a => {
-      const candId = a.candidate ? a.candidate.w.id : null;
-      const last = grouped[grouped.length - 1];
-      if (last && last.candId === candId && candId !== null) {
-        last.items.push(a);
-      } else {
-        grouped.push({ candId, items: [a] });
-      }
-    });
+        if (ai > 0) {
+          nodesHtml += '<div class="ct-node-connector"></div>';
+        }
 
-    // Render hero assignment rows
-    grouped.forEach((group, gi) => {
-      const first = group.items[0];
-      const da = first.dayAnalysis;
-      const shiftColor = da.effShift === 'M' ? '#2e8b7a' : da.effShift === 'T' ? '#4a9dd4' : da.effShift === 'N' ? '#c5a832' : 'var(--text3)';
-
-      if (!first.candidate) {
-        group.items.forEach(a => {
-          const d = a.dayAnalysis;
-          if (bestPlan.isPartial) {
-            html += `<div class="hero-assign-row" style="animation-delay:${gi * 0.05}s;opacity:0.85;">
-              <span class="hero-assign-date">${d.dayName} ${d.dayDate.getDate()}/${d.month + 1}</span>
-              <span class="hero-assign-shift" style="background:${shiftColor}15;color:${shiftColor};">${d.workerShift}</span>
-              <span class="hero-assign-arrow">→</span>
-              <span class="hero-assign-name" style="color:var(--text3);font-style:italic;">Ausencia parcial — sin sustitución</span>
-              <span class="hero-assign-badge hab-ok">Parcial</span>
+        if (!a.candidate) {
+          if (plan.isPartial) {
+            nodesHtml += `<div class="ct-day-node partial" style="animation-delay:${ai * 0.08}s;">
+              <span class="ct-day-date">${da.dayName} ${da.dayDate.getDate()}/${da.month + 1}</span>
+              <span class="ct-day-shift" style="background:${shiftColor}15;color:${shiftColor};">${shiftLabel}</span>
+              <span class="ct-day-arrow">→</span>
+              <span class="ct-day-worker">
+                <span class="ct-day-worker-name" style="color:var(--text3);font-style:italic;">Ausencia parcial</span>
+              </span>
             </div>`;
           } else {
-            html += `<div class="hero-assign-uncovered" style="animation-delay:${gi * 0.05}s">
-              <span style="font-weight:700;">${d.dayName} ${d.dayDate.getDate()}/${d.month + 1}</span>
-              <span>— Sin candidatos disponibles</span>
+            nodesHtml += `<div class="ct-day-node uncovered" style="animation-delay:${ai * 0.08}s;">
+              <span class="ct-day-date">${da.dayName} ${da.dayDate.getDate()}/${da.month + 1}</span>
+              <span class="ct-day-shift" style="background:${shiftColor}15;color:${shiftColor};">${shiftLabel}</span>
+              <span class="ct-day-arrow">→</span>
+              <span class="ct-day-worker">
+                <span class="ct-day-worker-name" style="color:#cc4444;">Sin candidatos</span>
+              </span>
             </div>`;
           }
-        });
-      } else {
-        const dayLabels = group.items.map(a => {
-          const d = a.dayAnalysis;
-          return d.dayName.substring(0, 3) + ' ' + d.dayDate.getDate();
-        });
-        const dayStr = dayLabels.length === 1 ? dayLabels[0] + '/' + (da.month + 1) : dayLabels[0] + ' → ' + dayLabels[dayLabels.length - 1] + '/' + (da.month + 1);
-        const anyCritical = group.items.some(a => a.dayAnalysis.isCritical);
-        const allOk = group.items.every(a => a.dayAnalysis.covStillOk);
-        const badgeCls = anyCritical ? 'hab-crit' : allOk ? 'hab-ok' : 'hab-warn';
-        const badgeText = anyCritical ? 'Critico' : allOk ? 'OK' : 'Necesario';
+        } else {
+          const cmpBal = calcComputoBalance(a.candidate.w.id);
+          const cmpStr = fmtComputo(a.candidate.w.id);
+          const cmpCol = computoColor(cmpBal.balance);
+          const cStats = a.candidate.w ? (typeof getWorkerStats === 'function' ? getWorkerStats(a.candidate.w.id) : null) : null;
+          const nightsStr = cStats ? cStats.n + 'N' : '';
+          const fdsStr = cStats ? cStats.wknd + ' fds' : '';
 
-        html += `<div class="hero-assign-row" style="animation-delay:${gi * 0.05}s">
-          <span class="hero-assign-date">${dayStr}${dayLabels.length > 1 ? ' <span style="font-size:10px;color:var(--text3);">(' + dayLabels.length + 'd)</span>' : ''}</span>
-          <span class="hero-assign-shift" style="background:${shiftColor}15;color:${shiftColor};">${da.workerShift}</span>
-          <span class="hero-assign-arrow">→</span>
-          <span class="hero-assign-name">${first.candidate.w.name}</span>
-          <span class="hero-assign-badge ${badgeCls}">${badgeText}</span>
-        </div>`;
-
-        // Inline warnings for forbidden combinations
-        const assignForbidden = detectForbiddenCombinations(first.candidate.w.id, da.dayIdx, da.workerShift, da.month, da.year);
-        if (assignForbidden.length > 0) {
-          html += `<div style="margin:-4px 0 6px 16px;padding:5px 10px;background:rgba(204,68,68,0.06);border-left:3px solid #cc4444;border-radius:0 8px 8px 0;font-size:10px;color:#cc4444;">
-            ${assignForbidden.map(f => f.desc).join('; ')}
+          nodesHtml += `<div class="ct-day-node" style="border-left-color:${shiftColor};animation-delay:${ai * 0.08}s;">
+            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+              <span class="ct-day-date">${da.dayName} ${da.dayDate.getDate()}/${da.month + 1}</span>
+              <span class="ct-day-shift" style="background:${shiftColor}15;color:${shiftColor};">${shiftLabel}</span>
+              <span class="ct-day-arrow">→</span>
+              <span class="ct-day-worker">
+                <span class="ct-day-worker-name">${a.candidate.w.name}</span>
+              </span>
+            </div>
+            <div class="ct-day-worker-stats">${nightsStr}${nightsStr && cmpStr ? ' · ' : ''}${cmpStr ? '<span style="color:' + cmpCol + ';">' + cmpStr + ' comp</span>' : ''}${fdsStr ? ' · ' + fdsStr : ''}</div>
           </div>`;
-        }
-        // Cascade warnings
-        const assignCascade = detectCascadeNeeds(first.candidate.w.id, da.dayIdx, da.workerShift, w.id, da.month, da.year);
-        if (assignCascade.needsCascade) {
-          assignCascade.cascadeDetails.forEach(c => {
-            const candNames = c.candidates.length > 0 ? c.candidates.slice(0, 2).map(x => x.w.name).join(', ') : 'sin candidatos';
-            html += `<div style="margin:-4px 0 6px 16px;padding:5px 10px;background:rgba(230,126,34,0.06);border-left:3px solid #e67e22;border-radius:0 8px 8px 0;font-size:10px;color:#b5651d;">
-              Cascada: ${first.candidate.w.name} deja ${c.gapShift} → cubrir con ${candNames}
+
+          // Forbidden combination warnings
+          const treeForbidden = detectForbiddenCombinations(a.candidate.w.id, da.dayIdx, da.workerShift, da.month, da.year);
+          if (treeForbidden.length > 0) {
+            nodesHtml += `<div style="margin:2px 0 4px 12px;padding:4px 8px;background:rgba(204,68,68,0.06);border-left:3px solid #cc4444;border-radius:0 6px 6px 0;font-size:9px;color:#cc4444;">
+              ${treeForbidden.map(f => f.desc).join('; ')}
             </div>`;
-          });
+          }
+          // Cascade warnings
+          const treeCascade = detectCascadeNeeds(a.candidate.w.id, da.dayIdx, da.workerShift, w.id, da.month, da.year);
+          if (treeCascade.needsCascade) {
+            treeCascade.cascadeDetails.forEach(c => {
+              const candNames = c.candidates.length > 0 ? c.candidates.slice(0, 2).map(x => x.w.name).join(', ') : 'sin candidatos';
+              nodesHtml += `<div style="margin:2px 0 4px 12px;padding:4px 8px;background:rgba(230,126,34,0.06);border-left:3px solid #e67e22;border-radius:0 6px 6px 0;font-size:9px;color:#b5651d;">
+                Cascada: ${a.candidate.w.name} deja ${c.gapShift} → cubrir con ${candNames}
+              </div>`;
+            });
+          }
         }
+      });
+      nodesHtml += '</div>';
+      return nodesHtml;
+    };
+
+    // Helper: render apply button for a plan
+    const renderTreeApplyBtn = (plan, planClass) => {
+      let btnHtml = '';
+      const covCount = plan.assignments.filter(a => a.candidate).length;
+      if (plan.isPartial) {
+        const partialPlanStr = btoa(encodeURIComponent(JSON.stringify({
+          absentId: w.id,
+          shiftToAssign,
+          isPartial: true,
+          assignments: daysNeedingCoverage.map(da => ({
+            year: da.year,
+            month: da.month,
+            dayIdx: da.dayIdx,
+            originalShift: da.workerShift,
+            replacementId: null,
+            replacementName: null
+          }))
+        })));
+        btnHtml += `<button class="ct-branch-apply" onclick="applyPartialPlan('${partialPlanStr}', this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Registrar ${actionLabels[action]} (${daysNeedingCoverage.length} d)
+        </button>`;
+      } else if (covCount > 0) {
+        const planDataStr = btoa(encodeURIComponent(JSON.stringify({
+          absentId: w.id,
+          shiftToAssign,
+          assignments: plan.assignments.filter(a => a.candidate).map(a => ({
+            year: a.dayAnalysis.year,
+            month: a.dayAnalysis.month,
+            dayIdx: a.dayAnalysis.dayIdx,
+            originalShift: a.dayAnalysis.workerShift,
+            replacementId: a.candidate.w.id,
+            replacementName: a.candidate.w.name
+          }))
+        })));
+        btnHtml += `<button class="ct-branch-apply" onclick="showPlanPreview('${planDataStr}', this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Aplicar (${covCount} dia${covCount > 1 ? 's' : ''})
+        </button>`;
       }
-    });
+      return btnHtml;
+    };
 
-    // Apply button — prominent
-    const coveredBest = bestPlan.assignments.filter(a => a.candidate).length;
-    if (bestPlan.isPartial) {
-      // For partial actions, apply just the absence code without substitutions
-      const partialPlanStr = btoa(encodeURIComponent(JSON.stringify({
-        absentId: w.id,
-        shiftToAssign,
-        isPartial: true,
-        assignments: daysNeedingCoverage.map(da => ({
-          year: da.year,
-          month: da.month,
-          dayIdx: da.dayIdx,
-          originalShift: da.workerShift,
-          replacementId: null,
-          replacementName: null
-        }))
-      })));
-      html += `<button class="gestor-apply-all-btn" onclick="applyPartialPlan('${partialPlanStr}', this)" style="margin-top:14px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        Registrar ${actionLabels[action]} (${daysNeedingCoverage.length} dia${daysNeedingCoverage.length > 1 ? 's' : ''})
-      </button>`;
-    } else if (coveredBest > 0) {
-      const planDataStr = btoa(encodeURIComponent(JSON.stringify({
-        absentId: w.id,
-        shiftToAssign,
-        assignments: bestPlan.assignments.filter(a => a.candidate).map(a => ({
-          year: a.dayAnalysis.year,
-          month: a.dayAnalysis.month,
-          dayIdx: a.dayAnalysis.dayIdx,
-          originalShift: a.dayAnalysis.workerShift,
-          replacementId: a.candidate.w.id,
-          replacementName: a.candidate.w.name
-        }))
-      })));
+    // Build the coverage tree
+    const confPctA = bestPlan.confidence || 0;
+    html += `<div class="coverage-tree">
+      <div class="ct-root">
+        <div class="ct-root-name">${escHtml(w.name.split(' ')[0])}</div>
+        <div class="ct-root-info">${actionLabels[action] || action} · ${daysNeedingCoverage.length} dia${daysNeedingCoverage.length > 1 ? 's' : ''} · ${shiftToAssign}</div>
+      </div>
+      <div class="ct-trunk"></div>
+      <div class="ct-branches">`;
 
-      html += `<button class="gestor-apply-all-btn" onclick="showPlanPreview('${planDataStr}', this)" style="margin-top:14px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        Aplicar plan (${coveredBest} dia${coveredBest > 1 ? 's' : ''})
-      </button>`;
+    // Plan A branch
+    html += `<div class="ct-branch plan-a">
+      <div class="ct-branch-header">PLAN A — ${stratNames[bestPlan.strategy] || 'IA'} <span style="margin-left:auto;font-size:9px;opacity:0.7;">${confPctA}%</span></div>
+      <div class="ct-branch-connector"></div>
+      ${renderTreeDayNodes(bestPlan, 0)}
+      <div class="ct-branch-score" style="color:${confPctA >= 70 ? '#27ae60' : confPctA >= 40 ? '#e67e22' : '#cc4444'};">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Confianza ${confPctA}%
+      </div>
+      ${renderTreeApplyBtn(bestPlan, 'plan-a')}
+    </div>`;
+
+    // Plan B branch
+    if (plans.length > 1 && plans[1]) {
+      const planB = plans[1];
+      const confPctB = planB.confidence || 0;
+      html += `<div class="ct-branch plan-b">
+        <div class="ct-branch-header">PLAN B — ${stratNames[planB.strategy] || 'IA'} <span style="margin-left:auto;font-size:9px;opacity:0.7;">${confPctB}%</span></div>
+        <div class="ct-branch-connector"></div>
+        ${renderTreeDayNodes(planB, 1)}
+        <div class="ct-branch-score" style="color:${confPctB >= 70 ? '#27ae60' : confPctB >= 40 ? '#e67e22' : '#cc4444'};">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Confianza ${confPctB}%
+        </div>
+        ${renderTreeApplyBtn(planB, 'plan-b')}
+      </div>`;
+    } else {
+      html += `<div class="ct-branch plan-b" style="opacity:0.5;">
+        <div class="ct-branch-header">PLAN B</div>
+        <div style="padding:20px 10px;text-align:center;font-size:11px;color:var(--text3);font-style:italic;">
+          No se encontro plan alternativo
+        </div>
+      </div>`;
     }
+
+    html += `</div></div>`;
 
     // ── SECTION 2a.1: PLAN TIMELINE ──
     if (dayAnalyses.length > 1) {
