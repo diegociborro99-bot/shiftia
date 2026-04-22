@@ -13575,13 +13575,13 @@ function openWorkerPanel(wId) {
         <div class="wp-stat"><div class="wp-stat-val">${stats.m}</div><div class="wp-stat-label">Mananas</div></div>
         <div class="wp-stat"><div class="wp-stat-val">${stats.t}</div><div class="wp-stat-label">Tardes</div></div>
         <div class="wp-stat"><div class="wp-stat-val">${stats.n}</div><div class="wp-stat-label">Noches</div></div>
-        <div class="wp-stat"><div class="wp-stat-val">${Math.round(stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS)}</div><div class="wp-stat-label">H.Computo</div></div>
+        <div class="wp-stat"><div class="wp-stat-val" style="color:${computoColor(calcComputoBalance(w.id, stats).balance)}">${fmtComputo(w.id, stats)}</div><div class="wp-stat-label">Computo</div></div>
         <div class="wp-stat"><div class="wp-stat-val">${stats.wknd}</div><div class="wp-stat-label">Fines sem.</div></div>
         <div class="wp-stat"><div class="wp-stat-val">${stats.total}</div><div class="wp-stat-label">Total turnos</div></div>
       </div>
       <div style="display:flex;gap:12px;margin-top:10px;font-size:11px;">
         <span style="color:${stats.n - avgN <= 0 ? '#27ae60' : '#e67e22'};">${(stats.n - avgN) >= 0 ? '+' : ''}${(stats.n - avgN).toFixed(1)} noches vs media</span>
-        <span style="color:${(stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS) - avgH <= 0 ? '#27ae60' : '#e67e22'};">${((stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS) - avgH) >= 0 ? '+' : ''}${((stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS) - avgH).toFixed(0)}h comp vs media</span>
+        <span style="color:${computoColor(calcComputoBalance(w.id, stats).balance)}">${fmtComputo(w.id, stats)} computo (balance anual)</span>
       </div>
     </div>
 
@@ -14313,6 +14313,50 @@ function getWorkerStats(wId, filterMonths) {
   return {m,t,n,d,h,vac,baj,other,total:m+t+n,wknd};
 }
 
+// ========== COMPUTO DE JORNADA ==========
+// Calculates the annual computo balance per the hospital PDF formula:
+// [D] Jornada efectiva a realizar = 1519 - (noches × 2.1) - antigüedad
+// [E] Jornada teórica realizada = sum of SHIFT_HOURS (raw hours worked)
+// Balance = E - D (positive = worker has worked MORE than target = owed time off)
+// If only partial year loaded, prorate the target proportionally
+function calcComputoBalance(wId, statsOverride) {
+  const stats = statsOverride || getWorkerStats(wId);
+  const w = workers.find(x => x.id === wId);
+  // Count how many months of data are loaded for this worker
+  let monthsWithData = 0;
+  for (const key in scheduleData) {
+    if (scheduleData[key][wId] && scheduleData[key][wId].some(s => s && s !== '')) monthsWithData++;
+  }
+  if (monthsWithData === 0) return { balance: 0, worked: 0, target: 0, nightReduction: 0, monthsLoaded: 0 };
+  // Night reduction: noches × 2.1h (NIGHT_COMPUTO_HOURS)
+  const nightReduction = parseFloat((stats.n * RULES.NIGHT_COMPUTO_HOURS).toFixed(1));
+  // Prorate annual target to loaded months
+  const annualTarget = RULES.ANNUAL_HOURS; // 1519
+  const proratedTarget = parseFloat((annualTarget / 12 * monthsWithData).toFixed(1));
+  // Effective target = prorated - night reduction
+  const effectiveTarget = proratedTarget - nightReduction;
+  // Actual hours worked
+  const worked = stats.h;
+  // Balance: positive = worked more than needed (favorable for worker, owed time off)
+  const balance = parseFloat((worked - effectiveTarget).toFixed(1));
+  return { balance, worked, target: effectiveTarget, nightReduction, monthsLoaded: monthsWithData, proratedTarget };
+}
+
+// Format computo balance for display: "+59.1h" or "-12.3h"
+function fmtComputo(wId, statsOverride) {
+  const c = calcComputoBalance(wId, statsOverride);
+  if (c.monthsLoaded === 0) return '0h';
+  const sign = c.balance >= 0 ? '+' : '';
+  return sign + c.balance.toFixed(1) + 'h';
+}
+
+// Computo color: green if low/negative (good for coverage), red if high positive (overworked)
+function computoColor(balance) {
+  if (balance > 30) return '#cc4444';
+  if (balance > 10) return '#e67e22';
+  return '#27ae60';
+}
+
 // ========== AI ENGINE v4.1 HELPERS ==========
 
 // MEJORA 1+4: Multi-month equity — 3-month lookback for fair scoring
@@ -14750,6 +14794,19 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
     if (w.id === excludeId) return;
     if (w.rules && w.rules.noSwap) return;
     if (w.rules && w.rules.noCover) return;
+
+    // === Lactancia protection: workers currently on lactancia cannot be used as substitutes ===
+    // Check if this worker has ANY LAC day in the current month — indicates active lactancia
+    if (sch[w.id] && sch[w.id].some(s => s === 'LAC')) return;
+
+    // === Baja protection: workers currently on baja cannot be pulled in for coverage ===
+    // Check if this worker has active baja (BAJ/INT/MTC) in the current month
+    if (sch[w.id]) {
+      const bajaDays = sch[w.id].filter(s => s === 'BAJ' || s === 'INT' || s === 'MTC').length;
+      // If more than half the month is baja, worker is on active leave — cannot cover
+      const daysInMonth = sch[w.id].length;
+      if (bajaDays > daysInMonth * 0.3) return;
+    }
 
     // === Category enforcement: enf covers enf, tec covers tec ===
     if (w.type !== absentType) return;
@@ -15479,12 +15536,12 @@ function handleChatQuery(query) {
         const nightColor = parseFloat(c.nightsVsAvg) > 3 ? 'var(--danger)' : parseFloat(c.nightsVsAvg) < -2 ? 'var(--success)' : 'var(--text2)';
         html += `<div class="chat-metric">
           <span>${i+1}. ${c.w.name} <span style="font-size:10px;color:var(--text3);">${c.w.type}</span></span>
-          <span style="font-size:10px;"><span style="color:${nightColor};">${c.stats.n}N</span> ${Math.round(c.stats.h - c.stats.n * RULES.NIGHT_COMPUTO_HOURS)}h comp ${c.reason}</span>
+          <span style="font-size:10px;"><span style="color:${nightColor};">${c.stats.n}N</span> <span style="color:${computoColor(calcComputoBalance(c.w.id, c.stats).balance)}">${fmtComputo(c.w.id, c.stats)}</span> ${c.reason}</span>
         </div>`;
       });
       if (candidates.length > 8) html += `<div style="font-size:10px;color:var(--text3);">... y ${candidates.length-8} mas</div>`;
       html += `<div style="margin-top:8px;padding:8px;background:rgba(92,122,111,0.08);border-radius:8px;font-size:11px;">`;
-      html += `<strong>Recomendacion:</strong> ${candidates[0].w.name} es el/la mejor candidato/a — tiene ${candidates[0].stats.n} noches (${candidates[0].nightsVsAvg} vs media) y ${Math.round(candidates[0].stats.h - candidates[0].stats.n * RULES.NIGHT_COMPUTO_HOURS)}h de computo.`;
+      html += `<strong>Recomendacion:</strong> ${candidates[0].w.name} es el/la mejor candidato/a — tiene ${candidates[0].stats.n} noches (${candidates[0].nightsVsAvg} vs media), computo ${fmtComputo(candidates[0].w.id, candidates[0].stats)}.`;
       html += `</div>`;
     }
     html += `<button class="chat-action-btn" onclick="goToDay(${year},${month},${targetDay})">Ver en planilla</button>`;
@@ -15515,7 +15572,7 @@ function handleChatQuery(query) {
       // Compare workloads
       html += `<div class="chat-section-label" style="margin-top:8px;">Comparativa carga</div>`;
       html += `<div class="chat-metric"><span>Noches</span><span>${result.w1.stats.n} vs ${result.w2.stats.n}</span></div>`;
-      html += `<div class="chat-metric"><span>H.Computo</span><span>${Math.round(result.w1.stats.h - result.w1.stats.n * RULES.NIGHT_COMPUTO_HOURS)}h vs ${Math.round(result.w2.stats.h - result.w2.stats.n * RULES.NIGHT_COMPUTO_HOURS)}h</span></div>`;
+      html += `<div class="chat-metric"><span>Computo</span><span>${fmtComputo(result.w1.id || twoWorkers[0].id, result.w1.stats)} vs ${fmtComputo(result.w2.id || twoWorkers[1].id, result.w2.stats)}</span></div>`;
       html += `<div class="chat-metric"><span>Fines semana</span><span>${result.w1.stats.wknd} vs ${result.w2.stats.wknd}</span></div>`;
       html += `<button class="chat-action-btn" onclick="goToDay(${now.getFullYear()},${now.getMonth()},${targetDay})">Ver en planilla</button>`;
       return html;
@@ -15545,10 +15602,10 @@ function handleChatQuery(query) {
         html += '<div style="font-size:12px;color:var(--danger);">No hay sustitutos disponibles ese dia.</div>';
       } else {
         candidates.slice(0, 6).forEach((c, i) => {
-          html += `<div class="chat-metric"><span>${i+1}. ${c.w.name}</span><span style="font-size:10px;">${c.stats.n}N ${Math.round(c.stats.h - c.stats.n * RULES.NIGHT_COMPUTO_HOURS)}h comp — ${c.reason}</span></div>`;
+          html += `<div class="chat-metric"><span>${i+1}. ${c.w.name}</span><span style="font-size:10px;">${c.stats.n}N <span style="color:${computoColor(calcComputoBalance(c.w.id, c.stats).balance)}">${fmtComputo(c.w.id, c.stats)}</span> — ${c.reason}</span></div>`;
         });
         html += `<div style="margin-top:8px;padding:8px;background:rgba(92,122,111,0.08);border-radius:8px;font-size:11px;">`;
-        html += `<strong>Mejor opcion:</strong> ${candidates[0].w.name} (${candidates[0].stats.n} noches, ${Math.round(candidates[0].stats.h - candidates[0].stats.n * RULES.NIGHT_COMPUTO_HOURS)}h comp)`;
+        html += `<strong>Mejor opcion:</strong> ${candidates[0].w.name} (${candidates[0].stats.n} noches, computo ${fmtComputo(candidates[0].w.id, candidates[0].stats)})`;
         html += `</div>`;
       }
       html += `<button class="chat-action-btn" onclick="goToDay(${now.getFullYear()},${now.getMonth()},${targetDayNum})">Ver en planilla</button>`;
@@ -15666,7 +15723,7 @@ function handleChatQuery(query) {
     html += `<div class="chat-metric"><span>Tardes</span><span class="chat-metric-val">${stats.t}</span></div>`;
     html += `<div class="chat-metric"><span>Noches</span><span class="${nightDiff>5?'chat-metric-warn':'chat-metric-val'}">${stats.n}${nightDiff>3?' (+'+nightDiff.toFixed(0)+' vs media)':''}</span></div>`;
     html += `<div class="chat-metric"><span>Descansos</span><span class="chat-metric-val">${stats.d}</span></div>`;
-    html += `<div class="chat-metric"><span>Horas computo</span><span class="chat-metric-val">${Math.round(stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS)}h</span></div>`;
+    html += `<div class="chat-metric"><span>Computo jornada</span><span class="chat-metric-val" style="color:${computoColor(calcComputoBalance(workerMatch.id, stats).balance)}">${fmtComputo(workerMatch.id, stats)}</span></div>`;
     if (stats.vac > 0) html += `<div class="chat-metric"><span>Vacaciones disfrutadas</span><span class="chat-metric-val">${stats.vac} dias</span></div>`;
     if (stats.baj > 0) {
       html += `<div class="chat-metric"><span>Baja/IT/Maternidad</span><span class="chat-metric-warn">${stats.baj} dias</span></div>`;
@@ -15681,7 +15738,7 @@ function handleChatQuery(query) {
     let insight = '';
     if (nightDiff > 5) insight = `${workerMatch.name} tiene significativamente mas noches que la media del equipo. Considera redistribuir.`;
     else if (stats.baj > 10) insight = `De baja prolongada. Evalua si necesitas cobertura temporal.`;
-    else if ((stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS) > RULES.ANNUAL_HOURS * 0.9) insight = `Cerca del limite anual de ${RULES.ANNUAL_HOURS}h de computo. Vigila la asignacion.`;
+    else if (calcComputoBalance(workerMatch.id, stats).balance > 50) insight = `Computo muy positivo (${fmtComputo(workerMatch.id, stats)}). Trabaja mas de lo que le corresponde — considerar compensar.`;
     else insight = `Carga equilibrada respecto al equipo.`;
     html += `<div style="margin-top:8px;padding:8px;background:rgba(92,122,111,0.08);border-radius:8px;font-size:11px;">${insight}</div>`;
     html += `<button class="chat-action-btn" onclick="switchView('workers')">Ver ficha</button>`;
@@ -17365,7 +17422,7 @@ function onGestorWorkerChange() {
     </div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
       <span>${nightIcon} <strong>${stats.n}</strong> noches (media: ${avgN.toFixed(1)})</span>
-      <span>⏱ <strong>${Math.round(stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS)}h</strong> computo</span>
+      <span>⏱ <strong style="color:${computoColor(calcComputoBalance(w.id, stats).balance)}">${fmtComputo(w.id, stats)}</strong> computo</span>
       <span>📅 <strong>${stats.wknd}</strong> fds</span>
       <span>🔄 <strong>${getExtraCoverageCount(w.id, 3)}</strong> extras (3m)</span>
     </div>
@@ -18477,15 +18534,15 @@ function buildAICoverageAnalysis(w, days, action) {
           Ver todos los candidatos evaluados (${multiDayCandidates.length})
         </button>`;
         html += `<div id="${rankSectionId}" style="display:none;margin-top:6px;">`;
-        html += `<table class="rank-all-table"><thead><tr><th>#</th><th>Nombre</th><th>Score</th><th>Noches</th><th>H.Computo</th><th>Fds</th><th>Dias</th></tr></thead><tbody>`;
+        html += `<table class="rank-all-table"><thead><tr><th>#</th><th>Nombre</th><th>Score</th><th>Noches</th><th>Computo</th><th>Fds</th><th>Dias</th></tr></thead><tbody>`;
         multiDayCandidates.forEach((c, ci) => {
-          const computoH = c.stats ? Math.round(c.stats.h - c.stats.n * RULES.NIGHT_COMPUTO_HOURS) : '?';
+          const cBal = calcComputoBalance(c.w.id, c.stats);
           html += `<tr>
             <td>${ci + 1}</td>
             <td>${c.w.name}</td>
             <td><strong>${Math.round(c.avgScore)}</strong></td>
             <td>${c.stats ? c.stats.n : '?'}</td>
-            <td>${computoH}</td>
+            <td style="color:${computoColor(cBal.balance)};font-weight:600;">${fmtComputo(c.w.id, c.stats)}</td>
             <td>${c.stats ? c.stats.wknd : '?'}</td>
             <td>${c.coverageCount || c.daysCanCover.length}</td>
           </tr>`;
@@ -19086,6 +19143,14 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWor
     const vSch = getVSch(da.year, da.month);
     workers.forEach(w => {
       if (w.id === absentId) return;
+      // === Lactancia protection: workers on lactancia cannot substitute ===
+      const realSchPlan = scheduleData[`${da.year}-${da.month}`];
+      if (realSchPlan && realSchPlan[w.id] && realSchPlan[w.id].some(s => s === 'LAC')) { rejectionLog.push({ worker: w.name, reason: 'En periodo de lactancia — no puede sustituir' }); return; }
+      // === Baja protection: workers on active baja cannot be pulled in ===
+      if (realSchPlan && realSchPlan[w.id]) {
+        const bajCtPlan = realSchPlan[w.id].filter(s => s === 'BAJ' || s === 'INT' || s === 'MTC').length;
+        if (bajCtPlan > realSchPlan[w.id].length * 0.3) { rejectionLog.push({ worker: w.name, reason: 'De baja activa — no puede cubrir' }); return; }
+      }
       // === Category enforcement: enf covers enf, tec covers tec ===
       if (w.type !== absentType) { rejectionLog.push({ worker: w.name, reason: 'Tipo diferente (enf/tec)' }); return; }
       // Section boundary enforcement
@@ -20070,17 +20135,15 @@ function renderMetricBars(stats, teamAvg) {
     <div class="gestor-metric-value">${stats.n}</div>
   </div>`;
 
-  const computoH = stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS;
-  const computoAvgH = teamAvg.h - (teamAvg.n || 0) * RULES.NIGHT_COMPUTO_HOURS;
-  const hourDiff = computoH - computoAvgH;
-  const hourPct = (computoH / (computoAvgH + 100)) * 100;
-  const hourColor = hourDiff <= 0 ? '#27ae60' : hourDiff <= 20 ? '#e67e22' : '#cc4444';
+  const compBal = calcComputoBalance(wId, stats);
+  const compColor = computoColor(compBal.balance);
+  const compPct = Math.min(100, Math.max(0, 50 + compBal.balance));
   html += `<div class="gestor-metric-bar">
-    <div class="gestor-metric-label">H.Computo</div>
+    <div class="gestor-metric-label">Computo</div>
     <div class="gestor-metric-track">
-      <div class="gestor-metric-fill" style="width:${Math.min(100, hourPct)}%;background:${hourColor};"></div>
+      <div class="gestor-metric-fill" style="width:${compPct}%;background:${compColor};"></div>
     </div>
-    <div class="gestor-metric-value">${Math.round(computoH)}h</div>
+    <div class="gestor-metric-value" style="color:${compColor}">${fmtComputo(wId, stats)}</div>
   </div>`;
 
   const wkndDiff = stats.wknd - (teamAvg.wknd || 0);
