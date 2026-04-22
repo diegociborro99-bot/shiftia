@@ -13575,13 +13575,13 @@ function openWorkerPanel(wId) {
         <div class="wp-stat"><div class="wp-stat-val">${stats.m}</div><div class="wp-stat-label">Mananas</div></div>
         <div class="wp-stat"><div class="wp-stat-val">${stats.t}</div><div class="wp-stat-label">Tardes</div></div>
         <div class="wp-stat"><div class="wp-stat-val">${stats.n}</div><div class="wp-stat-label">Noches</div></div>
-        <div class="wp-stat"><div class="wp-stat-val">${stats.h}</div><div class="wp-stat-label">Horas</div></div>
+        <div class="wp-stat"><div class="wp-stat-val">${Math.round(stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS)}</div><div class="wp-stat-label">H.Computo</div></div>
         <div class="wp-stat"><div class="wp-stat-val">${stats.wknd}</div><div class="wp-stat-label">Fines sem.</div></div>
         <div class="wp-stat"><div class="wp-stat-val">${stats.total}</div><div class="wp-stat-label">Total turnos</div></div>
       </div>
       <div style="display:flex;gap:12px;margin-top:10px;font-size:11px;">
         <span style="color:${stats.n - avgN <= 0 ? '#27ae60' : '#e67e22'};">${(stats.n - avgN) >= 0 ? '+' : ''}${(stats.n - avgN).toFixed(1)} noches vs media</span>
-        <span style="color:${stats.h - avgH <= 0 ? '#27ae60' : '#e67e22'};">${(stats.h - avgH) >= 0 ? '+' : ''}${(stats.h - avgH).toFixed(0)}h vs media</span>
+        <span style="color:${(stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS) - avgH <= 0 ? '#27ae60' : '#e67e22'};">${((stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS) - avgH) >= 0 ? '+' : ''}${((stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS) - avgH).toFixed(0)}h comp vs media</span>
       </div>
     </div>
 
@@ -15479,12 +15479,12 @@ function handleChatQuery(query) {
         const nightColor = parseFloat(c.nightsVsAvg) > 3 ? 'var(--danger)' : parseFloat(c.nightsVsAvg) < -2 ? 'var(--success)' : 'var(--text2)';
         html += `<div class="chat-metric">
           <span>${i+1}. ${c.w.name} <span style="font-size:10px;color:var(--text3);">${c.w.type}</span></span>
-          <span style="font-size:10px;"><span style="color:${nightColor};">${c.stats.n}N</span> ${c.stats.h}h ${c.reason}</span>
+          <span style="font-size:10px;"><span style="color:${nightColor};">${c.stats.n}N</span> ${Math.round(c.stats.h - c.stats.n * RULES.NIGHT_COMPUTO_HOURS)}h comp ${c.reason}</span>
         </div>`;
       });
       if (candidates.length > 8) html += `<div style="font-size:10px;color:var(--text3);">... y ${candidates.length-8} mas</div>`;
       html += `<div style="margin-top:8px;padding:8px;background:rgba(92,122,111,0.08);border-radius:8px;font-size:11px;">`;
-      html += `<strong>Recomendacion:</strong> ${candidates[0].w.name} es el/la mejor candidato/a — tiene ${candidates[0].stats.n} noches (${candidates[0].nightsVsAvg} vs media) y ${candidates[0].stats.h}h totales.`;
+      html += `<strong>Recomendacion:</strong> ${candidates[0].w.name} es el/la mejor candidato/a — tiene ${candidates[0].stats.n} noches (${candidates[0].nightsVsAvg} vs media) y ${Math.round(candidates[0].stats.h - candidates[0].stats.n * RULES.NIGHT_COMPUTO_HOURS)}h de computo.`;
       html += `</div>`;
     }
     html += `<button class="chat-action-btn" onclick="goToDay(${year},${month},${targetDay})">Ver en planilla</button>`;
@@ -15515,7 +15515,7 @@ function handleChatQuery(query) {
       // Compare workloads
       html += `<div class="chat-section-label" style="margin-top:8px;">Comparativa carga</div>`;
       html += `<div class="chat-metric"><span>Noches</span><span>${result.w1.stats.n} vs ${result.w2.stats.n}</span></div>`;
-      html += `<div class="chat-metric"><span>Horas</span><span>${result.w1.stats.h}h vs ${result.w2.stats.h}h</span></div>`;
+      html += `<div class="chat-metric"><span>H.Computo</span><span>${Math.round(result.w1.stats.h - result.w1.stats.n * RULES.NIGHT_COMPUTO_HOURS)}h vs ${Math.round(result.w2.stats.h - result.w2.stats.n * RULES.NIGHT_COMPUTO_HOURS)}h</span></div>`;
       html += `<div class="chat-metric"><span>Fines semana</span><span>${result.w1.stats.wknd} vs ${result.w2.stats.wknd}</span></div>`;
       html += `<button class="chat-action-btn" onclick="goToDay(${now.getFullYear()},${now.getMonth()},${targetDay})">Ver en planilla</button>`;
       return html;
@@ -15545,10 +15545,10 @@ function handleChatQuery(query) {
         html += '<div style="font-size:12px;color:var(--danger);">No hay sustitutos disponibles ese dia.</div>';
       } else {
         candidates.slice(0, 6).forEach((c, i) => {
-          html += `<div class="chat-metric"><span>${i+1}. ${c.w.name}</span><span style="font-size:10px;">${c.stats.n}N ${c.stats.h}h — ${c.reason}</span></div>`;
+          html += `<div class="chat-metric"><span>${i+1}. ${c.w.name}</span><span style="font-size:10px;">${c.stats.n}N ${Math.round(c.stats.h - c.stats.n * RULES.NIGHT_COMPUTO_HOURS)}h comp — ${c.reason}</span></div>`;
         });
         html += `<div style="margin-top:8px;padding:8px;background:rgba(92,122,111,0.08);border-radius:8px;font-size:11px;">`;
-        html += `<strong>Mejor opcion:</strong> ${candidates[0].w.name} (${candidates[0].stats.n} noches, ${candidates[0].stats.h}h)`;
+        html += `<strong>Mejor opcion:</strong> ${candidates[0].w.name} (${candidates[0].stats.n} noches, ${Math.round(candidates[0].stats.h - candidates[0].stats.n * RULES.NIGHT_COMPUTO_HOURS)}h comp)`;
         html += `</div>`;
       }
       html += `<button class="chat-action-btn" onclick="goToDay(${now.getFullYear()},${now.getMonth()},${targetDayNum})">Ver en planilla</button>`;
@@ -15666,7 +15666,7 @@ function handleChatQuery(query) {
     html += `<div class="chat-metric"><span>Tardes</span><span class="chat-metric-val">${stats.t}</span></div>`;
     html += `<div class="chat-metric"><span>Noches</span><span class="${nightDiff>5?'chat-metric-warn':'chat-metric-val'}">${stats.n}${nightDiff>3?' (+'+nightDiff.toFixed(0)+' vs media)':''}</span></div>`;
     html += `<div class="chat-metric"><span>Descansos</span><span class="chat-metric-val">${stats.d}</span></div>`;
-    html += `<div class="chat-metric"><span>Horas totales</span><span class="chat-metric-val">${stats.h}h</span></div>`;
+    html += `<div class="chat-metric"><span>Horas computo</span><span class="chat-metric-val">${Math.round(stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS)}h</span></div>`;
     if (stats.vac > 0) html += `<div class="chat-metric"><span>Vacaciones disfrutadas</span><span class="chat-metric-val">${stats.vac} dias</span></div>`;
     if (stats.baj > 0) {
       html += `<div class="chat-metric"><span>Baja/IT/Maternidad</span><span class="chat-metric-warn">${stats.baj} dias</span></div>`;
@@ -15681,7 +15681,7 @@ function handleChatQuery(query) {
     let insight = '';
     if (nightDiff > 5) insight = `${workerMatch.name} tiene significativamente mas noches que la media del equipo. Considera redistribuir.`;
     else if (stats.baj > 10) insight = `De baja prolongada. Evalua si necesitas cobertura temporal.`;
-    else if (stats.h > RULES.ANNUAL_HOURS * 0.9) insight = `Cerca del limite anual de ${RULES.ANNUAL_HOURS}h. Vigila la asignacion.`;
+    else if ((stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS) > RULES.ANNUAL_HOURS * 0.9) insight = `Cerca del limite anual de ${RULES.ANNUAL_HOURS}h de computo. Vigila la asignacion.`;
     else insight = `Carga equilibrada respecto al equipo.`;
     html += `<div style="margin-top:8px;padding:8px;background:rgba(92,122,111,0.08);border-radius:8px;font-size:11px;">${insight}</div>`;
     html += `<button class="chat-action-btn" onclick="switchView('workers')">Ver ficha</button>`;
@@ -17365,7 +17365,7 @@ function onGestorWorkerChange() {
     </div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
       <span>${nightIcon} <strong>${stats.n}</strong> noches (media: ${avgN.toFixed(1)})</span>
-      <span>⏱ <strong>${stats.h}h</strong> totales</span>
+      <span>⏱ <strong>${Math.round(stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS)}h</strong> computo</span>
       <span>📅 <strong>${stats.wknd}</strong> fds</span>
       <span>🔄 <strong>${getExtraCoverageCount(w.id, 3)}</strong> extras (3m)</span>
     </div>
@@ -18477,14 +18477,15 @@ function buildAICoverageAnalysis(w, days, action) {
           Ver todos los candidatos evaluados (${multiDayCandidates.length})
         </button>`;
         html += `<div id="${rankSectionId}" style="display:none;margin-top:6px;">`;
-        html += `<table class="rank-all-table"><thead><tr><th>#</th><th>Nombre</th><th>Score</th><th>Noches</th><th>Horas</th><th>Fds</th><th>Dias</th></tr></thead><tbody>`;
+        html += `<table class="rank-all-table"><thead><tr><th>#</th><th>Nombre</th><th>Score</th><th>Noches</th><th>H.Computo</th><th>Fds</th><th>Dias</th></tr></thead><tbody>`;
         multiDayCandidates.forEach((c, ci) => {
+          const computoH = c.stats ? Math.round(c.stats.h - c.stats.n * RULES.NIGHT_COMPUTO_HOURS) : '?';
           html += `<tr>
             <td>${ci + 1}</td>
             <td>${c.w.name}</td>
             <td><strong>${Math.round(c.avgScore)}</strong></td>
             <td>${c.stats ? c.stats.n : '?'}</td>
-            <td>${c.stats ? c.stats.h : '?'}</td>
+            <td>${computoH}</td>
             <td>${c.stats ? c.stats.wknd : '?'}</td>
             <td>${c.coverageCount || c.daysCanCover.length}</td>
           </tr>`;
@@ -20069,15 +20070,17 @@ function renderMetricBars(stats, teamAvg) {
     <div class="gestor-metric-value">${stats.n}</div>
   </div>`;
 
-  const hourDiff = stats.h - teamAvg.h;
-  const hourPct = (stats.h / (teamAvg.h + 100)) * 100;
+  const computoH = stats.h - stats.n * RULES.NIGHT_COMPUTO_HOURS;
+  const computoAvgH = teamAvg.h - (teamAvg.n || 0) * RULES.NIGHT_COMPUTO_HOURS;
+  const hourDiff = computoH - computoAvgH;
+  const hourPct = (computoH / (computoAvgH + 100)) * 100;
   const hourColor = hourDiff <= 0 ? '#27ae60' : hourDiff <= 20 ? '#e67e22' : '#cc4444';
   html += `<div class="gestor-metric-bar">
-    <div class="gestor-metric-label">Horas</div>
+    <div class="gestor-metric-label">H.Computo</div>
     <div class="gestor-metric-track">
       <div class="gestor-metric-fill" style="width:${Math.min(100, hourPct)}%;background:${hourColor};"></div>
     </div>
-    <div class="gestor-metric-value">${stats.h}h</div>
+    <div class="gestor-metric-value">${Math.round(computoH)}h</div>
   </div>`;
 
   const wkndDiff = stats.wknd - (teamAvg.wknd || 0);
