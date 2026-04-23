@@ -114,7 +114,7 @@
 }
 .login-field input:focus {
   border-color: var(--accent); box-shadow: 0 0 0 3px rgba(46,139,122,0.12);
-  background: #fff;
+  background: var(--surface);
 }
 .login-field input.error {
   border-color: var(--danger); box-shadow: 0 0 0 3px rgba(204,68,68,0.1);
@@ -173,6 +173,8 @@
   --ae: #a8a832;
   --ex: #9a9a9a;
   --baj: #b04050;
+  --text1: #2c2c2c;
+  --surface1: #f5f3f0;
   --shadow: 0 1px 2px rgba(0,0,0,0.03);
   --shadow-hover: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05);
   --shadow-md: 0 8px 25px rgba(0,0,0,0.08);
@@ -184,8 +186,10 @@
   --surface: #1a1a1e;
   --surface2: #222226;
   --surface3: #2a2a2f;
+  --surface1: #1e1e22;
   --border: #2e2e34;
   --text: #e8e6e3;
+  --text1: #e8e6e3;
   --text2: #9a9a9a;
   --text3: #5a5a5a;
   --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
@@ -10316,7 +10320,8 @@ function renderDashboard() {
   let count = 0;
   workers.forEach(w => {
     const s = sch[w.id] ? sch[w.id][todayIdx] : '';
-    if (s === currentShift) count++;
+    const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+    if (eff === currentShift) count++;
   });
   document.getElementById('nowCount').textContent = count;
 
@@ -12010,13 +12015,10 @@ function findConflictSolution(data) {
   if (!sch) return { found: false, reason: 'No hay datos de planilla para este mes.' };
 
   if (type === 'coverage') {
-    // Find someone free who can cover the shift
     const shiftNeeded = shift || 'M';
     const candidates = findCoverageCandidates(day, month, year, shiftNeeded, -1);
-    // Filter by type needed
     const covRules = getCoverageRules(year, month, day + 1);
 
-    // Determine what's short
     let mE=0,mT=0,tE=0,tT=0,nE=0,nT=0;
     workers.forEach(w => {
       const s = sch[w.id] ? sch[w.id][day] : '';
@@ -12032,36 +12034,32 @@ function findConflictSolution(data) {
     else if (shiftNeeded === 'T') { shortEnf = Math.max(0, covRules.T.enf - tE); shortTec = Math.max(0, covRules.T.tec - tT); }
     else if (shiftNeeded === 'N') { shortEnf = Math.max(0, covRules.N.enf - nE); shortTec = Math.max(0, covRules.N.tec - nT); }
 
-    // Find best candidates for enf and tec separately
-    const enfCandidates = candidates.filter(c => c.w.type === 'enf').slice(0, 3);
-    const tecCandidates = candidates.filter(c => c.w.type === 'tec' && c.w.area !== 'micro').slice(0, 3);
+    // Return ALL ranked candidates like the gestor does
+    const enfCandidates = candidates.filter(c => c.w.type === 'enf').slice(0, 5);
+    const tecCandidates = candidates.filter(c => c.w.type === 'tec' && c.w.area !== 'micro').slice(0, 5);
 
-    const assignments = [];
-    if (shortEnf > 0 && enfCandidates.length > 0) {
-      for (let i = 0; i < Math.min(shortEnf, enfCandidates.length); i++) {
-        assignments.push({ worker: enfCandidates[i].w, shift: targetShift, type: 'enf', stats: enfCandidates[i].stats });
-      }
-    }
-    if (shortTec > 0 && tecCandidates.length > 0) {
-      for (let i = 0; i < Math.min(shortTec, tecCandidates.length); i++) {
-        assignments.push({ worker: tecCandidates[i].w, shift: targetShift, type: 'tec', stats: tecCandidates[i].stats });
-      }
-    }
+    const allCandidates = [];
+    if (shortEnf > 0) enfCandidates.forEach((c, i) => allCandidates.push({ ...c, rank: i, targetType: 'enf', needed: true }));
+    if (shortTec > 0) tecCandidates.forEach((c, i) => allCandidates.push({ ...c, rank: i, targetType: 'tec', needed: true }));
+    // If only one type is short, still show other type as alternates
+    if (shortEnf === 0 && enfCandidates.length > 0) enfCandidates.slice(0, 2).forEach((c, i) => allCandidates.push({ ...c, rank: i, targetType: 'enf', needed: false }));
+    if (shortTec === 0 && tecCandidates.length > 0) tecCandidates.slice(0, 2).forEach((c, i) => allCandidates.push({ ...c, rank: i, targetType: 'tec', needed: false }));
 
-    if (assignments.length > 0) {
+    if (allCandidates.length > 0) {
       return {
         found: true,
         action: 'assign',
-        assignments,
+        allCandidates,
+        shortEnf, shortTec,
+        targetShift,
         year, month, day,
-        description: assignments.map(a => `${a.worker.name} → ${a.shift}`).join(', ')
+        description: allCandidates.filter(c => c.needed && c.rank === 0).map(a => `${a.w.name} → ${targetShift}`).join(', ')
       };
     }
     return { found: false, reason: 'No hay trabajadores disponibles que cumplan las reglas de descanso.' };
   }
 
-  if (type === 'rest') {
-    // Find the worker from the title
+  if (type === 'rest' || type === 'restriction') {
     const workerMatch = title.match(/— (.+)$/);
     if (!workerMatch) return { found: false, reason: 'No se pudo identificar al trabajador.' };
     const workerName = workerMatch[1];
@@ -12069,54 +12067,23 @@ function findConflictSolution(data) {
     if (!w) return { found: false, reason: 'Trabajador no encontrado.' };
 
     const currentShift = sch[w.id] ? sch[w.id][day] : '';
-    const prevShift = day > 0 && sch[w.id] ? sch[w.id][day - 1] : '';
-
-    // Solution: swap this worker to D (rest) and find someone to cover their shift
     const candidates = findCoverageCandidates(day, month, year, currentShift, w.id);
     const sameType = candidates.filter(c => c.w.type === w.type && (w.area !== 'micro' || c.w.area === 'micro'));
 
     if (sameType.length > 0) {
-      const best = sameType[0];
       return {
         found: true,
-        action: 'swap_rest',
+        action: type === 'rest' ? 'swap_rest' : 'swap_restriction',
         worker: w,
-        replacement: best.w,
-        replacementStats: best.stats,
+        allReplacements: sameType.slice(0, 5),
+        replacement: sameType[0].w,
+        replacementStats: sameType[0].stats,
         originalShift: currentShift,
         year, month, day,
-        description: `${escHtml(w.name)} → D (descanso), ${escHtml(best.w.name)} → ${currentShift}`
+        description: `${escHtml(w.name)} → D, ${escHtml(sameType[0].w.name)} → ${currentShift}`
       };
     }
     return { found: false, reason: `No hay ${w.type === 'enf' ? 'enfermeros' : 'tecnicos'} disponibles para cubrir el ${currentShift} de ${escHtml(w.name)}.` };
-  }
-
-  if (type === 'restriction') {
-    // Worker assigned to something against their restriction - swap them out
-    const workerMatch = title.match(/— (.+)$/);
-    if (!workerMatch) return { found: false, reason: 'No se pudo identificar al trabajador.' };
-    const workerName = workerMatch[1];
-    const w = workers.find(x => x.name === workerName);
-    if (!w) return { found: false, reason: 'Trabajador no encontrado.' };
-
-    const currentShift = sch[w.id] ? sch[w.id][day] : '';
-    const candidates = findCoverageCandidates(day, month, year, currentShift, w.id);
-    const sameType = candidates.filter(c => c.w.type === w.type);
-
-    if (sameType.length > 0) {
-      const best = sameType[0];
-      return {
-        found: true,
-        action: 'swap_restriction',
-        worker: w,
-        replacement: best.w,
-        replacementStats: best.stats,
-        originalShift: currentShift,
-        year, month, day,
-        description: `${escHtml(w.name)} → D, ${escHtml(best.w.name)} → ${currentShift}`
-      };
-    }
-    return { found: false, reason: `No hay trabajadores disponibles para sustituir a ${escHtml(w.name)}.` };
   }
 
   return { found: false, reason: 'Este tipo de conflicto no tiene resolucion automatica.' };
@@ -12127,57 +12094,122 @@ function renderConflictProposal(conflictId, data, solution) {
   if (!proposalDiv) return;
 
   if (!solution.found) {
-    proposalDiv.innerHTML = `<div style="padding:12px;background:rgba(204,68,68,0.06);border-radius:10px;border:1px solid rgba(204,68,68,0.15);">
-      <div style="font-size:12px;font-weight:600;color:#cc4444;margin-bottom:4px;">Sin solucion automatica</div>
-      <div style="font-size:11px;color:var(--text2);">${solution.reason}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:6px;">Usa el Gestor de Cobertura para buscar manualmente.</div>
+    proposalDiv.innerHTML = `<div style="padding:14px;background:rgba(204,68,68,0.06);border-radius:12px;border:1px solid rgba(204,68,68,0.15);">
+      <div style="font-size:13px;font-weight:700;color:#cc4444;margin-bottom:6px;">Sin solucion automatica</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5;">${solution.reason}</div>
+      <button onclick="event.stopPropagation();openGestorFromConflict()" style="margin-top:10px;padding:8px 16px;border-radius:8px;border:none;background:var(--accent);color:white;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;">
+        Abrir Gestor de Cobertura
+      </button>
     </div>`;
     return;
   }
 
-  const teamAnalysis = solution.assignments ? getTeamWorkloadAnalysis('enf') : null;
-  const avgN = teamAnalysis ? teamAnalysis.avgN : 0;
-  const avgH = teamAnalysis ? teamAnalysis.avgH : 0;
+  const teamAnalysisEnf = getTeamWorkloadAnalysis('enf');
+  const teamAnalysisTec = getTeamWorkloadAnalysis('tec');
+  const avgNEnf = teamAnalysisEnf ? teamAnalysisEnf.avgN : 0;
+  const avgHEnf = teamAnalysisEnf ? teamAnalysisEnf.avgH : 0;
+  const avgNTec = teamAnalysisTec ? teamAnalysisTec.avgN : 0;
+  const avgHTec = teamAnalysisTec ? teamAnalysisTec.avgH : 0;
 
-  let html = `<div style="padding:14px;background:rgba(39,174,96,0.06);border-radius:12px;border:1px solid rgba(39,174,96,0.2);">`;
-  html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-    <span style="font-size:16px;">🧠</span>
-    <span style="font-size:13px;font-weight:700;color:#27ae60;">Solucion propuesta</span>
+  const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const d = new Date(solution.year, solution.month, solution.day + 1);
+  const dayLabel = `${dayNames[d.getDay()]} ${solution.day + 1}/${solution.month + 1}`;
+  const shiftNames = { M: 'Mañana', T: 'Tarde', N: 'Noche' };
+  const shiftColors = { M: '#2e8b7a', T: '#4a9dd4', N: '#c5a832' };
+
+  let html = `<div style="padding:16px;background:linear-gradient(135deg,rgba(39,174,96,0.04),rgba(46,139,122,0.06));border-radius:14px;border:1px solid rgba(39,174,96,0.2);margin-top:8px;">`;
+
+  // Header
+  html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+    <div style="width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#e67e22,#d35400);display:flex;align-items:center;justify-content:center;font-size:16px;">🧠</div>
+    <div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);">Plan de resolución IA</div>
+      <div style="font-size:11px;color:var(--text3);">${dayLabel} — Candidatos ordenados por idoneidad</div>
+    </div>
   </div>`;
 
   if (solution.action === 'assign') {
-    solution.assignments.forEach(a => {
-      const nightDiff = a.stats.n - avgN;
-      const hourDiff = a.stats.h - avgH;
-      html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;">
-        <span style="font-weight:700;color:var(--text);flex:1;">${escHtml(a.worker.name)}</span>
-        <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${a.type==='enf'?'#fde8e8;color:#cc4444':'#e8f0fd;color:#4a9dd4'};">${a.type==='enf'?'ENF':'TEC'}</span>
-        <span style="font-size:11px;color:var(--text2);">→ ${a.shift}</span>
-        <span style="font-size:10px;color:${nightDiff<=0?'#27ae60':'#e67e22'};">${nightDiff>=0?'+':''}${nightDiff.toFixed(1)}N</span>
-        <span style="font-size:10px;color:${hourDiff<=0?'#27ae60':'#e67e22'};">${hourDiff>=0?'+':''}${hourDiff.toFixed(0)}h</span>
+    const targetShift = solution.targetShift;
+    const shColor = shiftColors[targetShift] || '#2e8b7a';
+
+    if (solution.shortEnf > 0) html += `<div style="font-size:10px;color:#cc4444;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Falta${solution.shortEnf > 1 ? 'n' : ''} ${solution.shortEnf} ENF en ${targetShift}</div>`;
+    if (solution.shortTec > 0) html += `<div style="font-size:10px;color:#4a9dd4;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Falta${solution.shortTec > 1 ? 'n' : ''} ${solution.shortTec} TEC en ${targetShift}</div>`;
+
+    solution.allCandidates.forEach((c, i) => {
+      const avgN = c.w.type === 'enf' ? avgNEnf : avgNTec;
+      const avgH = c.w.type === 'enf' ? avgHEnf : avgHTec;
+      const nightDiff = c.stats.n - avgN;
+      const hourDiff = c.stats.h - avgH;
+      const isRecommended = c.needed && c.rank === 0;
+      const currentShiftLabel = c.currentShift || 'D';
+
+      const solObj = { found: true, action: 'assign', assignments: [{ worker: c.w, shift: targetShift, type: c.w.type, stats: c.stats }], year: solution.year, month: solution.month, day: solution.day, description: c.w.name + ' → ' + targetShift };
+      const solData = btoa(encodeURIComponent(JSON.stringify(solObj)));
+
+      html += `<div style="padding:12px;background:var(--surface);border-radius:10px;margin-bottom:8px;border:${isRecommended ? '2px solid #27ae60' : '1px solid var(--border)'};">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          ${isRecommended ? '<span style="font-size:9px;padding:2px 8px;border-radius:6px;background:#27ae60;color:white;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Recomendado</span>' : '<span style="font-size:9px;padding:2px 8px;border-radius:6px;background:var(--surface2);color:var(--text3);font-weight:600;">Opción ' + (i + 1) + '</span>'}
+          <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${c.w.type === 'enf' ? 'rgba(204,68,68,0.1);color:#cc4444' : 'rgba(74,157,212,0.1);color:#4a9dd4'};font-weight:600;">${c.w.type === 'enf' ? 'ENF' : 'TEC'}</span>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;">${escHtml(c.w.name)}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:12px;">
+          <span style="padding:3px 10px;border-radius:6px;background:var(--surface2);color:var(--text2);">${currentShiftLabel}</span>
+          <span style="color:var(--text3);">→</span>
+          <span style="padding:3px 10px;border-radius:6px;background:${shColor}20;color:${shColor};font-weight:700;">${targetShift}</span>
+        </div>
+        <div style="display:flex;gap:12px;font-size:11px;color:var(--text2);margin-bottom:10px;">
+          <span>Noches: <strong style="color:${nightDiff <= 0 ? '#27ae60' : nightDiff <= 2 ? '#e67e22' : '#cc4444'};">${c.stats.n}</strong> <span style="font-size:10px;color:var(--text3);">(avg ${avgN.toFixed(1)})</span></span>
+          <span>Horas: <strong style="color:${hourDiff <= 0 ? '#27ae60' : '#e67e22'};">${c.stats.h}</strong> <span style="font-size:10px;color:var(--text3);">(avg ${avgH.toFixed(0)})</span></span>
+          <span>Fds: <strong>${c.stats.wknd}</strong></span>
+        </div>
+        ${renderTimeline(c.w.id, solution.year, solution.month, solution.day + 1)}
+        <button onclick="event.stopPropagation();applyConflictSolution('${conflictId}','${solData}')"
+          style="width:100%;margin-top:10px;padding:10px;border-radius:10px;border:none;background:${isRecommended ? '#27ae60' : 'var(--accent)'};color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.2s;">
+          Asignar ${targetShift} a ${escHtml(c.w.name)}
+        </button>
       </div>`;
     });
+
   } else if (solution.action === 'swap_rest' || solution.action === 'swap_restriction') {
-    html += `<div style="padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;">
-      <div style="font-size:12px;"><strong>${escHtml(solution.worker.name)}</strong> → <span style="color:#cc4444;font-weight:600;">D (descanso)</span></div>
-      <div style="font-size:11px;color:var(--text3);margin-top:2px;">Liberar de turno conflictivo</div>
+    html += `<div style="padding:10px 12px;background:rgba(204,68,68,0.06);border-radius:8px;margin-bottom:12px;font-size:12px;">
+      <strong>${escHtml(solution.worker.name)}</strong> necesita descanso → se le asignará <strong style="color:#cc4444;">D</strong>
     </div>`;
-    html += `<div style="padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;">
-      <div style="font-size:12px;"><strong>${escHtml(solution.replacement.name)}</strong> → <span style="color:#2e8b7a;font-weight:600;">${escHtml(solution.originalShift)}</span></div>
-      <div style="font-size:11px;color:var(--text3);margin-top:2px;">Cubre el turno (${solution.replacementStats.h}h acumuladas, ${solution.replacementStats.n} noches)</div>
-    </div>`;
+    html += `<div style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Candidatos para cubrir ${solution.originalShift}:</div>`;
+
+    const replacements = solution.allReplacements || [{ w: solution.replacement, stats: solution.replacementStats }];
+    replacements.forEach((c, i) => {
+      const avgN = c.w.type === 'enf' ? avgNEnf : avgNTec;
+      const avgH = c.w.type === 'enf' ? avgHEnf : avgHTec;
+      const nightDiff = c.stats.n - avgN;
+      const isRecommended = i === 0;
+      const shColor = shiftColors[solution.originalShift] || '#2e8b7a';
+
+      const solObj = { found: true, action: solution.action, worker: solution.worker, replacement: c.w, replacementStats: c.stats, originalShift: solution.originalShift, year: solution.year, month: solution.month, day: solution.day, description: solution.worker.name + ' → D, ' + c.w.name + ' → ' + solution.originalShift };
+      const solData = btoa(encodeURIComponent(JSON.stringify(solObj)));
+
+      html += `<div style="padding:12px;background:var(--surface);border-radius:10px;margin-bottom:8px;border:${isRecommended ? '2px solid #27ae60' : '1px solid var(--border)'};">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          ${isRecommended ? '<span style="font-size:9px;padding:2px 8px;border-radius:6px;background:#27ae60;color:white;font-weight:700;">Recomendado</span>' : '<span style="font-size:9px;padding:2px 8px;border-radius:6px;background:var(--surface2);color:var(--text3);font-weight:600;">Opción ' + (i + 1) + '</span>'}
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;">${escHtml(c.w.name)}</div>
+        <div style="display:flex;gap:12px;font-size:11px;color:var(--text2);margin-bottom:8px;">
+          <span>Noches: <strong style="color:${nightDiff <= 0 ? '#27ae60' : '#e67e22'};">${c.stats.n}</strong></span>
+          <span>Horas: <strong>${c.stats.h}</strong></span>
+          <span>Fds: <strong>${c.stats.wknd}</strong></span>
+        </div>
+        ${renderTimeline(c.w.id, solution.year, solution.month, solution.day + 1)}
+        <button onclick="event.stopPropagation();applyConflictSolution('${conflictId}','${solData}')"
+          style="width:100%;margin-top:10px;padding:10px;border-radius:10px;border:none;background:${isRecommended ? '#27ae60' : 'var(--accent)'};color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;">
+          ${escHtml(solution.worker.name)} → D, ${escHtml(c.w.name)} → ${solution.originalShift}
+        </button>
+      </div>`;
+    });
   }
 
-  const solutionData = btoa(encodeURIComponent(JSON.stringify(solution)));
-
-  html += `<div style="display:flex;gap:8px;margin-top:12px;">
-    <button onclick="event.stopPropagation();applyConflictSolution('${conflictId}','${solutionData}')"
-      style="flex:1;padding:10px;border-radius:10px;border:none;background:#27ae60;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.2s;">
-      Si, aplicar
-    </button>
+  html += `<div style="text-align:center;margin-top:8px;">
     <button onclick="event.stopPropagation();dismissConflictProposal('${conflictId}')"
-      style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.2s;">
-      No, descartar
+      style="padding:8px 20px;border-radius:8px;border:none;background:var(--surface2);color:var(--text3);font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;">
+      Descartar propuestas
     </button>
   </div>`;
 
@@ -12260,6 +12292,11 @@ function dismissConflictProposal(conflictId) {
   }
   const resolveBtn = document.getElementById(conflictId + '-resolve-btn');
   if (resolveBtn) resolveBtn.style.display = 'inline-block';
+}
+
+function openGestorFromConflict() {
+  const fab = document.querySelector('.gestor-fab');
+  if (fab) fab.click();
 }
 
 // ========== ENHANCED CHAT SYSTEM ==========
@@ -14573,6 +14610,15 @@ function saveToStorage() {
   } catch (e) { console.warn('[Shiftia] Save error:', e); showSaveIndicator('saved'); }
 }
 
+function saveIncidents() {
+  // Incidents are already included in saveToStorage(), this persists them immediately
+  try {
+    const existing = JSON.parse(localStorage.getItem('shiftia_data') || '{}');
+    existing.incidents = incidents;
+    localStorage.setItem('shiftia_data', JSON.stringify(existing));
+  } catch(e) { console.warn('[Shiftia] saveIncidents error:', e); }
+}
+
 async function loadFromStorage() {
   try {
     let data = null;
@@ -14788,11 +14834,13 @@ function generateProactiveAlerts() {
       if (!shiftCoverage[shiftGroup]) return;
 
       // Determine role (enfermero vs técnico)
-      const role = w.role && w.role.includes('enf') ? 'enf' : 'tec';
-      shiftCoverage[shiftGroup][role]++;
+      const role = w.type === 'enf' ? 'enf' : 'tec';
+      if (w.area !== 'micro') {
+        shiftCoverage[shiftGroup][role]++;
+      }
 
       // Count morning micro staff
-      if ((shift === 'M' || shift.startsWith('M')) && w.dept === 'MICRO') {
+      if ((shift === 'M' || shift.startsWith('M')) && w.area === 'micro') {
         morningMicroTec++;
       }
     });
@@ -16838,7 +16886,7 @@ function getGuardiaCoverageRisk(year, month, day, sch) {
   for (let i = 0; i < 3; i++) {
     sIdx++;
     if (sIdx >= 3) { sIdx = 0; dIdx++; }
-    if (dIdx >= 31) break;
+    if (dIdx >= new Date(year, month + 1, 0).getDate()) break;
     const shift = order[sIdx];
     const realDay = dIdx + 1;
     const cov = getCoverageRules(year, month, realDay);
@@ -16877,7 +16925,8 @@ function renderGuardia() {
   function getShiftWorkers(shift, dIdx) {
     return workers.filter(w => {
       const s = sch[w.id] ? (sch[w.id][dIdx] || '').toString().trim() : '';
-      return s === shift;
+      const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+      return eff === shift;
     }).map(w => ({ ...w, shift: shift }));
   }
 
@@ -16890,7 +16939,7 @@ function renderGuardia() {
   }
 
   const onNow = getShiftWorkers(currentShift, dayIdx);
-  const nextDayIdx = (currentShift === 'N') ? Math.min(dayIdx + 1, 30) : dayIdx;
+  const nextDayIdx = (currentShift === 'N') ? Math.min(dayIdx + 1, new Date(year, month + 1, 0).getDate() - 1) : dayIdx;
   const onNext = getShiftWorkers(nextShift, nextDayIdx);
   const available = getAvailable(dayIdx);
   const cov = getCoverageRules(year, month, day);
@@ -21493,7 +21542,7 @@ function renderTimeline(workerId, targetYear, targetMonth, targetDay) {
   return html;
 }
 
-function renderMetricBars(stats, teamAvg) {
+function renderMetricBars(wId, stats, teamAvg) {
   let html = '';
 
   const nightDiff = stats.n - teamAvg.n;
@@ -21610,7 +21659,7 @@ function buildSwapAnalysis(w, dayDate) {
         <div style="font-size:12px;margin:6px 0;padding:8px;background:var(--surface2);border-radius:8px;text-align:center;">
           ${escHtml(w.name)}: ${wShift} → ${c.currentShift} &nbsp;&nbsp;|&nbsp;&nbsp; ${c.w.name}: ${c.currentShift} → ${wShift}
         </div>
-        ${renderMetricBars(c.stats, teamAvgForMetrics)}
+        ${renderMetricBars(c.w.id, c.stats, teamAvgForMetrics)}
         ${renderTimeline(c.w.id, year, month, dayIdx + 1)}
         ${hasIssues && c.swap.issues ? `<div class="gestor-warning" style="margin-top:6px;">${c.swap.issues.join('<br>')}</div>` : ''}
         <button class="gestor-apply-btn" onclick="applyGestorSwap(${w.id}, ${c.w.id}, ${year}, ${month}, ${dayIdx}, '${wShift}', '${c.currentShift}', this)">
@@ -21627,11 +21676,12 @@ function buildSwapAnalysis(w, dayDate) {
       const hourDiff = c.stats.h - avgH;
       const typeClass = c.w.type === 'enf' ? 'background:#fde8e8;color:#cc4444;' : 'background:#e8f0fd;color:#4a9dd4;';
 
-      const teamAvgForMetrics2 = { n: avgN, h: avgH, wknd: avgWknd || 0 };
+      const avgWknd2 = freeCandidates.length > 0 ? freeCandidates.reduce((a, x) => a + x.stats.wknd, 0) / freeCandidates.length : 0;
+      const teamAvgForMetrics2 = { n: avgN, h: avgH, wknd: avgWknd2 };
       html += `<div class="gestor-candidate ${i === 0 && validSwaps.length === 0 ? 'best' : ''}">
         <div class="gestor-candidate-rank">${i === 0 && validSwaps.length === 0 ? 'Recomendado' : 'Libre'}</div>
         <div class="gestor-candidate-name">${c.w.name} <span class="gestor-candidate-type" style="${typeClass}">${c.w.type === 'enf' ? 'ENF' : 'TEC'}</span></div>
-        ${renderMetricBars(c.stats, teamAvgForMetrics2)}
+        ${renderMetricBars(c.w.id, c.stats, teamAvgForMetrics2)}
         ${renderTimeline(c.w.id, year, month, dayIdx + 1)}
         <div class="gestor-candidate-reason"><strong>Estado:</strong> ${c.reason} — puede asumir ${wShift} sin violar reglas.</div>
         <button class="gestor-apply-btn" onclick="applyGestorCover(${c.w.id}, ${year}, ${month}, ${dayIdx}, '${wShift}', this)">
@@ -23183,12 +23233,14 @@ function computeDashboardKPIs() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   let totalNightsEnf = 0, totalNightsTec = 0, nightRotEnf = 0, nightRotTec = 0;
   workers.forEach(w => {
-    if (w.rules && w.rules.noNights) return;
+    if (w.rules && (w.rules.noNights || w.rules.conciliacion || w.rules.noCover)) return;
+    if (w.role === 'supervisora') return;
     if (w.area === 'micro') return;
     let nights = 0;
     for (let d = 0; d < daysInMonth; d++) {
       if (sch[w.id] && sch[w.id][d] === 'N') nights++;
     }
+    if (nights === 0) return; // Only count actual night rotators
     if (w.type === 'enf') { totalNightsEnf += nights; nightRotEnf++; }
     else { totalNightsTec += nights; nightRotTec++; }
   });
