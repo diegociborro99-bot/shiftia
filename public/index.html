@@ -14955,15 +14955,20 @@ function getMultiMonthEquity(wId, currentMonth, currentYear) {
   const stats = getWorkerStats(wId, months);
   const type = workers.find(w => w.id === wId)?.type || 'enf';
 
-  // Get team averages for same 3-month window
+  // Get team averages for same 3-month window — ONLY night rotators for avgN
   const teamWorkers = workers.filter(w => w.type === type && !w.rules?.noCover && !w.rules?.noSwap);
-  let teamN = 0, teamH = 0, teamWknd = 0, count = 0;
+  let teamN = 0, teamH = 0, teamWknd = 0, count = 0, nightRotCount = 0;
   teamWorkers.forEach(tw => {
     const ts = getWorkerStats(tw.id, months);
-    teamN += ts.n; teamH += ts.h; teamWknd += ts.wknd;
+    teamH += ts.h; teamWknd += ts.wknd;
     count++;
+    // Solo incluir en media de noches a quien realmente hace noches
+    if (ts.n > 0 && !tw.rules?.noNights && !tw.rules?.conciliacion && tw.role !== 'supervisora' && tw.area !== 'micro') {
+      teamN += ts.n;
+      nightRotCount++;
+    }
   });
-  const avgN3m = count > 0 ? teamN / count : 0;
+  const avgN3m = nightRotCount > 0 ? teamN / nightRotCount : 0;
   const avgH3m = count > 0 ? teamH / count : 0;
   const avgWknd3m = count > 0 ? teamWknd / count : 0;
 
@@ -15671,9 +15676,14 @@ function suggestVoluntarySwaps(absentWId, dayIdx, month, year, shiftNeeded) {
         let nightEquityBenefit = 0;
         if (aDay.effShift === 'N') {
           // A gives away a night (loses 1), B gets a night (gains 1)
-          const avgN = workers.filter(w => (!w.rules || !w.rules.noNights) && w.role !== 'supervisora').length > 0 ?
-            workers.reduce((sum, w) => sum + getWorkerStats(w.id).n, 0) /
-            workers.filter(w => (!w.rules || !w.rules.noNights) && w.role !== 'supervisora').length : 0;
+          const nightWorkers = workers.filter(w => {
+            if (w.rules && (w.rules.noNights || w.rules.conciliacion || w.rules.noCover)) return false;
+            if (w.role === 'supervisora' || w.area === 'micro') return false;
+            const ws = getWorkerStats(w.id);
+            return ws.n > 0;
+          });
+          const avgN = nightWorkers.length > 0 ?
+            nightWorkers.reduce((sum, w) => sum + getWorkerStats(w.id).n, 0) / nightWorkers.length : 0;
           nightEquityBenefit = (statsB.n - statsA.n) * 0.5; // Positive if B has fewer nights
         }
 
