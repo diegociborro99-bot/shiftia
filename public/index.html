@@ -175,6 +175,8 @@
   --baj: #b04050;
   --text1: #2c2c2c;
   --surface1: #f5f3f0;
+  --primary: #5c7a6f;
+  --warning: #e6a832;
   --shadow: 0 1px 2px rgba(0,0,0,0.03);
   --shadow-hover: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05);
   --shadow-md: 0 8px 25px rgba(0,0,0,0.08);
@@ -187,6 +189,8 @@
   --surface2: #222226;
   --surface3: #2a2a2f;
   --surface1: #1e1e22;
+  --primary: #5c7a6f;
+  --warning: #d4a030;
   --border: #2e2e34;
   --text: #e8e6e3;
   --text1: #e8e6e3;
@@ -5411,7 +5415,7 @@ table.schedule th.month-total-header {
 
 .onboarding-tooltip {
   position: fixed;
-  background: white;
+  background: var(--surface);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
@@ -10491,7 +10495,7 @@ function renderDailyBriefing() {
   // On leave today
   const onLeave = workers.filter(w => {
     const s = sch[w.id] ? sch[w.id][todayIdx] : '';
-    return ['BAJ','INT','MTC','LAC','VAC','VAA'].includes(s);
+    return ['BAJ','INT','MTC','LAC','VAC','VAA','FOR','HS','CAA','AE','EX','HF','LD'].includes(s);
   });
 
   // On rest today
@@ -15142,8 +15146,8 @@ function getWorkerStats(wId, filterMonths) {
       else if(s==='BAJ'||s==='INT'||s==='MTC'||s==='LAC') baj++;
       else if(s!=='') other++;
       h += RULES.SHIFT_HOURS[s]||0;
-      // Count weekend working days
-      if (s && s !== 'D' && s !== 'VAC' && s !== 'VAA') {
+      // Count weekend working days (only actual work shifts, not absences)
+      if (['M','MR','M7H','M6R','M55','T','N'].includes(s)) {
         const dow = new Date(yr, mo, dayIdx + 1).getDay();
         if (dow === 0 || dow === 6) wknd++;
       }
@@ -15630,38 +15634,42 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
   const candidates = [];
 
   // Determine area of the absent worker to enforce section boundaries
-  const absentWorker = workers.find(wx => wx.id === excludeId);
-  const absentArea = absentWorker ? (absentWorker.area || 'lab') : 'lab';
-  const absentType = absentWorker ? absentWorker.type : 'enf';
+  const absentWorker = (excludeId != null && excludeId >= 0) ? workers.find(wx => wx.id === excludeId) : null;
+  const absentArea = absentWorker ? (absentWorker.area || 'lab') : null;
+  const absentType = absentWorker ? absentWorker.type : null;
+  const noTypeFilter = !absentType; // When no specific worker, return ALL types
 
   workers.forEach(w => {
-    if (w.id === excludeId) return;
+    if (excludeId != null && excludeId >= 0 && w.id === excludeId) return;
     if (w.rules && w.rules.noSwap) return;
     if (w.rules && w.rules.noCover) return;
 
     // === Lactancia protection: workers currently on lactancia cannot be used as substitutes ===
-    // Check if this worker has ANY LAC day in the current month — indicates active lactancia
     if (sch[w.id] && sch[w.id].some(s => s === 'LAC')) return;
 
     // === Baja protection: workers currently on baja cannot be pulled in for coverage ===
-    // Check if this worker has active baja (BAJ/INT/MTC) in the current month
     if (sch[w.id]) {
       const bajaDays = sch[w.id].filter(s => s === 'BAJ' || s === 'INT' || s === 'MTC').length;
-      // If more than half the month is baja, worker is on active leave — cannot cover
       const daysInMonth = sch[w.id].length;
       if (bajaDays > daysInMonth * 0.3) return;
     }
 
-    // === Category enforcement: enf covers enf, tec covers tec ===
-    if (w.type !== absentType) return;
+    // === Category enforcement: enf covers enf, tec covers tec (skip when no specific absent worker) ===
+    if (!noTypeFilter && w.type !== absentType) return;
 
     // === Section boundary enforcement (v3.1) ===
-    // Micro workers (Trinidad, Montse, Pili) CANNOT cover Lab
-    if (w.rules && w.rules.noLab && absentArea !== 'micro') return;
-    // Enfermeras CANNOT cover Micro — only Lab
-    if (w.type === 'enf' && absentArea === 'micro') return;
-    // Micro workers stay in micro: don't offer them for non-micro coverage
-    if (w.area === 'micro' && absentArea !== 'micro') return;
+    // === Section boundary enforcement (skip when no specific absent worker) ===
+    if (absentArea) {
+      // Micro workers (Trinidad, Montse, Pili) CANNOT cover Lab
+      if (w.rules && w.rules.noLab && absentArea !== 'micro') return;
+      // Enfermeras CANNOT cover Micro — only Lab
+      if (w.type === 'enf' && absentArea === 'micro') return;
+      // Micro workers stay in micro: don't offer them for non-micro coverage
+      if (w.area === 'micro' && absentArea !== 'micro') return;
+    } else {
+      // When no specific absent worker, still exclude micro from lab candidates
+      // (caller will filter by type)
+    }
 
     if (!sch[w.id]) return;
     const currentShift = sch[w.id][day] || '';
@@ -16805,7 +16813,7 @@ function guardiaCallIn(wId, shift, dayIdx, year, month) {
   const sch = genSchedule(year, month);
   if (!sch[wId]) return;
   const prev = (sch[wId][dayIdx] || '').toString().trim();
-  if (prev !== 'D' && prev !== '' && !prev) return;
+  if (prev && prev !== 'D') return; // Only allow calling in workers who are off
   // Assign worker to current shift
   const key = year + '-' + month;
   if (!scheduleData[key]) scheduleData[key] = {};
@@ -16893,10 +16901,11 @@ function getGuardiaCoverageRisk(year, month, day, sch) {
     const covReq = cov[shift] || { enf: 1, tec: 1 };
     const onShift = workers.filter(w => {
       const s = sch[w.id] ? (sch[w.id][dIdx] || '').toString().trim() : '';
-      return s === shift;
+      const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+      return eff === shift;
     });
     const enfCount = onShift.filter(w => w.type === 'enf').length;
-    const tecCount = onShift.filter(w => w.type === 'tec').length;
+    const tecCount = onShift.filter(w => w.type === 'tec' && w.area !== 'micro').length;
     const ok = enfCount >= covReq.enf && tecCount >= covReq.tec;
     const shiftLabel = shift === 'M' ? 'Mañana' : shift === 'T' ? 'Tarde' : 'Noche';
     const dayLabel = (dIdx === day - 1) ? 'Hoy' : (dIdx === day) ? 'Mañana' : new Date(year, month, dIdx + 1).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
@@ -17683,7 +17692,8 @@ function renderComparativa() {
         let have = 0;
         workers.forEach(w => {
           const s = sch[w.id] ? (sch[w.id][d] || '').toString().trim() : '';
-          if (s === shift) have++;
+          const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+          if (eff === shift && w.area !== 'micro') have++;
         });
         totalSlots += totalReq;
         totalCovered += Math.min(have, totalReq);
@@ -17860,9 +17870,10 @@ function exportWhatsApp() {
     const absences = [];
     workers.forEach(w => {
       const s = sch[w.id] ? (sch[w.id][dayIdx] || '').toString().trim() : '';
-      if (shifts[s] !== undefined) {
-        shifts[s].push(w.name.split(' ')[0]);
-      } else if (['VAC','BAJ','FOR','LAC','MTC','HS','CAA','INT'].includes(s)) {
+      const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+      if (shifts[eff] !== undefined) {
+        shifts[eff].push(w.name.split(' ')[0]);
+      } else if (['VAC','VAA','BAJ','FOR','LAC','MTC','HS','CAA','INT','LD','AE','EX','HF'].includes(s)) {
         absences.push(`${w.name.split(' ')[0]}(${s})`);
       }
     });
@@ -18173,7 +18184,7 @@ function renderSituationPanel() {
   html += renderCoverageForecast();
 
   // Heatmap
-  html += renderCoverageHeatmap();
+  html += renderGestorCoverageHeatmap();
 
   // Coverage history
   html += renderCoverageHistory();
@@ -18270,7 +18281,7 @@ function toggleCoverageHistory() {
 }
 
 // ── COVERAGE HEATMAP: Monthly risk calendar ──
-function renderCoverageHeatmap() {
+function renderGestorCoverageHeatmap() {
   const now = new Date();
   const year = gestorCalState.year;
   const month = gestorCalState.month;
