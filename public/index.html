@@ -1458,12 +1458,29 @@ table.schedule td.name-cell:hover {
   box-shadow: 0 1px 4px rgba(92,122,111,0.3);
 }
 
-/* Tab icons */
+/* Tab icons — custom SVG */
 .tab-icon {
-  font-size: 11px;
-  opacity: 0.6;
-  margin-right: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 3px;
+  vertical-align: -2px;
+  opacity: 0.55;
+  transition: opacity 0.2s;
 }
+.tab-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nav-tab.active .tab-icon { opacity: 1; }
+.nav-tab:hover .tab-icon { opacity: 0.85; }
 
 /* Mini calendar */
 .mini-cal-btn {
@@ -7121,11 +7138,15 @@ html {
   }
 
   .nav-tab .tab-icon {
-    font-size: 18px !important;
-    line-height: 1 !important;
+    width: 22px !important;
+    height: 22px !important;
     display: block !important;
     margin-bottom: 1px;
+    margin-right: 0 !important;
+    opacity: 0.5;
   }
+  .nav-tab.active .tab-icon { opacity: 1 !important; }
+  .nav-tab .tab-icon svg { stroke-width: 2; }
 
   .nav-tab.active {
     color: var(--accent) !important;
@@ -7167,7 +7188,7 @@ html {
     transition: all 0.2s ease;
   }
 
-  .nav-tab-more .tab-icon { font-size: 18px !important; }
+  .nav-tab-more .tab-icon { width: 22px !important; height: 22px !important; display: block !important; margin-bottom: 1px; margin-right: 0 !important; }
   .nav-tab-more:active { transform: scale(0.92); background: rgba(92,122,111,0.12); }
   .nav-tab-more.has-active { color: var(--accent) !important; }
 
@@ -7239,7 +7260,8 @@ html {
     min-height: 60px;
   }
 
-  .mobile-more-item .more-icon { font-size: 20px; }
+  .mobile-more-item .more-icon { font-size: 20px; display: flex; align-items: center; justify-content: center; }
+  .mobile-more-item .more-icon svg { width: 22px; height: 22px; }
   .mobile-more-item:active { transform: scale(0.93); }
   .mobile-more-item.active { background: rgba(92,122,111,0.12); color: var(--accent); font-weight: 600; }
 
@@ -9168,16 +9190,16 @@ table.schedule tbody tr:hover {
       </div>
     </div>
     <nav class="nav-tabs" role="tablist" aria-label="Navegación principal">
-      <button class="nav-tab active" data-view="dashboard" role="tab" aria-selected="true" aria-controls="panel-dashboard"><span class="tab-icon" aria-hidden="true">◉</span> Hoy</button>
-      <button class="nav-tab" data-view="schedule" role="tab" aria-selected="false" aria-controls="panel-schedule"><span class="tab-icon" aria-hidden="true">▦</span> Planilla</button>
-      <button class="nav-tab" data-view="workers" role="tab" aria-selected="false" aria-controls="panel-workers"><span class="tab-icon" aria-hidden="true">◎</span> Equipo</button>
-      <button class="nav-tab" data-view="heatmap" role="tab" aria-selected="false" aria-controls="panel-heatmap"><span class="tab-icon" aria-hidden="true">🗓️</span> Mapa</button>
-      <button class="nav-tab" data-view="incidents" role="tab" aria-selected="false" aria-controls="panel-incidents"><span class="tab-icon" aria-hidden="true">☰</span> Historial</button>
-      <button class="nav-tab" data-view="conflicts" role="tab" aria-selected="false" aria-controls="panel-conflicts"><span class="tab-icon" aria-hidden="true">△</span> Conflictos</button>
-      <button class="nav-tab" data-view="metrics" role="tab" aria-selected="false" aria-controls="panel-metrics"><span class="tab-icon" aria-hidden="true">📊</span> Métricas</button>
-      <button class="nav-tab" data-view="guardia" role="tab" aria-selected="false" aria-controls="panel-guardia"><span class="tab-icon" aria-hidden="true">🚨</span> Guardia</button>
-      <button class="nav-tab" data-view="vacaciones" role="tab" aria-selected="false" aria-controls="panel-vacaciones"><span class="tab-icon" aria-hidden="true">🏖️</span> Vacaciones</button>
-      <button class="nav-tab" data-view="import" role="tab" aria-selected="false" aria-controls="panel-import"><span class="tab-icon" aria-hidden="true">↑</span> Importar</button>
+      <button class="nav-tab active" data-view="dashboard" role="tab" aria-selected="true" aria-controls="panel-dashboard"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg></span> Hoy</button>
+      <button class="nav-tab" data-view="schedule" role="tab" aria-selected="false" aria-controls="panel-schedule"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="4" x2="9" y2="2"/><line x1="15" y1="4" x2="15" y2="2"/><line x1="8" y1="13" x2="8" y2="13.01"/><line x1="12" y1="13" x2="12" y2="13.01"/><line x1="16" y1="13" x2="16" y2="13.01"/><line x1="8" y1="17" x2="8" y2="17.01"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg></span> Planilla</button>
+      <button class="nav-tab" data-view="workers" role="tab" aria-selected="false" aria-controls="panel-workers"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3.5"/><path d="M2 20v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1"/><circle cx="18" cy="9" r="2.5"/><path d="M22 20v-.5a3.5 3.5 0 0 0-3.5-3.5h-.5"/></svg></span> Equipo</button>
+      <button class="nav-tab" data-view="heatmap" role="tab" aria-selected="false" aria-controls="panel-heatmap"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1" style="fill:currentColor;opacity:0.25;"/></svg></span> Mapa</button>
+      <button class="nav-tab" data-view="incidents" role="tab" aria-selected="false" aria-controls="panel-incidents"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9"/><polyline points="9 12 12 15 22 5"/></svg></span> Historial</button>
+      <button class="nav-tab" data-view="conflicts" role="tab" aria-selected="false" aria-controls="panel-conflicts"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3L2 20h20L12 3z"/><line x1="12" y1="9" x2="12" y2="14"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg></span> Conflictos</button>
+      <button class="nav-tab" data-view="metrics" role="tab" aria-selected="false" aria-controls="panel-metrics"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9" rx="0.5"/><rect x="10" y="7" width="4" height="14" rx="0.5"/><rect x="17" y="3" width="4" height="18" rx="0.5"/></svg></span> Métricas</button>
+      <button class="nav-tab" data-view="guardia" role="tab" aria-selected="false" aria-controls="panel-guardia"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2L4 6v6c0 5.25 3.4 10.15 8 11.4 4.6-1.25 8-6.15 8-11.4V6l-8-4z"/><path d="M9 12l2 2 4-4" style="stroke-width:2.2;"/></svg></span> Guardia</button>
+      <button class="nav-tab" data-view="vacaciones" role="tab" aria-selected="false" aria-controls="panel-vacaciones"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="5"/><path d="M5 19c0-3.87 3.13-7 7-7s7 3.13 7 7"/><line x1="12" y1="2" x2="12" y2="4" style="stroke-width:2.5;"/><line x1="7.5" y1="3.5" x2="9" y2="5" style="stroke-width:2;"/><line x1="16.5" y1="3.5" x2="15" y2="5" style="stroke-width:2;"/></svg></span> Vacaciones</button>
+      <button class="nav-tab" data-view="import" role="tab" aria-selected="false" aria-controls="panel-import"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="16"/></svg></span> Importar</button>
     </nav>
     <!-- Mobile More Menu -->
     <div class="mobile-more-menu" id="mobileMoreMenu" style="display:none;">
@@ -11794,19 +11816,57 @@ let tlFilterWorker = '';
 let tlFilterDays = 'all';
 
 function renderIncidents() {
+  // Merge incidents + shiftHistory into a unified timeline
+  const allEntries = [];
+
+  // Add manual incidents
+  incidents.forEach(inc => {
+    allEntries.push({
+      date: inc.date,
+      worker: inc.worker || '',
+      type: inc.type || 'Cambio',
+      action: inc.action || '',
+      notes: inc.notes || '',
+      source: 'incident'
+    });
+  });
+
+  // Add shift history entries (not already in incidents)
+  shiftHistory.forEach(h => {
+    const w = workers.find(x => x.id === h.wId);
+    const wName = w ? w.name : `ID ${h.wId}`;
+    const oldS = h.oldShift || 'Vacío';
+    const newS = h.newShift || 'Vacío';
+    const sourceLabel = h.source === 'manual' ? 'Cambio manual' : h.source === 'Auto-resolver' ? 'Auto-resolver' : h.source || 'Cambio';
+    allEntries.push({
+      date: h.ts,
+      worker: wName,
+      type: 'Cambio turno',
+      action: sourceLabel,
+      notes: `${oldS} → ${newS} (día ${(h.day || 0) + 1}/${(h.month || 0) + 1}/${h.year || ''})`,
+      source: 'history'
+    });
+  });
+
   // Populate worker filter
   const wSelect = document.getElementById('tlWorkerFilter');
-  if (wSelect && wSelect.options.length <= 1) {
-    const uniqueWorkers = [...new Set(incidents.map(i => i.worker))].sort();
-    uniqueWorkers.forEach(w => {
-      const opt = document.createElement('option');
-      opt.value = w;
-      opt.textContent = w;
-      wSelect.appendChild(opt);
-    });
+  if (wSelect) {
+    const currentVal = wSelect.value;
+    const uniqueWorkers = [...new Set(allEntries.map(i => i.worker).filter(Boolean))].sort();
+    // Only repopulate if worker list changed
+    if (wSelect.options.length !== uniqueWorkers.length + 1) {
+      wSelect.innerHTML = '<option value="">Todos los trabajadores</option>';
+      uniqueWorkers.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w;
+        opt.textContent = w;
+        wSelect.appendChild(opt);
+      });
+      if (currentVal) wSelect.value = currentVal;
+    }
   }
 
-  if (incidents.length === 0) {
+  if (allEntries.length === 0) {
     document.getElementById('historyTimeline').innerHTML = `
       <div style="text-align:center;padding:48px 20px;">
         <div style="font-size:48px;margin-bottom:16px;opacity:0.3;">📝</div>
@@ -11816,9 +11876,25 @@ function renderIncidents() {
     return;
   }
 
+  // Deduplicate: if same worker+date+notes exist in both sources, keep incident version
+  const seen = new Set();
+  const deduped = [];
+  // Process incidents first (priority)
+  allEntries.filter(e => e.source === 'incident').forEach(e => {
+    const key = `${e.worker}|${e.date}|${e.notes}`;
+    seen.add(key);
+    deduped.push(e);
+  });
+  allEntries.filter(e => e.source === 'history').forEach(e => {
+    const key = `${e.worker}|${e.date}|${e.notes}`;
+    if (!seen.has(key)) {
+      deduped.push(e);
+    }
+  });
+
   // Apply filters
   const now = new Date();
-  let filtered = incidents.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+  let filtered = deduped.sort((a, b) => new Date(b.date) - new Date(a.date));
 
   if (tlFilterWorker) {
     filtered = filtered.filter(i => i.worker === tlFilterWorker);
@@ -11833,36 +11909,67 @@ function renderIncidents() {
     filtered = filtered.filter(i => {
       const t = (i.type || '').toLowerCase();
       const a = (i.action || '').toLowerCase();
-      if (tlFilterType === 'coverage') return t.includes('cobertura') || t.includes('coverage');
+      if (tlFilterType === 'coverage') return t.includes('cobertura') || t.includes('coverage') || a.includes('cobertura');
       if (tlFilterType === 'shift') return t.includes('cambio') || t.includes('shift') || t.includes('turno');
       if (tlFilterType === 'absence') return t.includes('ausencia') || t.includes('parcial') || a.includes('baja') || a.includes('vac');
       return true;
     });
   }
 
-  const html = filtered.map((inc, idx) => {
-    const typeLC = (inc.type || '').toLowerCase();
-    const tlClass = typeLC.includes('cobertura') || typeLC.includes('coverage') ? 'tl-coverage' :
-                    typeLC.includes('parcial') ? 'tl-partial' :
-                    typeLC.includes('cambio') || typeLC.includes('turno') ? 'tl-shift' : 'tl-absence';
-    const typeLabel = inc.action || inc.type || 'Cambio';
-    const dateObj = new Date(inc.date);
-    const dateStr = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
-    const timeStr = dateObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  // Stats header
+  const totalCount = deduped.length;
+  const shiftCount = deduped.filter(e => (e.type || '').toLowerCase().includes('turno') || (e.type || '').toLowerCase().includes('cambio')).length;
+  const coverCount = deduped.filter(e => (e.type || '').toLowerCase().includes('cobertura') || (e.action || '').toLowerCase().includes('cobertura')).length;
+  const otherCount = totalCount - shiftCount - coverCount;
 
-    return `<div class="tl-item" style="animation-delay:${Math.min(idx * 0.03, 0.3)}s">
-      <div class="tl-item-header">
-        <div class="tl-item-worker">
-          <span class="tl-item-type ${tlClass}">${typeLabel}</span>
-          ${inc.worker}
+  let html = `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+    <div style="padding:6px 12px;background:var(--surface);border-radius:8px;box-shadow:var(--shadow);font-size:11px;">
+      <strong style="color:var(--text);font-size:16px;">${totalCount}</strong> <span style="color:var(--text3);">total</span>
+    </div>
+    <div style="padding:6px 12px;background:var(--surface);border-radius:8px;box-shadow:var(--shadow);font-size:11px;">
+      <strong style="color:#2e8b7a;font-size:16px;">${shiftCount}</strong> <span style="color:var(--text3);">cambios</span>
+    </div>
+    <div style="padding:6px 12px;background:var(--surface);border-radius:8px;box-shadow:var(--shadow);font-size:11px;">
+      <strong style="color:#4a9dd4;font-size:16px;">${coverCount}</strong> <span style="color:var(--text3);">coberturas</span>
+    </div>
+    ${otherCount > 0 ? `<div style="padding:6px 12px;background:var(--surface);border-radius:8px;box-shadow:var(--shadow);font-size:11px;">
+      <strong style="color:#e67e22;font-size:16px;">${otherCount}</strong> <span style="color:var(--text3);">otros</span>
+    </div>` : ''}
+  </div>`;
+
+  if (filtered.length === 0) {
+    html += '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px;">Sin entradas con estos filtros</div>';
+  } else {
+    html += filtered.slice(0, 100).map((inc, idx) => {
+      const typeLC = (inc.type || '').toLowerCase();
+      const actionLC = (inc.action || '').toLowerCase();
+      const tlClass = typeLC.includes('cobertura') || actionLC.includes('cobertura') || typeLC.includes('coverage') ? 'tl-coverage' :
+                      typeLC.includes('parcial') ? 'tl-partial' :
+                      typeLC.includes('cambio') || typeLC.includes('turno') ? 'tl-shift' : 'tl-absence';
+      const typeLabel = inc.action || inc.type || 'Cambio';
+      const dateObj = new Date(inc.date);
+      const isValidDate = !isNaN(dateObj.getTime());
+      const dateStr = isValidDate ? dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '';
+      const timeStr = isValidDate ? dateObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+
+      return `<div class="tl-item" style="animation-delay:${Math.min(idx * 0.03, 0.3)}s">
+        <div class="tl-item-header">
+          <div class="tl-item-worker">
+            <span class="tl-item-type ${tlClass}">${escHtml(typeLabel)}</span>
+            ${escHtml(inc.worker)}
+          </div>
+          <div class="tl-item-time">${dateStr} ${timeStr}</div>
         </div>
-        <div class="tl-item-time">${dateStr} ${timeStr}</div>
-      </div>
-      <div class="tl-item-desc">${(inc.notes || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-    </div>`;
-  }).join('');
+        <div class="tl-item-desc">${escHtml(inc.notes || '')}</div>
+      </div>`;
+    }).join('');
 
-  document.getElementById('historyTimeline').innerHTML = html || '<div class="gs-empty">Sin incidencias con estos filtros</div>';
+    if (filtered.length > 100) {
+      html += `<div style="text-align:center;padding:12px;color:var(--text3);font-size:11px;">Mostrando 100 de ${filtered.length} entradas</div>`;
+    }
+  }
+
+  document.getElementById('historyTimeline').innerHTML = html;
 }
 
 function filterTimeline(type, btn) {
@@ -12013,14 +12120,16 @@ function proposeAutoResolve(conflictId, dataStr) {
 }
 
 function findConflictSolution(data) {
-  const { year, month, day, type, shift, title } = data;
+  const { year, month, day, type, shift, title, severity } = data;
   const key = `${year}-${month}`;
   const sch = scheduleData[key];
   if (!sch) return { found: false, reason: 'No hay datos de planilla para este mes.' };
 
   if (type === 'coverage') {
     const shiftNeeded = shift || 'M';
-    const candidates = findCoverageCandidates(day, month, year, shiftNeeded, -1);
+    const result = findCoverageCandidates(day, month, year, shiftNeeded, -1, true);
+    const candidates = result.candidates;
+    const excludedWorkers = result.excluded;
     const covRules = getCoverageRules(year, month, day + 1);
 
     let mE=0,mT=0,tE=0,tT=0,nE=0,nT=0;
@@ -12045,9 +12154,11 @@ function findConflictSolution(data) {
     const allCandidates = [];
     if (shortEnf > 0) enfCandidates.forEach((c, i) => allCandidates.push({ ...c, rank: i, targetType: 'enf', needed: true }));
     if (shortTec > 0) tecCandidates.forEach((c, i) => allCandidates.push({ ...c, rank: i, targetType: 'tec', needed: true }));
-    // If only one type is short, still show other type as alternates
     if (shortEnf === 0 && enfCandidates.length > 0) enfCandidates.slice(0, 2).forEach((c, i) => allCandidates.push({ ...c, rank: i, targetType: 'enf', needed: false }));
     if (shortTec === 0 && tecCandidates.length > 0) tecCandidates.slice(0, 2).forEach((c, i) => allCandidates.push({ ...c, rank: i, targetType: 'tec', needed: false }));
+
+    // Categorize excluded workers for display
+    const exclusionSummary = categorizeExclusions(excludedWorkers);
 
     if (allCandidates.length > 0) {
       return {
@@ -12057,10 +12168,17 @@ function findConflictSolution(data) {
         shortEnf, shortTec,
         targetShift,
         year, month, day,
+        excludedWorkers: excludedWorkers.slice(0, 15),
+        exclusionSummary,
         description: allCandidates.filter(c => c.needed && c.rank === 0).map(a => `${a.w.name} → ${targetShift}`).join(', ')
       };
     }
-    return { found: false, reason: 'No hay trabajadores disponibles que cumplan las reglas de descanso.' };
+    return {
+      found: false,
+      reason: buildNoSolutionReason(excludedWorkers, shiftNeeded, day, month),
+      excludedWorkers: excludedWorkers.slice(0, 15),
+      exclusionSummary
+    };
   }
 
   if (type === 'rest' || type === 'restriction') {
@@ -12071,8 +12189,16 @@ function findConflictSolution(data) {
     if (!w) return { found: false, reason: 'Trabajador no encontrado.' };
 
     const currentShift = sch[w.id] ? sch[w.id][day] : '';
-    const candidates = findCoverageCandidates(day, month, year, currentShift, w.id);
+    // Check if current shift is immovable (shouldn't happen but guard)
+    if (IMMOVABLE_SHIFT_CODES.includes(currentShift)) {
+      return { found: false, reason: `${w.name} tiene ${IMMOVABLE_SHIFTS[currentShift]} (${currentShift}) — este turno no se puede reubicar ni intercambiar.` };
+    }
+
+    const result = findCoverageCandidates(day, month, year, currentShift, w.id, true);
+    const candidates = result.candidates;
+    const excludedWorkers = result.excluded;
     const sameType = candidates.filter(c => c.w.type === w.type && (w.area !== 'micro' || c.w.area === 'micro'));
+    const exclusionSummary = categorizeExclusions(excludedWorkers);
 
     if (sameType.length > 0) {
       return {
@@ -12084,13 +12210,67 @@ function findConflictSolution(data) {
         replacementStats: sameType[0].stats,
         originalShift: currentShift,
         year, month, day,
+        excludedWorkers: excludedWorkers.slice(0, 15),
+        exclusionSummary,
         description: `${escHtml(w.name)} → D, ${escHtml(sameType[0].w.name)} → ${currentShift}`
       };
     }
-    return { found: false, reason: `No hay ${w.type === 'enf' ? 'enfermeros' : 'tecnicos'} disponibles para cubrir el ${currentShift} de ${escHtml(w.name)}.` };
+    return {
+      found: false,
+      reason: buildNoSolutionReason(excludedWorkers, currentShift, day, month, w),
+      excludedWorkers: excludedWorkers.slice(0, 15),
+      exclusionSummary
+    };
   }
 
   return { found: false, reason: 'Este tipo de conflicto no tiene resolucion automatica.' };
+}
+
+// Categorize exclusions into groups for summary display
+function categorizeExclusions(excluded) {
+  const cats = { immovable: [], leave: [], busy: [], legal: [], rule: [], section: [], data: [] };
+  excluded.forEach(e => {
+    const cat = cats[e.category] || cats.data;
+    cat.push(e);
+  });
+  return {
+    immovable: cats.immovable,  // CJ, LD, FOR, CAA, etc. — key user concern
+    leave: cats.leave,          // BAJ, LAC, MTC, etc.
+    busy: cats.busy,            // Already working another shift
+    legal: cats.legal,          // Max nights, post-night rest, consecutive days
+    rule: cats.rule,            // noSwap, noCover, conciliacion
+    section: cats.section,      // Micro/lab boundaries
+    total: excluded.length
+  };
+}
+
+// Build an intelligent "no solution" reason explaining WHY no candidates exist
+function buildNoSolutionReason(excluded, shiftNeeded, day, month, workerToCover) {
+  const cats = categorizeExclusions(excluded);
+  const parts = [];
+
+  if (cats.immovable.length > 0) {
+    const codes = {};
+    cats.immovable.forEach(e => {
+      const match = e.reason.match(/\(([A-Z]+)\)/);
+      if (match) { codes[match[1]] = (codes[match[1]] || 0) + 1; }
+    });
+    const codeList = Object.entries(codes).map(([c, n]) => `${n} con ${IMMOVABLE_SHIFTS[c] || c} (${c})`).join(', ');
+    parts.push(codeList);
+  }
+  if (cats.leave.length > 0) parts.push(`${cats.leave.length} de baja/lactancia/IT`);
+  if (cats.busy.length > 0) parts.push(`${cats.busy.length} ya con turno asignado`);
+  if (cats.legal.length > 0) parts.push(`${cats.legal.length} excluidos por restricciones legales`);
+  if (cats.rule.length > 0) parts.push(`${cats.rule.length} con restricciones personales`);
+
+  const shiftLabel = shiftNeeded === 'M' ? 'mañana' : shiftNeeded === 'T' ? 'tarde' : 'noche';
+  const workerLabel = workerToCover ? ` de ${escHtml(workerToCover.name)}` : '';
+  let msg = `No hay trabajadores disponibles para cubrir ${shiftLabel}${workerLabel} el día ${day + 1}/${month + 1}.`;
+  if (parts.length > 0) {
+    msg += ` Motivos: ${parts.join('; ')}.`;
+  }
+  msg += ' Valorar contratación temporal o reajuste del cuadrante.';
+  return msg;
 }
 
 function renderConflictProposal(conflictId, data, solution) {
@@ -12098,9 +12278,14 @@ function renderConflictProposal(conflictId, data, solution) {
   if (!proposalDiv) return;
 
   if (!solution.found) {
+    let excHtml = '';
+    if (solution.exclusionSummary) {
+      excHtml = renderExclusionSummary(solution.exclusionSummary, solution.excludedWorkers);
+    }
     proposalDiv.innerHTML = `<div style="padding:14px;background:rgba(204,68,68,0.06);border-radius:12px;border:1px solid rgba(204,68,68,0.15);">
-      <div style="font-size:13px;font-weight:700;color:#cc4444;margin-bottom:6px;">Sin solucion automatica</div>
+      <div style="font-size:13px;font-weight:700;color:#cc4444;margin-bottom:6px;">Sin solución automática</div>
       <div style="font-size:12px;color:var(--text2);line-height:1.5;">${solution.reason}</div>
+      ${excHtml}
       <button onclick="event.stopPropagation();openGestorFromConflict()" style="margin-top:10px;padding:8px 16px;border-radius:8px;border:none;background:var(--accent);color:white;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;">
         Abrir Gestor de Cobertura
       </button>
@@ -12123,12 +12308,14 @@ function renderConflictProposal(conflictId, data, solution) {
 
   let html = `<div style="padding:16px;background:linear-gradient(135deg,rgba(39,174,96,0.04),rgba(46,139,122,0.06));border-radius:14px;border:1px solid rgba(39,174,96,0.2);margin-top:8px;">`;
 
-  // Header
+  // Header with intelligence badge
+  const totalCandidates = solution.allCandidates ? solution.allCandidates.length : (solution.allReplacements ? solution.allReplacements.length : 0);
+  const totalExcluded = solution.excludedWorkers ? solution.excludedWorkers.length : 0;
   html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">
     <div style="width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#e67e22,#d35400);display:flex;align-items:center;justify-content:center;font-size:16px;">🧠</div>
-    <div>
-      <div style="font-size:14px;font-weight:700;color:var(--text);">Plan de resolución IA</div>
-      <div style="font-size:11px;color:var(--text3);">${dayLabel} — Candidatos ordenados por idoneidad</div>
+    <div style="flex:1;">
+      <div style="font-size:14px;font-weight:700;color:var(--text);">Plan de resolución IA <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(230,126,34,0.1);color:#e67e22;font-weight:600;">v5.0</span></div>
+      <div style="font-size:11px;color:var(--text3);">${dayLabel} — ${totalCandidates} candidato${totalCandidates !== 1 ? 's' : ''} viable${totalCandidates !== 1 ? 's' : ''} · ${totalExcluded} descartado${totalExcluded !== 1 ? 's' : ''}</div>
     </div>
   </div>`;
 
@@ -12150,22 +12337,55 @@ function renderConflictProposal(conflictId, data, solution) {
       const solObj = { found: true, action: 'assign', assignments: [{ worker: c.w, shift: targetShift, type: c.w.type, stats: c.stats }], year: solution.year, month: solution.month, day: solution.day, description: c.w.name + ' → ' + targetShift };
       const solData = btoa(encodeURIComponent(JSON.stringify(solObj)));
 
+      // Confidence badge
+      const conf = c.confidence || 95;
+      const confColor = conf >= 80 ? '#27ae60' : conf >= 60 ? '#e67e22' : '#cc4444';
+      const confLabel = conf >= 80 ? 'Alta' : conf >= 60 ? 'Media' : 'Baja';
+
+      // Warnings rendering
+      let warningsHtml = '';
+      if (c.warnings && c.warnings.length > 0) {
+        warningsHtml = `<div style="margin:6px 0 8px;display:flex;flex-wrap:wrap;gap:4px;">`;
+        c.warnings.forEach(wn => {
+          const wnColor = wn.type === 'critical' ? '#cc4444' : wn.type === 'warn' ? '#e67e22' : '#4a9dd4';
+          const wnIcon = wn.type === 'critical' ? '⚠️' : wn.type === 'warn' ? '⚡' : 'ℹ️';
+          warningsHtml += `<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:${wnColor}10;color:${wnColor};font-weight:500;display:inline-flex;align-items:center;gap:2px;">${wnIcon} ${escHtml(wn.text)}</span>`;
+        });
+        warningsHtml += `</div>`;
+      }
+
+      // Annual hours bar
+      const ap = c.annualPct || 0;
+      const apColor = ap > 100 ? '#cc4444' : ap > 95 ? '#e67e22' : ap > 85 ? '#c5a832' : '#27ae60';
+      const annualBar = ap > 0 ? `<div style="margin:4px 0 6px;">
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-bottom:2px;">
+          <span>Horas anuales</span><span style="color:${apColor};font-weight:600;">${Math.round(ap)}% de ${RULES.ANNUAL_HOURS}h</span>
+        </div>
+        <div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:${Math.min(100, ap)}%;background:${apColor};border-radius:2px;transition:width 0.3s;"></div>
+        </div>
+      </div>` : '';
+
       html += `<div style="padding:12px;background:var(--surface);border-radius:10px;margin-bottom:8px;border:${isRecommended ? '2px solid #27ae60' : '1px solid var(--border)'};">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
           ${isRecommended ? '<span style="font-size:9px;padding:2px 8px;border-radius:6px;background:#27ae60;color:white;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Recomendado</span>' : '<span style="font-size:9px;padding:2px 8px;border-radius:6px;background:var(--surface2);color:var(--text3);font-weight:600;">Opción ' + (i + 1) + '</span>'}
           <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${c.w.type === 'enf' ? 'rgba(204,68,68,0.1);color:#cc4444' : 'rgba(74,157,212,0.1);color:#4a9dd4'};font-weight:600;">${c.w.type === 'enf' ? 'ENF' : 'TEC'}</span>
+          <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:${confColor}15;color:${confColor};font-weight:600;margin-left:auto;">Confianza: ${confLabel} (${conf}%)</span>
         </div>
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;">${escHtml(c.w.name)}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">${escHtml(c.w.name)}</div>
+        ${warningsHtml}
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:12px;">
           <span style="padding:3px 10px;border-radius:6px;background:var(--surface2);color:var(--text2);">${currentShiftLabel}</span>
           <span style="color:var(--text3);">→</span>
           <span style="padding:3px 10px;border-radius:6px;background:${shColor}20;color:${shColor};font-weight:700;">${targetShift}</span>
         </div>
-        <div style="display:flex;gap:12px;font-size:11px;color:var(--text2);margin-bottom:10px;">
+        <div style="display:flex;gap:12px;font-size:11px;color:var(--text2);margin-bottom:6px;">
           <span>Noches: <strong style="color:${nightDiff <= 0 ? '#27ae60' : nightDiff <= 2 ? '#e67e22' : '#cc4444'};">${c.stats.n}</strong> <span style="font-size:10px;color:var(--text3);">(avg ${avgN.toFixed(1)})</span></span>
           <span>Horas: <strong style="color:${hourDiff <= 0 ? '#27ae60' : '#e67e22'};">${c.stats.h}</strong> <span style="font-size:10px;color:var(--text3);">(avg ${avgH.toFixed(0)})</span></span>
           <span>Fds: <strong>${c.stats.wknd}</strong></span>
+          <span>Racha: <strong style="color:${c.consecutiveDays >= 4 ? '#cc4444' : c.consecutiveDays >= 3 ? '#e67e22' : 'var(--text)'};">${c.consecutiveDays || 0}d</strong></span>
         </div>
+        ${annualBar}
         ${renderTimeline(c.w.id, solution.year, solution.month, solution.day + 1)}
         <button onclick="event.stopPropagation();applyConflictSolution('${conflictId}','${solData}')"
           style="width:100%;margin-top:10px;padding:10px;border-radius:10px;border:none;background:${isRecommended ? '#27ae60' : 'var(--accent)'};color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.2s;">
@@ -12191,16 +12411,47 @@ function renderConflictProposal(conflictId, data, solution) {
       const solObj = { found: true, action: solution.action, worker: solution.worker, replacement: c.w, replacementStats: c.stats, originalShift: solution.originalShift, year: solution.year, month: solution.month, day: solution.day, description: solution.worker.name + ' → D, ' + c.w.name + ' → ' + solution.originalShift };
       const solData = btoa(encodeURIComponent(JSON.stringify(solObj)));
 
+      // Confidence & warnings
+      const conf = c.confidence || 95;
+      const confColor = conf >= 80 ? '#27ae60' : conf >= 60 ? '#e67e22' : '#cc4444';
+      const confLabel = conf >= 80 ? 'Alta' : conf >= 60 ? 'Media' : 'Baja';
+
+      let warningsHtml = '';
+      if (c.warnings && c.warnings.length > 0) {
+        warningsHtml = `<div style="margin:4px 0 6px;display:flex;flex-wrap:wrap;gap:4px;">`;
+        c.warnings.forEach(wn => {
+          const wnColor = wn.type === 'critical' ? '#cc4444' : wn.type === 'warn' ? '#e67e22' : '#4a9dd4';
+          const wnIcon = wn.type === 'critical' ? '⚠️' : wn.type === 'warn' ? '⚡' : 'ℹ️';
+          warningsHtml += `<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:${wnColor}10;color:${wnColor};font-weight:500;display:inline-flex;align-items:center;gap:2px;">${wnIcon} ${escHtml(wn.text)}</span>`;
+        });
+        warningsHtml += `</div>`;
+      }
+
+      const ap = c.annualPct || 0;
+      const apColor = ap > 100 ? '#cc4444' : ap > 95 ? '#e67e22' : ap > 85 ? '#c5a832' : '#27ae60';
+      const annualBar = ap > 0 ? `<div style="margin:4px 0 6px;">
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-bottom:2px;">
+          <span>Horas anuales</span><span style="color:${apColor};font-weight:600;">${Math.round(ap)}%</span>
+        </div>
+        <div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:${Math.min(100, ap)}%;background:${apColor};border-radius:2px;"></div>
+        </div>
+      </div>` : '';
+
       html += `<div style="padding:12px;background:var(--surface);border-radius:10px;margin-bottom:8px;border:${isRecommended ? '2px solid #27ae60' : '1px solid var(--border)'};">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
           ${isRecommended ? '<span style="font-size:9px;padding:2px 8px;border-radius:6px;background:#27ae60;color:white;font-weight:700;">Recomendado</span>' : '<span style="font-size:9px;padding:2px 8px;border-radius:6px;background:var(--surface2);color:var(--text3);font-weight:600;">Opción ' + (i + 1) + '</span>'}
+          <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:${confColor}15;color:${confColor};font-weight:600;margin-left:auto;">Confianza: ${confLabel}</span>
         </div>
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;">${escHtml(c.w.name)}</div>
-        <div style="display:flex;gap:12px;font-size:11px;color:var(--text2);margin-bottom:8px;">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">${escHtml(c.w.name)}</div>
+        ${warningsHtml}
+        <div style="display:flex;gap:12px;font-size:11px;color:var(--text2);margin-bottom:6px;">
           <span>Noches: <strong style="color:${nightDiff <= 0 ? '#27ae60' : '#e67e22'};">${c.stats.n}</strong></span>
           <span>Horas: <strong>${c.stats.h}</strong></span>
           <span>Fds: <strong>${c.stats.wknd}</strong></span>
+          <span>Racha: <strong>${c.consecutiveDays || 0}d</strong></span>
         </div>
+        ${annualBar}
         ${renderTimeline(c.w.id, solution.year, solution.month, solution.day + 1)}
         <button onclick="event.stopPropagation();applyConflictSolution('${conflictId}','${solData}')"
           style="width:100%;margin-top:10px;padding:10px;border-radius:10px;border:none;background:${isRecommended ? '#27ae60' : 'var(--accent)'};color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;">
@@ -12208,6 +12459,11 @@ function renderConflictProposal(conflictId, data, solution) {
         </button>
       </div>`;
     });
+  }
+
+  // Exclusion summary section (collapsible)
+  if (solution.excludedWorkers && solution.excludedWorkers.length > 0) {
+    html += renderExclusionSummary(solution.exclusionSummary, solution.excludedWorkers);
   }
 
   html += `<div style="text-align:center;margin-top:8px;">
@@ -12286,6 +12542,45 @@ function applyConflictSolution(conflictId, solutionData) {
 
   // Re-render conflicts after a short delay to show the updated list
   setTimeout(() => renderConflicts(), 1500);
+}
+
+// Render exclusion summary for the AI proposal panel
+function renderExclusionSummary(summary, excludedList) {
+  if (!summary || summary.total === 0) return '';
+  const uid = 'exc_' + Math.random().toString(36).slice(2, 8);
+
+  // Summary chips
+  const chips = [];
+  const catIcons = { immovable: '🔒', leave: '🏥', busy: '⏰', legal: '⚖️', rule: '🚫', section: '🏢' };
+  const catLabels = { immovable: 'Permisos/cómputos', leave: 'Bajas/IT', busy: 'Con turno', legal: 'Restricción legal', rule: 'Regla personal', section: 'Sección' };
+
+  ['immovable','leave','busy','legal','rule','section'].forEach(cat => {
+    if (summary[cat] && summary[cat].length > 0) {
+      chips.push(`<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:var(--surface2);color:var(--text2);display:inline-flex;align-items:center;gap:3px;">${catIcons[cat]} ${catLabels[cat]}: <strong>${summary[cat].length}</strong></span>`);
+    }
+  });
+
+  // Detailed list (collapsible)
+  let detailRows = '';
+  (excludedList || []).forEach(e => {
+    const catIcon = catIcons[e.category] || '❓';
+    detailRows += `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px;">
+      <span>${catIcon}</span>
+      <span style="font-weight:600;color:var(--text);min-width:80px;">${escHtml(e.w.name)}</span>
+      <span style="color:var(--text3);flex:1;">${escHtml(e.reason)}</span>
+    </div>`;
+  });
+
+  return `<div style="margin-top:12px;padding:10px 12px;background:var(--surface);border-radius:10px;border:1px dashed var(--border);">
+    <div onclick="(function(){var d=document.getElementById('${uid}');d.style.display=d.style.display==='none'?'block':'none';})()" style="cursor:pointer;display:flex;align-items:center;gap:6px;">
+      <span style="font-size:11px;font-weight:600;color:var(--text2);">Por qué se descartaron ${summary.total} trabajadores</span>
+      <span style="font-size:10px;color:var(--text3);">▼</span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">${chips.join('')}</div>
+    <div id="${uid}" style="display:none;margin-top:8px;max-height:200px;overflow-y:auto;">
+      ${detailRows}
+    </div>
+  </div>`;
 }
 
 function dismissConflictProposal(conflictId) {
@@ -12416,7 +12711,7 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
   // Create "More" button
   const moreBtn = document.createElement('button');
   moreBtn.className = 'nav-tab-more';
-  moreBtn.innerHTML = '<span class="tab-icon">⋯</span> Más';
+  moreBtn.innerHTML = '<span class="tab-icon"><svg viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></span> Más';
   moreBtn.style.display = 'none';
   moreBtn.addEventListener('click', openMobileMore);
   navTabs.appendChild(moreBtn);
@@ -12431,15 +12726,23 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
     if (!menu || !grid) return;
 
     grid.innerHTML = '';
-    const icons = { heatmap: '🗓️', incidents: '☰', conflicts: '△', metrics: '📊', import: '↑' };
-    const labels = { heatmap: 'Mapa', incidents: 'Historial', conflicts: 'Conflictos', metrics: 'Métricas', import: 'Importar' };
+    const svgIcons = {
+      heatmap: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" opacity="0.25"/></svg>',
+      incidents: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9"/><polyline points="9 12 12 15 22 5"/></svg>',
+      conflicts: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 20h20L12 3z"/><line x1="12" y1="9" x2="12" y2="14"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg>',
+      metrics: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="0.5"/><rect x="10" y="7" width="4" height="14" rx="0.5"/><rect x="17" y="3" width="4" height="18" rx="0.5"/></svg>',
+      guardia: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v6c0 5.25 3.4 10.15 8 11.4 4.6-1.25 8-6.15 8-11.4V6l-8-4z"/><path d="M9 12l2 2 4-4" stroke-width="2.2"/></svg>',
+      vacaciones: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="5"/><path d="M5 19c0-3.87 3.13-7 7-7s7 3.13 7 7"/><line x1="12" y1="2" x2="12" y2="4" stroke-width="2.5"/><line x1="7.5" y1="3.5" x2="9" y2="5" stroke-width="2"/><line x1="16.5" y1="3.5" x2="15" y2="5" stroke-width="2"/></svg>',
+      import: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="16"/></svg>'
+    };
+    const labels = { heatmap: 'Mapa', incidents: 'Historial', conflicts: 'Conflictos', metrics: 'Métricas', guardia: 'Guardia', vacaciones: 'Vacaciones', import: 'Importar' };
 
     hiddenTabs.forEach(tab => {
       const view = tab.dataset.view;
       const isActive = tab.classList.contains('active');
       const btn = document.createElement('button');
       btn.className = 'mobile-more-item' + (isActive ? ' active' : '');
-      btn.innerHTML = `<span class="more-icon">${icons[view] || '◎'}</span>${labels[view] || view}`;
+      btn.innerHTML = `<span class="more-icon">${svgIcons[view] || '◎'}</span>${labels[view] || view}`;
       btn.addEventListener('click', () => {
         closeMobileMore();
         switchView(view);
@@ -15626,12 +15929,149 @@ function calculatePlanConfidence(plan, daysNeedingCoverage) {
 }
 
 
-// Find available workers for a specific day+shift, ranked by suitability
-function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
+// ===============================================================
+// NON-MOVABLE SHIFT CODES — permissions, leaves, computos that
+// cannot be relocated to cover a gap. Workers with these on a
+// given day are UNAVAILABLE and their shifts cannot be changed.
+// ===============================================================
+const IMMOVABLE_SHIFTS = {
+  'VAC': 'Vacaciones',
+  'VAA': 'Vacaciones antigüedad',
+  'VAN': 'Vacaciones navidad',
+  'BAJ': 'Baja médica',
+  'LD':  'Libre disposición',
+  'LAC': 'Lactancia',
+  'FOR': 'Formación',
+  'CAA': 'Comisión / asuntos propios',
+  'AE':  'Asuntos especiales',
+  'EX':  'Excedencia',
+  'MTC': 'Maternidad/paternidad',
+  'INT': 'Interinidad',
+  'HF':  'Horas de formación',
+  'HS':  'Horas sindicales',
+  'DLA': 'Día libre adicional',
+  'CJ':  'Cómputo jornada',
+  'FN':  'Festivo no recuperable',
+  'IQF': 'Incapacidad temporal',
+  'PM':  'Permiso maternidad'
+};
+const IMMOVABLE_SHIFT_CODES = Object.keys(IMMOVABLE_SHIFTS);
+
+// Classify why a worker is excluded from coverage candidacy
+// Returns { excluded: true/false, reason: string, category: string }
+function classifyWorkerExclusion(w, day, month, year, shiftNeeded, excludeId, absentType, absentArea) {
   const key = `${year}-${month}`;
   const sch = scheduleData[key];
-  if (!sch) return [];
+  if (!sch) return { excluded: true, reason: 'Sin datos de planilla', category: 'data' };
+
+  // Self-exclusion
+  if (excludeId != null && excludeId >= 0 && w.id === excludeId) return { excluded: true, reason: 'Es el trabajador ausente', category: 'self' };
+
+  // Rule-based exclusions
+  if (w.rules && w.rules.noSwap) return { excluded: true, reason: 'Marcado como no intercambiable (noSwap)', category: 'rule' };
+  if (w.rules && w.rules.noCover) return { excluded: true, reason: 'Excluido de coberturas (noCover)', category: 'rule' };
+
+  // Lactancia — entire month exclusion
+  if (sch[w.id] && sch[w.id].some(s => s === 'LAC'))
+    return { excluded: true, reason: 'En período de lactancia', category: 'leave' };
+
+  // Extended baja
+  if (sch[w.id]) {
+    const bajaDays = sch[w.id].filter(s => s === 'BAJ' || s === 'INT' || s === 'MTC').length;
+    const daysInMonth = sch[w.id].length;
+    if (bajaDays > daysInMonth * 0.3)
+      return { excluded: true, reason: `De baja/IT ${bajaDays} de ${daysInMonth} días del mes`, category: 'leave' };
+  }
+
+  // Type mismatch
+  const noTypeFilter = !absentType;
+  if (!noTypeFilter && w.type !== absentType)
+    return { excluded: true, reason: `Categoría ${w.type === 'enf' ? 'enfermería' : 'técnico'} ≠ ${absentType === 'enf' ? 'enfermería' : 'técnico'}`, category: 'type' };
+
+  // Section boundaries
+  if (absentArea) {
+    if (w.rules && w.rules.noLab && absentArea !== 'micro')
+      return { excluded: true, reason: 'No puede cubrir laboratorio (noLab)', category: 'section' };
+    if (w.type === 'enf' && absentArea === 'micro')
+      return { excluded: true, reason: 'Enfermería no cubre microbiología', category: 'section' };
+    if (w.area === 'micro' && absentArea !== 'micro')
+      return { excluded: true, reason: 'Personal micro no cubre laboratorio', category: 'section' };
+  }
+
+  if (!sch[w.id]) return { excluded: true, reason: 'Sin horario asignado', category: 'data' };
+
+  // === CRITICAL: Check what shift worker has that day ===
+  const currentShift = (sch[w.id][day] || '').toString().trim();
+
+  // Check immovable shifts (permissions, leaves, computos)
+  if (IMMOVABLE_SHIFT_CODES.includes(currentShift)) {
+    return { excluded: true, reason: `${IMMOVABLE_SHIFTS[currentShift]} (${currentShift}) — no reubicable`, category: 'immovable' };
+  }
+
+  // Worker is already working a DIFFERENT shift — can't double-assign
+  const isOff = !currentShift || currentShift === '' || currentShift === 'D';
+  if (!isOff) {
+    const effCurrent = ['MR','M7H','M6R','M55'].includes(currentShift) ? 'M' : currentShift;
+    return { excluded: true, reason: `Ya tiene turno ${currentShift} asignado`, category: 'busy' };
+  }
+
+  // Night-specific rules
+  if (shiftNeeded === 'N') {
+    if (w.rules && w.rules.noNights)
+      return { excluded: true, reason: 'Exento de noches (noNights)', category: 'rule' };
+    if (w.rules && w.rules.maxNightsPerMonth !== null && w.rules.maxNightsPerMonth !== undefined) {
+      const monthNights = sch[w.id].filter(s => (s || '').toString().trim() === 'N').length;
+      if (monthNights >= w.rules.maxNightsPerMonth)
+        return { excluded: true, reason: `Máx noches/mes alcanzado (${monthNights}/${w.rules.maxNightsPerMonth})`, category: 'legal' };
+    }
+    const consecN = getConsecutiveNights(w.id, day, month, year);
+    if (consecN >= 2)
+      return { excluded: true, reason: `Llevaría ${consecN + 1} noches consecutivas (máx ${RULES.MAX_CONSECUTIVE_NIGHTS})`, category: 'legal' };
+  }
+
+  // Post-night rest: if worker had N yesterday, can't do M or T today
+  if (day > 0 && (sch[w.id][day - 1] || '').toString().trim() === 'N') {
+    if (shiftNeeded !== 'N')
+      return { excluded: true, reason: 'Descanso obligatorio post-noche (tuvo N ayer)', category: 'legal' };
+  }
+
+  // canAssignShift covers remaining edge cases (N→M next day, etc.)
+  if (!canAssignShift(w.id, day, shiftNeeded, sch)) {
+    return { excluded: true, reason: 'Violación de reglas de descanso o combinación prohibida', category: 'legal' };
+  }
+
+  // === LEGAL CHECKS: Annual hours proximity ===
+  const stats = getWorkerStats(w.id);
+  const shiftH = RULES.SHIFT_HOURS[shiftNeeded] || 7;
+  const monthsWorked = Object.keys(scheduleData).filter(k => {
+    const s = scheduleData[k]; return s && s[w.id] && s[w.id].some(x => x && x !== '' && x !== 'D');
+  }).length || 1;
+  const projectedAnnual = (stats.h / monthsWorked) * 12;
+  if (projectedAnnual + shiftH > RULES.ANNUAL_HOURS * 1.05) {
+    // Not a hard exclusion but flagged — will be scored heavily
+  }
+
+  // === Consecutive work days check ===
+  const consec = getConsecutiveWorkDays(w.id, day, month, year);
+  if (consec.streak >= 6) {
+    return { excluded: true, reason: `Lleva ${consec.streak} días consecutivos trabajando (máx recomendado: 6)`, category: 'legal' };
+  }
+
+  // Conciliacion: can't assign nights or certain shifts
+  if (w.rules && w.rules.conciliacion && shiftNeeded === 'N')
+    return { excluded: true, reason: 'Conciliación familiar: no puede hacer noches', category: 'rule' };
+
+  return { excluded: false };
+}
+
+// Find available workers for a specific day+shift, ranked by suitability
+// Returns { candidates: [], excluded: [] } when returnExcluded=true, otherwise just sorted array
+function findCoverageCandidates(day, month, year, shiftNeeded, excludeId, returnExcluded) {
+  const key = `${year}-${month}`;
+  const sch = scheduleData[key];
+  if (!sch) return returnExcluded ? { candidates: [], excluded: [] } : [];
   const candidates = [];
+  const excluded = [];
 
   // Determine area of the absent worker to enforce section boundaries
   const absentWorker = (excludeId != null && excludeId >= 0) ? workers.find(wx => wx.id === excludeId) : null;
@@ -15640,66 +16080,29 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
   const noTypeFilter = !absentType; // When no specific worker, return ALL types
 
   workers.forEach(w => {
-    if (excludeId != null && excludeId >= 0 && w.id === excludeId) return;
-    if (w.rules && w.rules.noSwap) return;
-    if (w.rules && w.rules.noCover) return;
-
-    // === Lactancia protection: workers currently on lactancia cannot be used as substitutes ===
-    if (sch[w.id] && sch[w.id].some(s => s === 'LAC')) return;
-
-    // === Baja protection: workers currently on baja cannot be pulled in for coverage ===
-    if (sch[w.id]) {
-      const bajaDays = sch[w.id].filter(s => s === 'BAJ' || s === 'INT' || s === 'MTC').length;
-      const daysInMonth = sch[w.id].length;
-      if (bajaDays > daysInMonth * 0.3) return;
+    // === Use unified exclusion classifier ===
+    const exclusion = classifyWorkerExclusion(w, day, month, year, shiftNeeded, excludeId, absentType, absentArea);
+    if (exclusion.excluded) {
+      if (returnExcluded && exclusion.category !== 'self' && exclusion.category !== 'type') {
+        excluded.push({ w, reason: exclusion.reason, category: exclusion.category });
+      }
+      return;
     }
 
-    // === Category enforcement: enf covers enf, tec covers tec (skip when no specific absent worker) ===
-    if (!noTypeFilter && w.type !== absentType) return;
-
-    // === Section boundary enforcement (v3.1) ===
-    // === Section boundary enforcement (skip when no specific absent worker) ===
-    if (absentArea) {
-      // Micro workers (Trinidad, Montse, Pili) CANNOT cover Lab
-      if (w.rules && w.rules.noLab && absentArea !== 'micro') return;
-      // Enfermeras CANNOT cover Micro — only Lab
-      if (w.type === 'enf' && absentArea === 'micro') return;
-      // Micro workers stay in micro: don't offer them for non-micro coverage
-      if (w.area === 'micro' && absentArea !== 'micro') return;
-    } else {
-      // When no specific absent worker, still exclude micro from lab candidates
-      // (caller will filter by type)
-    }
-
-    if (!sch[w.id]) return;
     const currentShift = sch[w.id][day] || '';
-    // Only consider workers who are off (D) or unassigned — exclude VAC, BAJ, LD, LAC, FOR, etc.
-    const unavailableShifts = ['VAC','VAA','VAN','BAJ','LD','LAC','FOR','CAA','AE','EX','MTC','INT','HF','HS','DLA','CJ','FN','IQF','PM'];
-    if (unavailableShifts.includes(currentShift)) return;
-    const isOff = !currentShift || currentShift === '' || currentShift === 'D';
-    if (!isOff) return;
 
-    if (!canAssignShift(w.id, day, shiftNeeded, sch)) return;
-
-    // --- AI Engine v3.0: Enhanced scoring ---
+    // --- AI Engine v5.0: Enhanced scoring with legal awareness ---
     let score = 0;
     const scoreBreakdown = [];
+    const warnings = []; // Legal/operational warnings
 
-    // === Harden night rules (v3.1) ===
+    // === Night rules scoring ===
     if (shiftNeeded === 'N') {
       const consecN = getConsecutiveNights(w.id, day, month, year);
       if (consecN === 1) {
         scoreBreakdown.push('Llegaría a 2N consecutivas');
         score += 5;
-      } else if (consecN >= 2) {
-        return;
-      }
-    }
-
-    // HARD FILTER: If worker had N the day before, they can ONLY be offered N shifts
-    if (day > 0 && (sch[w.id][day - 1] || '').toString().trim() === 'N') {
-      if (shiftNeeded !== 'N') {
-        return;
+        warnings.push({ type: 'caution', text: '2ª noche consecutiva' });
       }
     }
 
@@ -15718,52 +16121,54 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
     else if (nightDiff < -1) scoreBreakdown.push(`${nightDiff.toFixed(1)} noches (por debajo)`);
 
     // (2) Overload penalties
-    if (stats.n > avgN * 1.2) { score += 10; scoreBreakdown.push('Sobrecargado noches'); }
-    if (stats.h > avgH * (analysis ? analysis.numMonths : 1) * 1.1) { score += 5; scoreBreakdown.push('Sobrecargado horas'); }
+    if (stats.n > avgN * 1.2) { score += 10; scoreBreakdown.push('Sobrecargado noches'); warnings.push({ type: 'warn', text: 'Noches por encima del 120% media' }); }
+    if (stats.h > avgH * (analysis ? analysis.numMonths : 1) * 1.1) { score += 5; scoreBreakdown.push('Sobrecargado horas'); warnings.push({ type: 'warn', text: 'Horas por encima del 110% media' }); }
 
-    // (3) Weekend equity — NEW in v3.0
+    // (3) Weekend equity
     const wkndDiff = stats.wknd - avgWknd;
     if (wkndDiff > 1) { score += wkndDiff * 2; scoreBreakdown.push(`+${wkndDiff.toFixed(0)} fds vs media`); }
     else if (wkndDiff < -1) { score -= 2; scoreBreakdown.push(`Menos fds que media`); }
     const targetDate = new Date(year, month, day + 1);
     const isWeekend = targetDate.getDay() === 0 || targetDate.getDay() === 6;
-    if (isWeekend && wkndDiff > 2) { score += 6; scoreBreakdown.push('Ya muchos fds'); }
+    if (isWeekend && wkndDiff > 2) { score += 6; scoreBreakdown.push('Ya muchos fds'); warnings.push({ type: 'warn', text: 'Muchos fines de semana acumulados' }); }
 
-    // (4) Consecutive days penalty — NEW in v3.0
+    // (4) Consecutive days penalty
     const consec = getConsecutiveWorkDays(w.id, day, month, year);
-    if (consec.streak >= 5) { score += 15; scoreBreakdown.push(`Racha ${consec.streak} dias`); }
-    else if (consec.streak >= 4) { score += 8; scoreBreakdown.push(`Racha ${consec.streak} dias`); }
+    if (consec.streak >= 5) { score += 15; scoreBreakdown.push(`Racha ${consec.streak} dias`); warnings.push({ type: 'critical', text: `${consec.streak} días consecutivos — al límite legal` }); }
+    else if (consec.streak >= 4) { score += 8; scoreBreakdown.push(`Racha ${consec.streak} dias`); warnings.push({ type: 'warn', text: `${consec.streak} días consecutivos` }); }
     else if (consec.streak >= 3) { score += 3; }
     if (consec.streak === 0) { score -= 2; scoreBreakdown.push('Viene de descanso'); }
 
-    // (5) Historical extras penalty — NEW in v3.0
+    // (5) Historical extras penalty
     const extras = getExtraCoverageCount(w.id, 3);
-    if (extras >= 4) { score += 10; scoreBreakdown.push(`${extras} extras (3 meses)`); }
+    if (extras >= 4) { score += 10; scoreBreakdown.push(`${extras} extras (3 meses)`); warnings.push({ type: 'warn', text: `${extras} coberturas extra en 3 meses` }); }
     else if (extras >= 2) { score += extras * 2; scoreBreakdown.push(`${extras} extras recientes`); }
     else if (extras === 0) { score -= 1; scoreBreakdown.push('Sin extras previas'); }
 
     // (6) Conciliacion preference
-    if (w.rules && w.rules.conciliacion) { score += 8; scoreBreakdown.push('Conciliacion'); }
+    if (w.rules && w.rules.conciliacion) { score += 8; scoreBreakdown.push('Conciliacion'); warnings.push({ type: 'caution', text: 'Tiene conciliación familiar' }); }
 
-    // (6b) Shift preference bonus — NEW
+    // (6b) Shift preference bonus
     const effShiftNeeded = ['MR','M7H','M6R','M55'].includes(shiftNeeded) ? 'M' : shiftNeeded;
     if (w.rules.preferredShift) {
       if (w.rules.preferredShift === effShiftNeeded) { score -= 3; scoreBreakdown.push('Turno preferido'); }
       else { score += 2; scoreBreakdown.push('No es su turno preferido'); }
     }
 
-    // (7) Future impact preview — NEW in v3.0
+    // (7) Future impact preview
     const impact = simulateFutureImpact(w.id, day, month, year, shiftNeeded);
     if (impact.impactScore > 0) {
       score += impact.impactScore;
       scoreBreakdown.push(`Impacto futuro: ${impact.details.length} dia(s)`);
+      if (impact.impactScore >= 5) warnings.push({ type: 'warn', text: `Impacta cobertura futura (${impact.details.length} días)` });
     }
 
-    // (8) Accumulated fatigue — 6-week lookback — NEW in v4.0
+    // (8) Accumulated fatigue — 6-week lookback
     const fatigue = getAccumulatedFatigue(w.id, day, month, year);
     if (fatigue.fatigueScore >= 70) {
       score += 15;
       scoreBreakdown.push(`Fatiga alta (${fatigue.fatigueScore}%): ${fatigue.totalNights}N en 6 sem`);
+      warnings.push({ type: 'critical', text: `Fatiga alta — ${fatigue.totalNights} noches en 6 semanas` });
     } else if (fatigue.fatigueScore >= 45) {
       score += 7;
       scoreBreakdown.push(`Fatiga media (${fatigue.fatigueScore}%): ${fatigue.nightsPerWeek}N/sem`);
@@ -15771,17 +16176,17 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
       score -= 3;
       scoreBreakdown.push(`Fatiga baja (${fatigue.fatigueScore}%) — descansado`);
     }
-    // Extra penalty for recent night intensity
     if (fatigue.nightsLast2Weeks >= 4) {
       score += 8;
       scoreBreakdown.push(`${fatigue.nightsLast2Weeks}N en ultimas 2 sem`);
     }
 
-    // (9) MEJORA 1+4: Multi-month equity — 3-month fairness tracking
+    // (9) Multi-month equity — 3-month fairness tracking
     const equity3m = getMultiMonthEquity(w.id, month, year);
     if (equity3m.isChronicallyOverloaded) {
       score += 12;
       scoreBreakdown.push(`Sobrecargado 3 meses: +${equity3m.nightDiff3m.toFixed(1)}N, +${equity3m.hourDiff3m.toFixed(0)}h vs media`);
+      warnings.push({ type: 'critical', text: 'Crónicamente sobrecargado (3 meses)' });
     } else if (equity3m.isChronicallyUnderloaded) {
       score -= 8;
       scoreBreakdown.push(`Infracargado 3 meses: ${equity3m.nightDiff3m.toFixed(1)}N vs media — candidato ideal`);
@@ -15793,8 +16198,44 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
       scoreBreakdown.push(`${equity3m.nightDiff3m.toFixed(1)}N menos que media 3m`);
     }
 
+    // (10) NEW v5.0: Annual hours proximity check
+    const shiftH = RULES.SHIFT_HOURS[shiftNeeded] || 7;
+    const monthsWorked = Object.keys(scheduleData).filter(k => {
+      const sd = scheduleData[k]; return sd && sd[w.id] && sd[w.id].some(x => x && x !== '' && x !== 'D');
+    }).length || 1;
+    const projectedAnnual = (stats.h / Math.max(monthsWorked, 1)) * 12;
+    const annualPct = (projectedAnnual / RULES.ANNUAL_HOURS) * 100;
+    if (annualPct > 100) {
+      score += 20;
+      scoreBreakdown.push(`Proyección anual ${Math.round(projectedAnnual)}h/${RULES.ANNUAL_HOURS}h (${annualPct.toFixed(0)}%)`);
+      warnings.push({ type: 'critical', text: `Superaría las ${RULES.ANNUAL_HOURS}h anuales` });
+    } else if (annualPct > 95) {
+      score += 10;
+      scoreBreakdown.push(`Cerca del límite anual (${annualPct.toFixed(0)}%)`);
+      warnings.push({ type: 'warn', text: `Al ${annualPct.toFixed(0)}% del límite anual de horas` });
+    } else if (annualPct < 80) {
+      score -= 3;
+      scoreBreakdown.push(`Holgura anual (${annualPct.toFixed(0)}%)`);
+    }
+
+    // (11) NEW v5.0: Forbidden combinations check (N→M, T→M next day conflicts)
+    const combWarnings = detectForbiddenCombinations(w.id, day, shiftNeeded, month, year);
+    if (combWarnings.length > 0) {
+      combWarnings.forEach(cw => {
+        score += cw.type === 'forbidden' ? 50 : 5;
+        warnings.push({ type: cw.type === 'forbidden' ? 'critical' : 'caution', text: cw.desc });
+      });
+    }
+
+    // Calculate confidence: 0-100 based on how "safe" this candidate is
+    const maxWarningLevel = warnings.reduce((max, wn) => {
+      const levels = { critical: 3, warn: 2, caution: 1 };
+      return Math.max(max, levels[wn.type] || 0);
+    }, 0);
+    const confidence = maxWarningLevel >= 3 ? 40 : maxWarningLevel >= 2 ? 65 : maxWarningLevel >= 1 ? 80 : 95;
+
     candidates.push({
-      w, currentShift, stats, score, scoreBreakdown, equity3m,
+      w, currentShift, stats, score, scoreBreakdown, equity3m, warnings, confidence,
       reason: currentShift === 'D' ? 'Descanso' : 'Libre',
       nightsVsAvg: (stats.n - avgN).toFixed(1),
       hoursVsAvg: (stats.h - avgH).toFixed(0),
@@ -15802,11 +16243,16 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId) {
       consecutiveDays: consec.streak,
       extrasCoverage: extras,
       futureImpact: impact,
-      fatigue: fatigue
+      fatigue: fatigue,
+      annualPct: annualPct
     });
   });
 
-  return candidates.sort((a, b) => a.score - b.score);
+  const sorted = candidates.sort((a, b) => a.score - b.score);
+  if (returnExcluded) {
+    return { candidates: sorted, excluded };
+  }
+  return sorted;
 }
 
 // Validate if swapping two workers on a given day is feasible
