@@ -6223,6 +6223,194 @@ table.schedule th.month-total-header {
   color: var(--text);
 }
 
+/* LIVE SHIFT CLOCK */
+.shift-clock {
+  background: linear-gradient(135deg, rgba(46,139,122,0.08) 0%, rgba(41,128,185,0.08) 100%);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.shift-clock::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), #2980b9, var(--accent));
+  background-size: 200% 100%;
+  animation: shiftClockShine 3s ease infinite;
+}
+@keyframes shiftClockShine {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.sc-time-block {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sc-clock-digits {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.sc-clock-seconds {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text3);
+  margin-left: 2px;
+}
+.sc-shift-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.sc-shift-badge.morning { background: rgba(46,139,122,0.12); color: #2e8b7a; }
+.sc-shift-badge.afternoon { background: rgba(74,157,212,0.12); color: #4a9dd4; }
+.sc-shift-badge.night { background: rgba(212,192,50,0.12); color: #8a7520; }
+.sc-pulse {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  animation: scPulse 2s ease infinite;
+}
+.sc-pulse.morning { background: #2e8b7a; }
+.sc-pulse.afternoon { background: #4a9dd4; }
+.sc-pulse.night { background: #c5a832; }
+@keyframes scPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+.sc-countdown {
+  text-align: right;
+}
+.sc-countdown-label {
+  font-size: 10px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.sc-countdown-time {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text2);
+  font-variant-numeric: tabular-nums;
+}
+.sc-progress-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--border);
+}
+.sc-progress-fill {
+  height: 100%;
+  border-radius: 0 2px 2px 0;
+  transition: width 1s linear;
+}
+.sc-progress-fill.morning { background: #2e8b7a; }
+.sc-progress-fill.afternoon { background: #4a9dd4; }
+.sc-progress-fill.night { background: #c5a832; }
+
+/* TOPBAR SHIFT INDICATOR */
+.topbar-shift-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.topbar-shift-indicator.morning { background: rgba(46,139,122,0.1); color: #2e8b7a; }
+.topbar-shift-indicator.afternoon { background: rgba(74,157,212,0.1); color: #4a9dd4; }
+.topbar-shift-indicator.night { background: rgba(212,192,50,0.1); color: #8a7520; }
+.tsi-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  animation: scPulse 2s ease infinite;
+}
+.tsi-dot.morning { background: #2e8b7a; }
+.tsi-dot.afternoon { background: #4a9dd4; }
+.tsi-dot.night { background: #c5a832; }
+
+/* SKELETON LOADERS */
+.skeleton-container { padding: 20px 0; }
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease infinite;
+  margin-bottom: 12px;
+}
+.skeleton-line.w80 { width: 80%; }
+.skeleton-line.w60 { width: 60%; }
+.skeleton-line.w40 { width: 40%; }
+.skeleton-line.h24 { height: 24px; }
+.skeleton-line.h40 { height: 40px; border-radius: 10px; }
+.skeleton-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.skeleton-card {
+  height: 100px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease infinite;
+}
+.skeleton-card:nth-child(2) { animation-delay: 0.15s; }
+.skeleton-card:nth-child(3) { animation-delay: 0.3s; }
+.skeleton-card:nth-child(4) { animation-delay: 0.45s; }
+.skeleton-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+.skeleton-row {
+  height: 36px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease infinite;
+}
+.skeleton-row:nth-child(2) { animation-delay: 0.1s; }
+.skeleton-row:nth-child(3) { animation-delay: 0.2s; }
+.skeleton-row:nth-child(4) { animation-delay: 0.3s; }
+.skeleton-row:nth-child(5) { animation-delay: 0.4s; }
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* KPI COUNT-UP ANIMATION */
+.kpi-value[data-count-target] {
+  transition: color 0.3s ease;
+}
+.kpi-counting {
+  color: var(--accent) !important;
+}
+
+
 /* RISK RADAR */
 .risk-radar-grid {
   display: flex;
@@ -8992,6 +9180,7 @@ table.schedule tbody tr:hover {
       </div>
     </div>
     <div class="topbar-right">
+      <span class="topbar-shift-indicator" id="topbarShiftIndicator"></span>
       <span id="wsSyncBadge" style="display:none;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:rgba(46,139,122,0.1);color:var(--morning);font-size:10px;font-weight:600;letter-spacing:0.3px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--morning);animation:savePulse 1.5s ease infinite;"></span><span id="wsSyncText"></span></span>
       <span class="user-display" id="userDisplay" style="font-size:12px;color:var(--text3);margin-right:8px;"></span>
       <button class="theme-btn" id="themeToggle" aria-label="Cambiar tema claro/oscuro">🌙</button>
@@ -9003,6 +9192,8 @@ table.schedule tbody tr:hover {
   <main class="content" id="mainContent" role="main">
     <!-- Dashboard -->
     <div class="view-panel active" id="dashboardPanel">
+      <!-- Live Shift Clock -->
+      <div class="shift-clock" id="shiftClock"></div>
       <div id="dailyBriefing" class="daily-briefing"></div>
       <div class="dashboard-title" id="todayText">Miércoles, 25 de marzo</div>
       <div class="dashboard-subtitle">Visualiza el estado de hoy y próximos días</div>
@@ -10060,8 +10251,16 @@ function toggleTheme() {
 
 // View Switching
 function switchView(view) {
+  const panelId = view + 'Panel';
+  const panel = document.getElementById(panelId);
+
+  // Show skeleton briefly for heavy views
+  const heavyViews = ['schedule', 'workers', 'metrics', 'heatmap', 'conflicts'];
+  if (heavyViews.includes(view) && panel) {
+    showViewSkeleton(panelId);
+  }
+
   document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
-  const panel = document.getElementById(view + 'Panel');
   if (panel) panel.classList.add('active');
 
   document.querySelectorAll('.nav-tab').forEach(t => {
@@ -10076,15 +10275,22 @@ function switchView(view) {
 
   appState.currentView = view;
 
-  if (view === 'schedule') renderSchedule();
-  if (view === 'workers') renderWorkers();
-  if (view === 'heatmap') renderHeatmap();
-  if (view === 'incidents') renderIncidents();
-  if (view === 'conflicts') { detectConflicts(); renderConflicts(); }
-  if (view === 'metrics') { renderMetrics(); try { renderComparativa(); } catch(e) { console.warn('[Shiftia] renderComparativa error:', e); } }
-  if (view === 'import') { renderImportManagement(); updateImportBadge(); }
-  if (view === 'guardia') renderGuardia();
-  if (view === 'vacaciones') renderVacacionesGantt();
+  // Render content with slight delay so skeleton shows
+  const renderDelay = heavyViews.includes(view) ? 80 : 0;
+  setTimeout(() => {
+    if (view === 'dashboard') { renderDashboard(); startShiftClock(); }
+    if (view === 'schedule') renderSchedule();
+    if (view === 'workers') renderWorkers();
+    if (view === 'heatmap') renderHeatmap();
+    if (view === 'incidents') renderIncidents();
+    if (view === 'conflicts') { detectConflicts(); renderConflicts(); }
+    if (view === 'metrics') { renderMetrics(); try { renderComparativa(); } catch(e) { console.warn('[Shiftia] renderComparativa error:', e); } }
+    if (view === 'import') { renderImportManagement(); updateImportBadge(); }
+    if (view === 'guardia') renderGuardia();
+    if (view === 'vacaciones') renderVacacionesGantt();
+
+    removeViewSkeleton(panelId);
+  }, renderDelay);
 }
 
 // Render Dashboard
@@ -22755,6 +22961,192 @@ function notifyPlan(planIdx) {
 })();
 
 // ===============================================================
+// ===============================================================
+// LIVE SHIFT CLOCK + TOPBAR INDICATOR
+// ===============================================================
+let shiftClockInterval = null;
+
+function getShiftInfo() {
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  const totalMin = h * 60 + m;
+
+  // M: 08:00-15:00, T: 15:00-22:00, N: 22:00-08:00
+  if (totalMin >= 480 && totalMin < 900) {
+    return { code: 'M', name: 'Mañana', cls: 'morning', start: 480, end: 900, elapsed: totalMin - 480, total: 420 };
+  } else if (totalMin >= 900 && totalMin < 1320) {
+    return { code: 'T', name: 'Tarde', cls: 'afternoon', start: 900, end: 1320, elapsed: totalMin - 900, total: 420 };
+  } else {
+    const elapsed = totalMin >= 1320 ? totalMin - 1320 : totalMin + 120;
+    return { code: 'N', name: 'Noche', cls: 'night', start: 1320, end: 480, elapsed: elapsed, total: 600 };
+  }
+}
+
+function renderShiftClock() {
+  const el = document.getElementById('shiftClock');
+  if (!el) return;
+
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+
+  const shift = getShiftInfo();
+  const remaining = shift.total - shift.elapsed;
+  const remH = Math.floor(remaining / 60);
+  const remM = remaining % 60;
+  const progressPct = Math.min(100, (shift.elapsed / shift.total) * 100);
+
+  el.innerHTML = `
+    <div class="sc-time-block">
+      <div>
+        <span class="sc-clock-digits">${h}:${m}</span><span class="sc-clock-seconds">:${s}</span>
+      </div>
+      <div class="sc-shift-badge ${shift.cls}">
+        <span class="sc-pulse ${shift.cls}"></span>
+        Turno ${shift.name}
+      </div>
+    </div>
+    <div class="sc-countdown">
+      <div class="sc-countdown-label">Cambio de turno en</div>
+      <div class="sc-countdown-time">${remH}h ${String(remM).padStart(2, '0')}min</div>
+    </div>
+    <div class="sc-progress-bar">
+      <div class="sc-progress-fill ${shift.cls}" style="width:${progressPct}%;"></div>
+    </div>
+  `;
+}
+
+function updateTopbarShiftIndicator() {
+  const el = document.getElementById('topbarShiftIndicator');
+  if (!el) return;
+  const shift = getShiftInfo();
+  const remaining = shift.total - shift.elapsed;
+  const remH = Math.floor(remaining / 60);
+  const remM = remaining % 60;
+  el.className = 'topbar-shift-indicator ' + shift.cls;
+  el.innerHTML = `<span class="tsi-dot ${shift.cls}"></span>${shift.code} · ${remH}h${String(remM).padStart(2, '0')}m`;
+}
+
+function startShiftClock() {
+  renderShiftClock();
+  updateTopbarShiftIndicator();
+  if (shiftClockInterval) clearInterval(shiftClockInterval);
+  shiftClockInterval = setInterval(() => {
+    renderShiftClock();
+    updateTopbarShiftIndicator();
+  }, 1000);
+}
+
+// ===============================================================
+// KPI COUNT-UP ANIMATION
+// ===============================================================
+function animateCountUp(element, target, duration = 800) {
+  const isFloat = target % 1 !== 0;
+  const startTime = performance.now();
+  element.classList.add('kpi-counting');
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+    const current = eased * target;
+
+    if (isFloat) {
+      element.textContent = current.toFixed(1);
+    } else {
+      element.textContent = Math.round(current);
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      element.classList.remove('kpi-counting');
+    }
+  }
+  requestAnimationFrame(update);
+}
+
+function triggerKPICountUp() {
+  document.querySelectorAll('.kpi-value[data-count-target]').forEach(el => {
+    const target = parseFloat(el.dataset.countTarget);
+    const suffix = el.dataset.suffix || '';
+    if (!isNaN(target) && target > 0) {
+      const isFloat = target % 1 !== 0;
+      const startTime = performance.now();
+      el.classList.add('kpi-counting');
+
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / 800, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = eased * target;
+        const display = isFloat ? current.toFixed(1) : String(Math.round(current));
+
+        if (suffix) {
+          el.innerHTML = display + '<span style="font-size:14px;color:var(--text3);">' + suffix + '</span>';
+        } else {
+          el.textContent = display;
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        } else {
+          el.classList.remove('kpi-counting');
+        }
+      }
+      requestAnimationFrame(update);
+    }
+  });
+}
+
+// ===============================================================
+// SKELETON LOADERS
+// ===============================================================
+function showViewSkeleton(panelId) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+
+  let skeletonHtml = '<div class="skeleton-container">';
+
+  if (panelId === 'schedulePanel') {
+    skeletonHtml += '<div class="skeleton-line h24 w60"></div>';
+    skeletonHtml += '<div class="skeleton-table">';
+    for (let i = 0; i < 8; i++) skeletonHtml += '<div class="skeleton-row"></div>';
+    skeletonHtml += '</div>';
+  } else if (panelId === 'workersPanel') {
+    skeletonHtml += '<div class="skeleton-line h24 w40"></div>';
+    skeletonHtml += '<div class="skeleton-card-grid">';
+    for (let i = 0; i < 6; i++) skeletonHtml += '<div class="skeleton-card"></div>';
+    skeletonHtml += '</div>';
+  } else {
+    skeletonHtml += '<div class="skeleton-line h24 w60"></div>';
+    skeletonHtml += '<div class="skeleton-card-grid">';
+    for (let i = 0; i < 4; i++) skeletonHtml += '<div class="skeleton-card"></div>';
+    skeletonHtml += '</div>';
+    skeletonHtml += '<div class="skeleton-line w80"></div>';
+    skeletonHtml += '<div class="skeleton-line w60"></div>';
+  }
+
+  skeletonHtml += '</div>';
+
+  const existing = panel.querySelector('.skeleton-container');
+  if (!existing) {
+    panel.insertAdjacentHTML('afterbegin', skeletonHtml);
+  }
+}
+
+function removeViewSkeleton(panelId) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  const sk = panel.querySelector('.skeleton-container');
+  if (sk) {
+    sk.style.opacity = '0';
+    sk.style.transition = 'opacity 0.2s ease';
+    setTimeout(() => sk.remove(), 200);
+  }
+}
+
 // INTELLIGENT DASHBOARD v5.0: KPIs + Heatmap + Predictions
 // ===============================================================
 
@@ -22839,7 +23231,7 @@ function renderIntelligentDashboard() {
     const isCurrent = sh === kpis.currentShift;
     html += `<div class="kpi-card ${ok ? 'kpi-ok' : 'kpi-alert'}" ${isCurrent ? 'style="box-shadow:0 0 0 2px ' + shiftColors[sh] + '30;"' : ''}>
       <div class="kpi-label" style="color:${shiftColors[sh]};">${isCurrent ? '● ' : ''}${shiftLabels[sh]}</div>
-      <div class="kpi-value">${e + t}<span style="font-size:14px;color:var(--text3);">/${needE + needT}</span></div>
+      <div class="kpi-value" data-count-target="${e + t}" data-suffix="/${needE + needT}">0<span style="font-size:14px;color:var(--text3);">/${needE + needT}</span></div>
       <div class="kpi-subvalue">ENF ${e}/${needE} · TEC ${t}/${needT}</div>
       <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${pct}%;background:${ok ? '#27ae60' : '#cc4444'};"></div></div>
     </div>`;
@@ -22848,7 +23240,7 @@ function renderIntelligentDashboard() {
   // Absences card
   html += `<div class="kpi-card ${kpis.absences > 3 ? 'kpi-warn' : kpis.absences > 0 ? 'kpi-ok' : 'kpi-ok'}">
     <div class="kpi-label">Ausencias hoy</div>
-    <div class="kpi-value">${kpis.absences}</div>
+    <div class="kpi-value" data-count-target="${kpis.absences}">0</div>
     <div class="kpi-subvalue">${Object.entries(kpis.absenceTypes).map(([k,v]) => k + ':' + v).join(' · ') || 'Ninguna'}</div>
   </div>`;
 
@@ -22862,7 +23254,7 @@ function renderIntelligentDashboard() {
   // Micro card
   html += `<div class="kpi-card kpi-ok">
     <div class="kpi-label">Microbiología</div>
-    <div class="kpi-value">${kpis.microM}</div>
+    <div class="kpi-value" data-count-target="${kpis.microM}">0</div>
     <div class="kpi-subvalue">Técnicos en mañana</div>
   </div>`;
 
@@ -22984,6 +23376,9 @@ function renderIntelligentDashboard() {
   html += '</div>';
 
   target.innerHTML = html;
+
+  // Trigger count-up animations
+  setTimeout(() => triggerKPICountUp(), 100);
 }
 
 // ===============================================================
@@ -23289,6 +23684,7 @@ function updateFilterBadge() {
   try { cleanOrphanedImports(); } catch(e) { console.warn('[Shiftia] cleanOrphanedImports error:', e); }
   try { detectConflicts(); } catch(e) { console.warn('[Shiftia] detectConflicts error:', e); }
   try { renderDashboard(); } catch(e) { console.warn('[Shiftia] renderDashboard error:', e); }
+  try { startShiftClock(); } catch(e) { console.warn('[Shiftia] startShiftClock error:', e); }
   try { updateImportBadge(); } catch(e) { console.warn('[Shiftia] updateImportBadge error:', e); }
   try { updateGestorFabBadge(); } catch(e) { console.warn('[Shiftia] updateGestorFabBadge error:', e); }
 
