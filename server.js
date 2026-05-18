@@ -107,6 +107,20 @@ setInterval(() => {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// CORS específico para la extensión Chrome (no afecta el resto del flujo same-origin)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && origin.startsWith('chrome-extension://')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Vary', 'Origin');
+    if (req.method === 'OPTIONS') return res.status(204).end();
+  }
+  next();
+});
+
 // ====== DATABASE CONFIG ======
 // Filter out undefined values to avoid overriding connectionString
 const poolConfig = process.env.DATABASE_URL
@@ -1262,6 +1276,12 @@ app.post('/api/backups/:id/restore', authMiddleware, async (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', version: '3.0.0', auth: 'enabled', websocket: true, backups: true });
 });
+
+// Shiftia Extension — endpoints para Consejero/Secretario/Sabio y bulk PDF import
+const { buildAssistantRouter } = require('./routes/assistant');
+const { buildImportRouter } = require('./routes/import');
+app.use('/api/assistant', buildAssistantRouter({ pool, authMiddleware }));
+app.use('/api/import', buildImportRouter({ pool, authMiddleware }));
 
 // SPA fallback
 app.get('*', (req, res) => {
