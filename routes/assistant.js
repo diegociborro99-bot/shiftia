@@ -1,4 +1,5 @@
 const express = require('express');
+const { matchWorker } = require('../engine/name-matcher');
 
 // ============================================================================
 // Shiftia Assistant — endpoints deterministas (sin LLM, sin coste por consulta)
@@ -187,19 +188,62 @@ function parseCell(body) {
 
 async function loadData(pool, userId) {
   const result = await pool.query('SELECT data FROM schedule_data WHERE user_id = $1', [userId]);
-  return result.rows[0]?.data || {};
+  const data = result.rows[0]?.data || {};
+  // Auto-persist de bindings de actaisId que se marcaron durante este request.
+  // Se ejecuta DESPUÉS de que el handler responda, porque setTimeout 500ms
+  // garantiza que resolveWorker ya tuvo tiempo de marcar __bindActaisId.
+  // 'data' se mantiene en memoria por reference mientras el timeout está vivo.
+  setTimeout(() => persistBindings(pool, userId, data).catch(e => console.warn('[bind]', e.message)), 500);
+  return data;
 }
 
 function resolveWorker(data, parsed) {
-  if (parsed.workerId) return workerById(data, parsed.workerId);
+  const all = data?.workerMeta || data?.workers || [];
+  // 1. Match directo por workerId interno O actaisId ya vinculado
+  if (parsed.workerId) {
+    const direct = workerById(data, parsed.workerId);
+    if (direct) return direct;
+  }
+  // 2. Match por nombre exacto / contains
   if (parsed.workerName) {
     const norm = parsed.workerName.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-    return (data.workers || []).find(w => {
+    const exact = all.find(w => {
       const wn = (w.name || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-      return norm.includes(wn) || wn.includes(norm);
+      return norm === wn || norm.includes(wn) || wn.includes(norm);
     });
+    if (exact) {
+      if (parsed.workerId && !exact.actaisId) exact.__bindActaisId = parsed.workerId;
+      return exact;
+    }
+    // 3. Fuzzy V2: Levenshtein + Jaro-Winkler (importado de engine/name-matcher)
+    const m = matchWorker(parsed.workerName, all);
+    if (m.match) {
+      if (parsed.workerId && !m.match.actaisId) m.match.__bindActaisId = parsed.workerId;
+      return m.match;
+    }
   }
   return null;
+}
+
+async function persistBindings(pool, userId, data) {
+  const all = data?.workerMeta || data?.workers || [];
+  const newlyBound = all.filter(w => w.__bindActaisId);
+  if (newlyBound.length === 0) return false;
+  for (const w of newlyBound) {
+    w.actaisId = w.__bindActaisId;
+    delete w.__bindActaisId;
+  }
+  try {
+    await pool.query(
+      `INSERT INTO schedule_data (user_id, data) VALUES ($1, $2)
+       ON CONFLICT (user_id) DO UPDATE SET data = $2`,
+      [userId, data]
+    );
+    return true;
+  } catch (err) {
+    console.error('[persistBindings]', err);
+    return false;
+  }
 }
 
 // ============================================================================
