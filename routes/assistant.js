@@ -516,6 +516,36 @@ function buildAssistantRouter({ pool, authMiddleware }) {
     res.json({ note: 'Función pendiente: aún no hay corpus histórico indexado. En esta versión devuelve vacío.', cases: [] });
   });
 
+  // ============================================================================
+  // Mantenimiento: limpia los actaisId mal vinculados en workerMeta.
+  // Útil cuando la 1ª llamada con un cliente buggy bindeó a la persona incorrecta
+  // (p.ej. la supervisora) al workerId de un empleado distinto. Tras llamar a
+  // este endpoint, la siguiente Alt+click re-bindea cada worker por nombre.
+  // ============================================================================
+  router.post('/admin/clearBindings', async (req, res) => {
+    try {
+      const result = await pool.query('SELECT data FROM schedule_data WHERE user_id = $1', [req.user.id]);
+      const data = result.rows[0]?.data || {};
+      const all = data?.workerMeta || data?.workers || [];
+      let cleared = 0;
+      for (const w of all) {
+        if (w.actaisId) {
+          delete w.actaisId;
+          cleared++;
+        }
+      }
+      await pool.query(
+        `INSERT INTO schedule_data (user_id, data) VALUES ($1, $2)
+         ON CONFLICT (user_id) DO UPDATE SET data = $2`,
+        [req.user.id, data]
+      );
+      res.json({ ok: true, cleared, total: all.length, message: `Limpiados ${cleared} de ${all.length} bindings actaisId.` });
+    } catch (err) {
+      console.error('[assistant.admin.clearBindings]', err);
+      res.status(500).json({ ok: false, error: 'Error al limpiar bindings' });
+    }
+  });
+
   return router;
 }
 
