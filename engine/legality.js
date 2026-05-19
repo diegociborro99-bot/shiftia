@@ -211,32 +211,90 @@ function isLegalAssignment(workerId, dayIdx, shift, scheduleData, workers, year,
   return { legal: r.legal, reasons: r.reasons };
 }
 
-// Cobertura — cuántos trabajadores cubren ya un turno X en la planta del worker
-// para ese día. Se usa para evaluar si quitar/poner al worker generaría hueco.
-function getCoveringNow(scheduleData, workers, year, month, day, shift, targetPlanta) {
+// ============================================================================
+// Roles y plantas — Mapeo de strings que vienen del PDF/Actais al modelo
+// interno del motor (enf|tec|micro).
+//   DUE        → 'enf' (enfermera/enfermero)
+//   TECNICO    → 'tec' (técnico de laboratorio o similar)
+//   MICRO*     → 'micro' (microbiología)
+// Si la role no encaja, devolvemos 'enf' por defecto (la mayoría).
+// ============================================================================
+function roleOf(worker) {
+  const r = (worker?.role || '').toString().toUpperCase().trim();
+  if (!r) return null;
+  if (r === 'DUE' || r === 'ENF' || r.startsWith('ENFERM')) return 'enf';
+  if (r === 'TECNICO' || r === 'TÉCNICO' || r === 'TEC' || r.startsWith('TEC')) return 'tec';
+  if (r.includes('MICRO')) return 'micro';
+  return null;
+}
+
+// ¿Es la planta de Microbiología? Acepta variantes con/sin tilde.
+function isMicroPlanta(planta) {
+  return /micro/i.test(String(planta || ''));
+}
+
+function isWeekendOrHoliday(year, month, day, isFestivo) {
+  const dow = new Date(year, month, day).getDay();
+  return dow === 0 || dow === 6 || (typeof isFestivo === 'function' && isFestivo(year, month, day));
+}
+
+// ============================================================================
+// getRequiredCoverage — cuántos trabajadores del MISMO ROL hacen falta para
+// CUBRIR un (planta, role, shift, día). Replica RULES.COVERAGE de la web.
+//
+// Por planta:
+//   MICROBIOLOGIA → solo M: 3 entre semana, 0 fin de semana
+//   resto (HEMATOLOGIA, etc.):
+//     M: 3 enf + 2 tec entre semana; 1 enf + 1 tec fin de semana
+//     T: 1 enf + 1 tec siempre
+//     N: 1 enf + 1 tec siempre
+// ============================================================================
+function getRequiredCoverage(planta, role, year, month, day, isFestivo) {
+  const isWE = isWeekendOrHoliday(year, month, day, isFestivo);
+  if (isMicroPlanta(planta)) {
+    const tbl = isWE ? RULES.COVERAGE_MICRO_WEEKEND : RULES.COVERAGE_MICRO;
+    return { M: tbl.M || 0, T: 0, N: 0 };
+  }
+  const tbl = isWE ? RULES.COVERAGE_WEEKEND : RULES.COVERAGE;
+  const r = role || 'enf';
+  return {
+    M: tbl.M?.[r] ?? 0,
+    T: tbl.T?.[r] ?? 0,
+    N: tbl.N?.[r] ?? 0
+  };
+}
+
+function getRequiredForShift(planta, role, shift, year, month, day, isFestivo) {
+  const cov = getRequiredCoverage(planta, role, year, month, day, isFestivo);
+  return cov[shift] ?? 0;
+}
+
+// Cobertura — cuántos trabajadores del MISMO ROL cubren ya un turno X en la
+// planta del worker. Filtra por planta Y por rol — un técnico no cuenta para
+// cubrir a una DUE y viceversa.
+function getCoveringNow(scheduleData, workers, year, month, day, shift, targetPlanta, targetRole) {
   const monthSchedules = scheduleData?.[ymKey(year, month)] || {};
   let count = 0;
   for (const wId of Object.keys(monthSchedules)) {
     const arr = monthSchedules[wId] || [];
-    if (arr[day] === shift) {
-      const w = (workers || []).find(x => String(x.id) === String(wId));
-      const planta = w?.planta;
-      if (planta === targetPlanta) count++;
-    }
+    if (arr[day] !== shift) continue;
+    const w = (workers || []).find(x => String(x.id) === String(wId));
+    if (!w) continue;
+    if (w.planta !== targetPlanta) continue;
+    if (targetRole && roleOf(w) !== targetRole) continue;
+    count++;
   }
   return count;
 }
 
-// Reglas de cobertura según día de semana / festivo.
+// Reglas de cobertura según día de semana / festivo (compat con código viejo).
 function getCoverageRules(year, month, day, isFestivo) {
-  const dow = new Date(year, month, day).getDay();
-  const isWE = dow === 0 || dow === 6 || (typeof isFestivo === 'function' && isFestivo(year, month, day));
+  const isWE = isWeekendOrHoliday(year, month, day, isFestivo);
   return isWE ? RULES.COVERAGE_WEEKEND : RULES.COVERAGE;
 }
 
 function getMicroCoverageRules(year, month, day, isFestivo) {
-  const dow = new Date(year, month, day).getDay();
-  const isWE = dow === 0 || dow === 6 || (typeof isFestivo === 'function' && isFestivo(year, month, day));
+  const isWE = isWeekendOrHoliday(year, month, day, isFestivo);
   return isWE ? RULES.COVERAGE_MICRO_WEEKEND : RULES.COVERAGE_MICRO;
 }
 
@@ -251,5 +309,10 @@ module.exports = {
   isLegalAssignment,
   getCoveringNow,
   getCoverageRules,
-  getMicroCoverageRules
+  getMicroCoverageRules,
+  getRequiredCoverage,
+  getRequiredForShift,
+  roleOf,
+  isMicroPlanta,
+  isWeekendOrHoliday
 };

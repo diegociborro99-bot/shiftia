@@ -326,18 +326,29 @@ function buildAssistantRouter({ pool, authMiddleware }) {
       const data = await loadData(pool, req.user.id);
       const p = parseCell(req.body);
       const absentWorker = resolveWorker(data, p);
-      const targetPlanta = p.plantaId || absentWorker?.planta;
-      const targetShift = p.shift || 'M';
-      if (!targetPlanta) return res.json({ candidates: [], note: 'Falta planta destino' });
+      if (!absentWorker) {
+        return res.json({
+          ok: false, verdict: 'blocked', verdictLabel: 'Trabajador no identificado',
+          error: workerNotFoundError(p, data),
+          summary: buildSummary('whoCovers', null, p, { where: '?' })
+        });
+      }
+      const targetPlanta = p.plantaId || absentWorker.planta;
+      const targetShift = p.shift || cellOf(data, p.year, p.month, absentWorker.id, p.day) || 'M';
+      const targetRole = engine.roleOf(absentWorker);
+      const workers = data.workerMeta || data.workers || [];
 
-      const candidates = (data.workers || [])
-        .filter(w => w.id !== absentWorker?.id)
+      // Solo candidatos del MISMO ROL — un técnico no sustituye a una DUE.
+      // Si no encontramos role, abrimos a todos (defensiva).
+      const candidates = workers
+        .filter(w => String(w.id) !== String(absentWorker.id))
+        .filter(w => !targetRole || engine.roleOf(w) === targetRole)
         .map(w => {
-          const legality = checkLegality(data, w, p.year, p.month, p.day, targetShift);
-          if (!legality.legal) return null;
+          const ev = engine.evaluateAssignment(w.id, p.day, targetShift, data.scheduleData || {}, workers, p.year, p.month);
+          if (!ev.legal) return null;
           const scoring = scoreCandidate(data, w, p.year, p.month, p.day, targetShift, targetPlanta);
           return {
-            workerId: w.id, name: w.name, planta: w.planta, flotante: !!w.flotante,
+            workerId: w.id, name: w.name, planta: w.planta, role: w.role, flotante: !!w.flotante,
             crossPlant: w.planta !== targetPlanta,
             score: scoring.score, breakdown: scoring.breakdown
           };
@@ -346,7 +357,23 @@ function buildAssistantRouter({ pool, authMiddleware }) {
         .sort((a, b) => b.score - a.score)
         .slice(0, 5);
 
-      res.json({ targetPlanta, targetShift, candidates });
+      const verdict = candidates.length === 0 ? 'blocked' : 'ok';
+      const roleLabel = targetRole === 'enf' ? 'DUE' : targetRole === 'tec' ? 'Técnico' : targetRole === 'micro' ? 'Microbiología' : '(rol)';
+
+      res.json({
+        ok: true,
+        verdict,
+        verdictLabel: candidates.length === 0
+          ? `Sin candidatos ${roleLabel} para cubrir ${targetShift}`
+          : `${candidates.length} candidato(s) ${roleLabel}`,
+        summary: buildSummary('whoCovers', absentWorker, p, { what: `Buscar sustituto ${roleLabel} para turno ${targetShift}` }),
+        reasoning: [
+          { rule: 'Búsqueda por rol', status: 'pass', detail: `Solo ${roleLabel}s en planta ${PLANT_NAMES[targetPlanta] || targetPlanta} o flotantes` },
+          { rule: 'Legalidad de cada candidato', status: 'pass', detail: 'Cada candidato pasó las 7 reglas del motor (cross-month, whitelist post-noche, máx noches, etc.)' },
+          { rule: 'Ordenación', status: 'pass', detail: 'Por score (misma planta > flotante > cross-plant; carga del mes; turno preferido)' }
+        ],
+        targetPlanta, targetShift, candidates
+      });
     } catch (err) { res.status(500).json({ error: 'Error interno' }); console.error('[assistant.whoCovers]', err); }
   });
 
@@ -376,37 +403,42 @@ function buildAssistantRouter({ pool, authMiddleware }) {
       const targetPlanta = worker.planta;
       const targetPlantaLabel = PLANT_NAMES[targetPlanta] || targetPlanta || '?';
       const monthSchedules = data?.scheduleData?.[p.year + '-' + p.month] || {};
+      const workers = data.workerMeta || data.workers || [];
+      const myRole = engine.roleOf(worker);
+      const isWE = engine.isWeekendOrHoliday(p.year, p.month, p.day);
 
-      // Cobertura ACTUAL del turno en esa planta
+      // Cobertura ACTUAL del turno en esa planta, FILTRANDO POR ROL.
+      // Un técnico no cuenta como cobertura de una DUE y viceversa — el web
+      // engine aplica cobertura por (rol, día, turno), no por planta plana.
       let coveringNow = 0;
       const otherCoverers = [];
       for (const wId of Object.keys(monthSchedules)) {
         const arr = monthSchedules[wId] || [];
         if (arr[p.day] !== originalShift) continue;
-        if (getEffectivePlanta(data, wId, p.year, p.month, p.day) !== targetPlanta) continue;
+        const w2 = workerById(data, wId);
+        if (!w2) continue;
+        if (w2.planta !== targetPlanta) continue;
+        if (myRole && engine.roleOf(w2) !== myRole) continue;
         coveringNow++;
-        if (String(wId) !== String(worker.id)) {
-          const w2 = workerById(data, wId);
-          if (w2) otherCoverers.push(w2.name);
-        }
+        if (String(wId) !== String(worker.id)) otherCoverers.push(w2.name);
       }
-      const required = PLANT_COVERAGE[targetPlanta]?.[originalShift] ?? 0;
+      const required = engine.getRequiredForShift(targetPlanta, myRole, originalShift, p.year, p.month, p.day);
       const afterIfRemoved = coveringNow - 1;
       const wouldGenerateGap = afterIfRemoved < required;
       const atBareMinimum = afterIfRemoved === required && required > 0;
 
-      // Sustitutos POTENCIALES (no detallados, solo count): otros workers
-      // de la misma planta que ese día están en D/L/LD y serían elegibles.
+      // Sustitutos POTENCIALES: workers del MISMO ROL en la planta o flotantes
+      // que ese día estén en D/L/LD/vacío y pasen el motor de legalidad.
       let potentialSubstitutes = 0;
-      const workers = data.workerMeta || data.workers || [];
+      const substituteNames = [];
       for (const w of workers) {
         if (String(w.id) === String(worker.id)) continue;
+        if (myRole && engine.roleOf(w) !== myRole) continue;
         if (w.planta !== targetPlanta && !w.flotante) continue;
         const cell = (monthSchedules[w.id] || [])[p.day] || '';
         if (!['', 'D', 'L', 'LD'].includes(String(cell).trim())) continue;
-        // Pasar el motor para asegurar legalidad del cambio
         const ev = engine.isLegalAssignment(w.id, p.day, originalShift, data.scheduleData || {}, workers, p.year, p.month);
-        if (ev.legal) potentialSubstitutes++;
+        if (ev.legal) { potentialSubstitutes++; substituteNames.push(w.name); }
       }
 
       // Razonamiento — qué reglas miramos para esta acción
@@ -421,29 +453,33 @@ function buildAssistantRouter({ pool, authMiddleware }) {
         reasoning.push({ rule: 'Estado del día', status: 'pass', detail: `Día asignado a turno ${originalShift}` });
       }
 
-      // 2. Cobertura
+      // 2. Cobertura — usa la misma tabla que la web (RULES.COVERAGE), por
+      //    rol (enf/tec/micro) y día (semana/fin-de-semana).
+      const dayKind = isWE ? 'fin de semana/festivo' : 'entre semana';
+      const roleLabel = myRole === 'enf' ? 'DUE' : myRole === 'tec' ? 'Técnico' : myRole === 'micro' ? 'Microbiología' : '(rol no detectado)';
       if (required === 0) {
-        reasoning.push({ rule: 'Cobertura planta', status: 'pass', detail: `${targetPlantaLabel} no requiere cobertura mínima para ${originalShift}` });
+        reasoning.push({ rule: 'Cobertura mínima', status: 'pass', detail: `${roleLabel} no requiere cobertura para ${originalShift} ${dayKind} en ${targetPlantaLabel}` });
       } else if (wouldGenerateGap) {
-        reasoning.push({ rule: 'Cobertura planta', status: 'fail', detail: `Tras librar quedarían ${afterIfRemoved} cubriendo, mínimo requerido ${required}` });
+        reasoning.push({ rule: 'Cobertura mínima', status: 'fail', detail: `Quedarían ${afterIfRemoved} ${roleLabel}(s) en ${originalShift}, mínimo requerido ${required} (${dayKind})` });
       } else if (atBareMinimum) {
-        reasoning.push({ rule: 'Cobertura planta', status: 'warning', detail: `Tras librar quedan justo ${afterIfRemoved} (= mínimo ${required}). Sin margen.` });
+        reasoning.push({ rule: 'Cobertura mínima', status: 'warning', detail: `Quedarían justo ${afterIfRemoved} ${roleLabel}(s) (= mínimo ${required}). Sin margen.` });
       } else {
-        reasoning.push({ rule: 'Cobertura planta', status: 'pass', detail: `${coveringNow} cubriendo ahora · ${afterIfRemoved} tras librar · mínimo ${required}` });
+        reasoning.push({ rule: 'Cobertura mínima', status: 'pass', detail: `${coveringNow} ${roleLabel}(s) ahora → ${afterIfRemoved} tras librar · mínimo ${required} (${dayKind})` });
       }
 
-      // 3. Sustitutos disponibles
+      // 3. Sustitutos disponibles — workers del mismo rol que pasan checkLegality
       if (potentialSubstitutes === 0 && wouldGenerateGap) {
-        reasoning.push({ rule: 'Sustitutos disponibles', status: 'fail', detail: 'No hay candidatos legales en planta+flotantes para cubrir ese turno' });
+        reasoning.push({ rule: 'Sustitutos disponibles', status: 'fail', detail: `Ningún ${roleLabel} libre legalmente para cubrir ${originalShift}` });
       } else if (potentialSubstitutes === 0) {
-        reasoning.push({ rule: 'Sustitutos disponibles', status: 'warning', detail: 'Ninguno listo, pero hay margen de cobertura' });
+        reasoning.push({ rule: 'Sustitutos disponibles', status: 'warning', detail: `Ningún ${roleLabel} libre, pero hay margen de cobertura` });
       } else {
-        reasoning.push({ rule: 'Sustitutos disponibles', status: 'pass', detail: `${potentialSubstitutes} candidatos legales para cubrir el turno` });
+        const namesList = substituteNames.slice(0, 4).join(', ') + (substituteNames.length > 4 ? `, +${substituteNames.length - 4} más` : '');
+        reasoning.push({ rule: 'Sustitutos disponibles', status: 'pass', detail: `${potentialSubstitutes} ${roleLabel}(s) elegibles: ${namesList}` });
       }
 
       // 4. Otros cubriendo (informativo)
       if (otherCoverers.length > 0) {
-        reasoning.push({ rule: 'Compañeros en el mismo turno', status: 'pass', detail: otherCoverers.slice(0, 4).join(', ') + (otherCoverers.length > 4 ? `, +${otherCoverers.length - 4} más` : '') });
+        reasoning.push({ rule: 'Otros en el mismo turno', status: 'pass', detail: otherCoverers.slice(0, 4).join(', ') + (otherCoverers.length > 4 ? `, +${otherCoverers.length - 4} más` : '') });
       }
 
       const v = summarizeVerdict(reasoning, {
