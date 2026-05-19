@@ -765,7 +765,8 @@ function buildAssistantRouter({ pool, authMiddleware }) {
       const worker = resolveWorker(data, p);
       if (!worker) return res.json({ ok: false, error: workerNotFoundError(p, data) });
 
-      const incoming = req.body?.rules || {};
+      // sw.js empaqueta args como req.body.cell, fallback a body raíz para curl directo
+      const incoming = req.body?.cell?.rules || req.body?.rules || {};
       // Whitelist de claves admitidas — evita inyectar campos arbitrarios.
       const allowed = ['noNights', 'noSwap', 'noCover', 'onlyMornings', 'noWeekends', 'maxNightsPerMonth', 'preferredShift', 'conciliacion'];
       worker.rules = worker.rules || {};
