@@ -144,6 +144,89 @@ function buildImportRouter({ pool, authMiddleware }) {
     res.json({ ok: true, summary, items });
   });
 
+  // ============================================================================
+  // POST /api/import/parsed-batch (application/json)
+  //
+  // Recibe planillas YA PARSEADAS por el cliente con pdf.js (mismo parser que
+  // la web). El backend solo persiste — no hace text-extraction. Garantiza que
+  // los PDFs se interpretan IDÉNTICO en web y extensión.
+  //
+  // Body esperado:
+  //   { files: [{ ok, filename, workerName, year, role, plantaHint, categoria,
+  //               scheduleByMonth: {0:[...],1:[...]}, monthHours, computoData,
+  //               convenioData, monthsWithData, error? }] }
+  // ============================================================================
+  router.post('/parsed-batch', async (req, res) => {
+    const files = Array.isArray(req.body?.files) ? req.body.files : [];
+    if (files.length === 0) return res.status(400).json({ error: 'Sin archivos. Envía files[] en JSON.' });
+
+    let data;
+    try {
+      const result = await pool.query('SELECT data FROM schedule_data WHERE user_id = $1', [req.user.id]);
+      data = result.rows[0]?.data || {};
+    } catch (err) {
+      console.error('[import.parsed-batch] load:', err);
+      return res.status(500).json({ error: 'No se pudo cargar la data del usuario' });
+    }
+    if (!data.workerMeta) data.workerMeta = [];
+    if (!data.scheduleData) data.scheduleData = {};
+
+    let nextId = data.workerMeta.reduce((m, w) => Math.max(m, parseInt(w.id, 10) || 0), 0) + 1;
+    const items = [];
+
+    for (const parsed of files) {
+      if (!parsed || parsed.ok === false) {
+        items.push({
+          filename: parsed?.filename || '(sin nombre)',
+          status: 'failed',
+          reason: parsed?.error || 'Parse cliente falló'
+        });
+        continue;
+      }
+      if (!parsed.workerName) {
+        items.push({ filename: parsed.filename, status: 'failed', reason: 'PDF sin nombre de trabajador detectado' });
+        continue;
+      }
+      if (!parsed.scheduleByMonth || Object.keys(parsed.scheduleByMonth).length === 0) {
+        items.push({ filename: parsed.filename, status: 'failed', reason: 'PDF sin meses parseados' });
+        continue;
+      }
+      // Guardar también monthHours, computoData, convenioData en el worker tras processSchedule
+      const item = processSchedule(data, parsed, () => nextId++);
+      // Adjuntar computo/convenio al worker (datos extra de la web)
+      if (item.status === 'created' || item.status === 'updated') {
+        const worker = data.workerMeta.find(w => String(w.id) === String(item.workerId));
+        if (worker) {
+          if (parsed.computoData?.noches != null) worker.nightsThisYear = parsed.computoData.noches;
+          if (parsed.computoData?.reduccionNoches != null) worker.computoBalance = parsed.computoData.reduccionNoches;
+          if (parsed.monthHours) worker.monthHours = parsed.monthHours;
+          if (parsed.convenioData) worker.convenioData = parsed.convenioData;
+        }
+      }
+      items.push(item);
+    }
+
+    try {
+      await pool.query(
+        `INSERT INTO schedule_data (user_id, data) VALUES ($1, $2)
+         ON CONFLICT (user_id) DO UPDATE SET data = $2`,
+        [req.user.id, data]
+      );
+    } catch (err) {
+      console.error('[import.parsed-batch] save:', err);
+      return res.status(500).json({ error: 'No se pudo guardar la data del usuario' });
+    }
+
+    const summary = {
+      processed: items.length,
+      updated: items.filter(i => i.status === 'updated').length,
+      created: items.filter(i => i.status === 'created').length,
+      pending: items.filter(i => i.status === 'pending').length,
+      failed: items.filter(i => i.status === 'failed').length
+    };
+    res.json({ ok: true, summary, items });
+  });
+
   return router;
 }
 
