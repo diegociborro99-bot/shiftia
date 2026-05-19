@@ -104,6 +104,72 @@ function buildSummary(action, worker, p, override = {}) {
   };
 }
 
+// ============================================================================
+// buildCoverPlan — genera DOS opciones de cobertura cuando hay que sustituir:
+//   primary    = mayor score (misma planta > flotante; turno preferido; menos
+//                noches este mes)
+//   alternative = mismo pool pero re-rankeado por balance (penaliza al worker
+//                que ya lleva muchos turnos este mes)
+// Filtra estrictamente por rol (DUE→DUE, tec→tec, micro→micro) y por planta
+// (o flotantes) y pasa cada candidato por el motor de legalidad completo.
+// ============================================================================
+function buildCoverPlan(data, absentWorker, p, targetShift) {
+  if (!absentWorker || !targetShift) return null;
+  const workers = data.workerMeta || data.workers || [];
+  const targetRole = engine.roleOf(absentWorker);
+  const targetPlanta = absentWorker.planta;
+  const monthSch = data?.scheduleData?.[p.year + '-' + p.month] || {};
+
+  const scored = workers
+    .filter(w => String(w.id) !== String(absentWorker.id))
+    .filter(w => !targetRole || engine.roleOf(w) === targetRole)
+    .filter(w => w.planta === targetPlanta || w.flotante)
+    .map(w => {
+      const ev = engine.evaluateAssignment(w.id, p.day, targetShift, data.scheduleData || {}, workers, p.year, p.month);
+      if (!ev.legal) return null;
+      const scoring = scoreCandidate(data, w, p.year, p.month, p.day, targetShift, targetPlanta);
+      const myMonth = monthSch[w.id] || [];
+      const workedDays = myMonth.filter(s => SHIFT_CODES.includes(s)).length;
+      const nightsDone = myMonth.filter(s => s === 'N').length;
+      // Estrategia balance: penaliza al que ya ha currado mucho
+      const balancePenalty = Math.max(0, workedDays - 15) * 3;
+      return {
+        workerId: w.id,
+        name: w.name,
+        planta: w.planta,
+        plantaLabel: PLANT_NAMES[w.planta] || w.planta,
+        role: w.role,
+        flotante: !!w.flotante,
+        crossPlant: w.planta !== targetPlanta,
+        score: scoring.score,
+        scoreBalance: scoring.score - balancePenalty,
+        breakdown: scoring.breakdown,
+        workedDays,
+        nightsDone,
+        legalChecks: ev.checks
+      };
+    })
+    .filter(Boolean);
+
+  if (scored.length === 0) {
+    return { primary: null, alternative: null, all: [], moreCount: 0 };
+  }
+
+  const byScore   = [...scored].sort((a, b) => b.score - a.score);
+  const byBalance = [...scored].sort((a, b) => b.scoreBalance - a.scoreBalance);
+
+  const primaryC = byScore[0];
+  let altC = byBalance.find(c => c.workerId !== primaryC.workerId);
+  if (!altC && byScore.length > 1) altC = byScore[1];
+
+  return {
+    primary:     primaryC ? { label: 'Mejor opción',          strategy: 'score',   candidate: primaryC } : null,
+    alternative: altC     ? { label: 'Mejor balance de carga', strategy: 'balance', candidate: altC     } : null,
+    all: byScore.slice(0, 5),
+    moreCount: Math.max(0, scored.length - 2)
+  };
+}
+
 // Convierte checks[] del engine en `verdict` global + verdictLabel
 function summarizeVerdict(checks, opts = {}) {
   const failed = checks.filter(c => c.status === 'fail').length;
@@ -360,6 +426,8 @@ function buildAssistantRouter({ pool, authMiddleware }) {
       const verdict = candidates.length === 0 ? 'blocked' : 'ok';
       const roleLabel = targetRole === 'enf' ? 'DUE' : targetRole === 'tec' ? 'Técnico' : targetRole === 'micro' ? 'Microbiología' : '(rol)';
 
+      const coverPlan = buildCoverPlan(data, absentWorker, p, targetShift);
+
       res.json({
         ok: true,
         verdict,
@@ -369,9 +437,10 @@ function buildAssistantRouter({ pool, authMiddleware }) {
         summary: buildSummary('whoCovers', absentWorker, p, { what: `Buscar sustituto ${roleLabel} para turno ${targetShift}` }),
         reasoning: [
           { rule: 'Búsqueda por rol', status: 'pass', detail: `Solo ${roleLabel}s en planta ${PLANT_NAMES[targetPlanta] || targetPlanta} o flotantes` },
-          { rule: 'Legalidad de cada candidato', status: 'pass', detail: 'Cada candidato pasó las 7 reglas del motor (cross-month, whitelist post-noche, máx noches, etc.)' },
-          { rule: 'Ordenación', status: 'pass', detail: 'Por score (misma planta > flotante > cross-plant; carga del mes; turno preferido)' }
+          { rule: 'Legalidad de cada candidato', status: 'pass', detail: 'Cada uno pasó las 7 reglas del motor (cross-month, whitelist post-noche, máx noches, etc.)' },
+          { rule: 'Dos estrategias', status: 'pass', detail: 'Primary = mejor score · Alternative = mejor balance de carga' }
         ],
+        coverPlan,
         targetPlanta, targetShift, candidates
       });
     } catch (err) { res.status(500).json({ error: 'Error interno' }); console.error('[assistant.whoCovers]', err); }
@@ -490,6 +559,10 @@ function buildAssistantRouter({ pool, authMiddleware }) {
         }
       });
 
+      // Plan de cobertura: SIEMPRE incluido, da igual el veredicto, porque
+      // la supervisora quiere ver opciones antes de decidir.
+      const coverPlan = buildCoverPlan(data, worker, p, originalShift);
+
       res.json({
         ok: true,
         verdict: v.verdict,
@@ -497,6 +570,7 @@ function buildAssistantRouter({ pool, authMiddleware }) {
         worker: worker.name,
         summary: buildSummary('librar', worker, p, { what: `Convertir turno ${originalShift || '∅'} → descanso` }),
         reasoning,
+        coverPlan,
         // payload legacy (back-compat con el frontend viejo)
         originalShift,
         plantaAffected: targetPlantaLabel,
