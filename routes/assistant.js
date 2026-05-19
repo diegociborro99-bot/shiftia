@@ -642,33 +642,160 @@ function buildAssistantRouter({ pool, authMiddleware }) {
     } catch (err) { res.status(500).json({ error: 'Error interno' }); console.error('[assistant.cambio]', err); }
   });
 
+  // ============================================================================
+  // /alternativas — TRES estrategias contrastadas (en lugar de 2 anteriores).
+  // Cada plan rankea a los mismos candidatos legales con un objetivo distinto:
+  //
+  //   planA "Mejor ajuste"         → pure score (misma planta > turno preferido > pocas noches)
+  //   planB "Balance carga"        → penaliza al que ya tiene > 15 días trabajados este mes
+  //   planC "Reparto noches"       → penaliza al que ya tiene muchas noches este mes
+  //
+  // Devuelve top-3 por estrategia + un análisis comparativo (overlap entre
+  // planes, recomendación textual, riesgos).
+  // ============================================================================
   router.post('/alternativas', async (req, res) => {
     try {
       const data = await loadData(pool, req.user.id);
       const p = parseCell(req.body);
-      const planA = await getCandidates(data, p, 'multi');
-      const planB = await getCandidates(data, p, 'balance');
-      res.json({ planA, planB });
+      const worker = resolveWorker(data, p);
+      if (!worker) {
+        return res.json({
+          ok: false, verdict: 'blocked', verdictLabel: 'Trabajador no identificado',
+          error: workerNotFoundError(p, data),
+          summary: buildSummary('alternativas', null, p, { where: '?' })
+        });
+      }
+      const targetShift = p.shift || cellOf(data, p.year, p.month, worker.id, p.day) || 'M';
+      const targetPlanta = p.plantaId || worker.planta;
+      const targetRole = engine.roleOf(worker);
+      const workers = data.workerMeta || data.workers || [];
+      const monthSch = data?.scheduleData?.[p.year + '-' + p.month] || {};
+
+      const pool_ = workers
+        .filter(w => String(w.id) !== String(worker.id))
+        .filter(w => !targetRole || engine.roleOf(w) === targetRole)
+        .filter(w => w.planta === targetPlanta || w.flotante)
+        .map(w => {
+          const ev = engine.evaluateAssignment(w.id, p.day, targetShift, data.scheduleData || {}, workers, p.year, p.month);
+          if (!ev.legal) return null;
+          const scoring = scoreCandidate(data, w, p.year, p.month, p.day, targetShift, targetPlanta);
+          const sch = monthSch[w.id] || [];
+          const workedDays = sch.filter(s => SHIFT_CODES.includes(s)).length;
+          const nightsDone = sch.filter(s => s === 'N').length;
+          return {
+            workerId: w.id, name: w.name, planta: w.planta, plantaLabel: PLANT_NAMES[w.planta] || w.planta, role: w.role, flotante: !!w.flotante,
+            crossPlant: w.planta !== targetPlanta,
+            score: scoring.score,
+            breakdown: scoring.breakdown,
+            workedDays, nightsDone
+          };
+        })
+        .filter(Boolean);
+
+      function pick(strategy) {
+        const ranked = pool_.map(c => {
+          let s = c.score;
+          if (strategy === 'balance') s -= Math.max(0, c.workedDays - 15) * 3;
+          if (strategy === 'nights')  s -= c.nightsDone * 4;
+          return { ...c, finalScore: s };
+        }).sort((a, b) => b.finalScore - a.finalScore).slice(0, 3);
+        return ranked;
+      }
+      const planA = pick('score');
+      const planB = pick('balance');
+      const planC = pick('nights');
+
+      // Análisis comparativo
+      const topByPlan = { A: planA[0]?.workerId, B: planB[0]?.workerId, C: planC[0]?.workerId };
+      const allSame = topByPlan.A && topByPlan.A === topByPlan.B && topByPlan.B === topByPlan.C;
+      const recommendation = allSame
+        ? `Las tres estrategias coinciden en ${planA[0].name}. Es la elección clara.`
+        : `Estrategias distintas → considera el contexto: si quieres balance de carga elige Plan B, si quieres repartir noches elige Plan C.`;
+
+      const reasoning = [
+        { rule: 'Plan A — Mejor ajuste', status: 'pass', detail: planA[0] ? `${planA[0].name} (score ${planA[0].finalScore})` : 'sin candidatos' },
+        { rule: 'Plan B — Balance carga', status: 'pass', detail: planB[0] ? `${planB[0].name} (score ${planB[0].finalScore}, ya ${planB[0].workedDays} días)` : 'sin candidatos' },
+        { rule: 'Plan C — Reparto noches', status: 'pass', detail: planC[0] ? `${planC[0].name} (score ${planC[0].finalScore}, ya ${planC[0].nightsDone} noches)` : 'sin candidatos' },
+        { rule: 'Convergencia', status: allSame ? 'pass' : 'warning', detail: allSame ? 'Las 3 estrategias coinciden — alta confianza' : 'Estrategias divergen — decide según prioridad' }
+      ];
+
+      res.json({
+        ok: true,
+        verdict: pool_.length === 0 ? 'blocked' : 'ok',
+        verdictLabel: pool_.length === 0 ? `Sin candidatos para cubrir ${targetShift}` : `${pool_.length} candidatos analizados con 3 estrategias`,
+        worker: worker.name,
+        summary: buildSummary('alternativas', worker, p, { what: `3 estrategias para cubrir ${targetShift}` }),
+        reasoning,
+        plans: {
+          A: { label: 'Mejor ajuste',    strategy: 'score',   candidates: planA },
+          B: { label: 'Balance carga',   strategy: 'balance', candidates: planB },
+          C: { label: 'Reparto noches',  strategy: 'nights',  candidates: planC }
+        },
+        recommendation,
+        targetShift, targetPlanta
+      });
     } catch (err) { res.status(500).json({ error: 'Error interno' }); console.error('[assistant.alternativas]', err); }
   });
 
-  async function getCandidates(data, p, strategy) {
-    const worker = resolveWorker(data, p);
-    const targetPlanta = p.plantaId || worker?.planta;
-    const targetShift = p.shift || 'M';
-    return (data.workers || [])
-      .filter(w => w.id !== worker?.id)
-      .map(w => {
-        const legality = checkLegality(data, w, p.year, p.month, p.day, targetShift);
-        if (!legality.legal) return null;
-        const scoring = scoreCandidate(data, w, p.year, p.month, p.day, targetShift, targetPlanta);
-        const extra = strategy === 'balance' ? -Math.abs((data?.scheduleData?.[ymKey(p.year, p.month)]?.[w.id] || []).filter(Boolean).length - 20) : 0;
-        return { name: w.name, score: scoring.score + extra, breakdown: scoring.breakdown };
-      })
-      .filter(Boolean)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3);
-  }
+  // ============================================================================
+  // Editor de reglas subjetivas por trabajador.
+  // POST /worker/getRules  body: { workerId }
+  // POST /worker/setRules  body: { workerId, rules: {...} }
+  // ============================================================================
+  router.post('/worker/getRules', async (req, res) => {
+    try {
+      const data = await loadData(pool, req.user.id);
+      const p = parseCell(req.body);
+      const worker = resolveWorker(data, p);
+      if (!worker) {
+        return res.json({ ok: false, error: workerNotFoundError(p, data) });
+      }
+      res.json({
+        ok: true,
+        worker: { id: worker.id, name: worker.name, planta: worker.planta, role: worker.role },
+        rules: worker.rules || {}
+      });
+    } catch (err) { res.status(500).json({ error: 'Error interno' }); console.error('[assistant.worker.getRules]', err); }
+  });
+
+  router.post('/worker/setRules', async (req, res) => {
+    try {
+      const data = await loadData(pool, req.user.id);
+      const p = parseCell(req.body);
+      const worker = resolveWorker(data, p);
+      if (!worker) return res.json({ ok: false, error: workerNotFoundError(p, data) });
+
+      const incoming = req.body?.rules || {};
+      // Whitelist de claves admitidas — evita inyectar campos arbitrarios.
+      const allowed = ['noNights', 'noSwap', 'noCover', 'onlyMornings', 'noWeekends', 'maxNightsPerMonth', 'preferredShift', 'conciliacion'];
+      worker.rules = worker.rules || {};
+      const changed = {};
+      for (const k of allowed) {
+        if (k in incoming) {
+          const v = incoming[k];
+          // Limpiar valores nulos/false que no tengan sentido
+          if (v === null || v === '' || v === false || v === undefined) {
+            if (k in worker.rules) { delete worker.rules[k]; changed[k] = null; }
+          } else {
+            worker.rules[k] = v; changed[k] = v;
+          }
+        }
+      }
+
+      await pool.query(
+        `INSERT INTO schedule_data (user_id, data) VALUES ($1, $2)
+         ON CONFLICT (user_id) DO UPDATE SET data = $2`,
+        [req.user.id, data]
+      );
+      res.json({
+        ok: true,
+        worker: { id: worker.id, name: worker.name },
+        rules: worker.rules,
+        changed,
+        message: `Reglas actualizadas para ${worker.name}`
+      });
+    } catch (err) { res.status(500).json({ error: 'Error interno' }); console.error('[assistant.worker.setRules]', err); }
+  });
 
   router.post('/fragilePlantas', async (req, res) => {
     try {

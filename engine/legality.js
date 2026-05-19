@@ -77,23 +77,45 @@ function evaluateAssignment(workerId, dayIdx, shift, scheduleData, workers, year
   const sch = scheduleData?.[ymKey(year, month)]?.[w.id] || [];
   const current = cellOf(scheduleData, year, month, w.id, dayIdx);
 
-  // 1. Restricciones individuales
+  // 1. Restricciones individuales subjetivas
+  //    - noNights         → no puede hacer noches
+  //    - noSwap           → no acepta sustituciones
+  //    - noCover          → no cubre a otros (típico: supervisora)
+  //    - onlyMornings     → conciliación familiar — solo M (y descansos/ausencias)
+  //    - noWeekends       → no trabaja fines de semana
+  const isShiftRestful = shift === '' || shift === 'D' || shift === 'L' || shift === 'LD' || UNAVAILABLE_CODES.includes(shift);
+  const dow = new Date(year, month, dayIdx + 1).getDay(); // 0=Dom 6=Sáb
+  const isWeekend = dow === 0 || dow === 6;
+
+  if (w.rules?.onlyMornings && !isShiftRestful && !isMorningShift(shift)) {
+    checks.push({ rule: 'Conciliación: solo mañanas', status: 'fail', detail: `Solo turnos de mañana — ${shift} prohibido` });
+    reasons.push(`Conciliación familiar (no ${shift})`); legal = false;
+  } else if (w.rules?.onlyMornings && isMorningShift(shift)) {
+    checks.push({ rule: 'Conciliación: solo mañanas', status: 'pass', detail: 'Turno de mañana permitido' });
+  }
+  if (w.rules?.noWeekends && isWeekend && !isShiftRestful) {
+    checks.push({ rule: 'Sin fines de semana', status: 'fail', detail: `${dow === 6 ? 'Sábado' : 'Domingo'}: trabajador no trabaja fines de semana` });
+    reasons.push(`No trabaja fines de semana (${dow === 6 ? 'sáb' : 'dom'})`); legal = false;
+  } else if (w.rules?.noWeekends && !isWeekend) {
+    checks.push({ rule: 'Sin fines de semana', status: 'pass', detail: 'Día laborable, sin conflicto' });
+  }
   if (w.rules?.noNights && shift === 'N') {
-    checks.push({ rule: 'Restricción individual: noches', status: 'fail', detail: 'Trabajador marcado noNights' });
-    reasons.push('No puede hacer noches (noNights)'); legal = false;
-  } else if (w.rules?.noNights) {
-    checks.push({ rule: 'Restricción individual: noches', status: 'pass', detail: 'noNights pero el turno no es N' });
+    checks.push({ rule: 'No noches', status: 'fail', detail: 'Trabajador marcado noNights' });
+    reasons.push('No puede hacer noches'); legal = false;
+  } else if (w.rules?.noNights && shift !== 'N') {
+    checks.push({ rule: 'No noches', status: 'pass', detail: 'noNights pero turno no es N' });
   }
   if (w.rules?.noSwap) {
-    checks.push({ rule: 'Restricción individual: no sustituciones', status: 'fail', detail: 'Trabajador marcado noSwap' });
-    reasons.push('No puede hacer sustituciones (noSwap)'); legal = false;
+    checks.push({ rule: 'No sustituciones', status: 'fail', detail: 'Trabajador no acepta sustituir' });
+    reasons.push('No acepta sustituciones'); legal = false;
   }
   if (w.rules?.noCover) {
-    checks.push({ rule: 'Restricción individual: no cubre', status: 'fail', detail: 'Trabajador marcado noCover' });
-    reasons.push('No puede hacer coberturas (noCover)'); legal = false;
+    checks.push({ rule: 'No cubre', status: 'fail', detail: 'Trabajador marcado noCover (típicamente supervisora)' });
+    reasons.push('No cubre a otros'); legal = false;
   }
-  if (!w.rules?.noNights && !w.rules?.noSwap && !w.rules?.noCover) {
-    checks.push({ rule: 'Restricciones individuales', status: 'pass', detail: 'Sin restricciones aplicables' });
+  const anyRestriction = w.rules?.noNights || w.rules?.noSwap || w.rules?.noCover || w.rules?.onlyMornings || w.rules?.noWeekends;
+  if (!anyRestriction) {
+    checks.push({ rule: 'Restricciones individuales', status: 'pass', detail: 'Sin restricciones subjetivas' });
   }
 
   // 2. Disponibilidad — ¿está libre ese día?
