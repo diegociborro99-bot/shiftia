@@ -74,13 +74,31 @@ function evaluateFull(data, worker, year, month, day, shift) {
 // ============================================================================
 // Constructores del shape uniforme de respuesta.
 // ============================================================================
+// Catálogo de códigos de ausencia / no-trabajo + etiqueta legible.
+// Categorías: Largo (semanas+), Corto (1-3 días), Variable.
+const ABSENCE_LABELS = {
+  VAC: 'Vacaciones',
+  VAA: 'Vacaciones año anterior',
+  VAN: 'Vacaciones arrastradas',
+  LAC: 'Lactancia',
+  EX:  'Excedencia',
+  BAJ: 'Baja médica',
+  FOR: 'Formación',
+  LD:  'Libre disposición',
+  AE:  'Asuntos propios',
+  PM:  'Permiso',
+  MTC: 'Motivo familiar',
+  CJ:  'Cómputo jornada'
+};
+
 const ACTION_LABELS = {
   librar:           { title: 'Librar día',           what: 'Convertir turno actual en descanso' },
   vacaciones:       { title: 'Marcar vacaciones',    what: 'Asignar VAC a los días indicados' },
   cambio:           { title: 'Proponer cambio',      what: 'Intercambiar turno con un compañero' },
   whoCovers:        { title: 'Buscar sustituto',     what: 'Sugerir candidatos para cubrir' },
   validateConvenio: { title: 'Validar convenio',     what: 'Comprobar legalidad de asignación' },
-  alternativas:     { title: 'Alternativas IA',      what: 'Comparar estrategias de cobertura' }
+  alternativas:     { title: 'Alternativas IA',      what: 'Comparar estrategias de cobertura' },
+  proposeAbsence:   { title: 'Plan de ausencia',     what: 'Cobertura día a día durante el rango' }
 };
 
 function formatDate(year, month, day) {
@@ -992,6 +1010,134 @@ function buildAssistantRouter({ pool, authMiddleware }) {
     } catch (err) {
       console.error('[assistant.syncWorkerMonth]', err);
       res.status(500).json({ error: 'Error al sincronizar el mes' });
+    }
+  });
+
+  // ============================================================================
+  // /proposeAbsence — plan de cobertura para una ausencia
+  // Body: { workerId|workerName, absenceType, startDate, endDate, reason? }
+  //
+  // Por cada día del rango: si el worker tiene turno laborable (M/T/N), busca
+  // sustituto con buildCoverPlan. Si es D/L/LD/ausencia ya, marca "no-cover".
+  // Devuelve plan día a día + estadísticas globales + reasoning explicativo.
+  //
+  // Catálogo de absenceTypes esperados:
+  //   Largos: VAC, VAA, VAN, LAC, EX, BAJ, FOR
+  //   Cortos: LD, AE, PM
+  //   Variables: MTC, CJ
+  // ============================================================================
+  router.post('/proposeAbsence', async (req, res) => {
+    try {
+      const data = await loadData(pool, req.user.id);
+      const p = parseCell(req.body);
+      const worker = resolveWorker(data, p);
+      if (!worker) {
+        return res.json({
+          ok: false, verdict: 'blocked', verdictLabel: 'Trabajador no identificado',
+          error: workerNotFoundError(p, data),
+          summary: buildSummary('proposeAbsence', null, p, { where: '?' })
+        });
+      }
+
+      const cell = req.body?.cell || {};
+      const absenceType = (cell.absenceType || 'VAC').toString().toUpperCase();
+      const startISO = cell.startDate || cell.dayISO;
+      const endISO   = cell.endDate   || cell.dayISO;
+      if (!startISO || !endISO) {
+        return res.json({ ok: false, error: 'Falta startDate / endDate (YYYY-MM-DD)' });
+      }
+      const [sy, sm, sd] = startISO.split('-').map(n => parseInt(n, 10));
+      const [ey, em, ed] = endISO.split('-').map(n => parseInt(n, 10));
+      if (!sy || !ey) return res.json({ ok: false, error: 'Fechas mal formateadas' });
+
+      const start = new Date(sy, sm - 1, sd);
+      const end   = new Date(ey, em - 1, ed);
+      if (start > end) return res.json({ ok: false, error: 'startDate posterior a endDate' });
+      const totalDaysRange = Math.round((end - start) / 86400000) + 1;
+      if (totalDaysRange > 366) return res.json({ ok: false, error: 'Rango excesivo (máx 366 días)' });
+
+      const days = [];
+      for (let cur = new Date(start); cur <= end; cur.setDate(cur.getDate() + 1)) {
+        const y = cur.getFullYear();
+        const m = cur.getMonth();
+        const d = cur.getDate() - 1;
+        const dateISO = `${y}-${String(m + 1).padStart(2, '0')}-${String(d + 1).padStart(2, '0')}`;
+        const dayOfWeek = cur.getDay();
+        const originalShift = engine.cellOf(data?.scheduleData || {}, y, m, worker.id, d);
+
+        const isAlreadyAbsence = engine.UNAVAILABLE_CODES.includes(originalShift);
+        const isRestDay = ['D', 'L', 'LD'].includes(originalShift);
+        const isEmpty   = !originalShift;
+
+        if (isAlreadyAbsence) {
+          days.push({ dateISO, dayOfWeek, day: d, month: m, year: y, originalShift, status: 'already-absent', note: `Ya estaba en ${originalShift}` });
+          continue;
+        }
+        if (isRestDay || isEmpty) {
+          days.push({ dateISO, dayOfWeek, day: d, month: m, year: y, originalShift: originalShift || '∅', status: 'no-cover-needed', note: isRestDay ? `${originalShift}: descanso, sin cobertura` : 'Día sin asignar' });
+          continue;
+        }
+
+        // Es turno laborable — buscar sustituto
+        const dayParam = { year: y, month: m, day: d };
+        const cp = buildCoverPlan(data, worker, dayParam, originalShift);
+        const primary = cp?.primary?.candidate || null;
+        const alternative = cp?.alternative?.candidate || null;
+
+        days.push({
+          dateISO, dayOfWeek, day: d, month: m, year: y,
+          originalShift,
+          status: primary ? 'covered' : 'no-substitute',
+          primary, alternative,
+          moreAvailable: cp?.moreCount || 0
+        });
+      }
+
+      // Resumen
+      const workDays = days.filter(x => x.status === 'covered' || x.status === 'no-substitute').length;
+      const coveredDays = days.filter(x => x.status === 'covered').length;
+      const uncoveredDays = days.filter(x => x.status === 'no-substitute').length;
+      const restDays = days.filter(x => x.status === 'no-cover-needed').length;
+      const alreadyAbsent = days.filter(x => x.status === 'already-absent').length;
+
+      const verdict = uncoveredDays === 0 ? 'ok' : uncoveredDays <= 2 ? 'warning' : 'blocked';
+      const verdictLabel = uncoveredDays === 0
+        ? `Plan cubre las ${workDays} jornadas laborables`
+        : `${uncoveredDays} día(s) sin sustituto`;
+
+      // Construir reasoning
+      const reasoning = [
+        { rule: 'Rango analizado', status: 'pass', detail: `${totalDaysRange} día(s): ${startISO} → ${endISO}` },
+        { rule: 'Tipo de ausencia', status: 'pass', detail: `${absenceType} ${ABSENCE_LABELS[absenceType] ? `· ${ABSENCE_LABELS[absenceType]}` : ''}` },
+        { rule: 'Jornadas laborables a cubrir', status: 'pass', detail: `${workDays} de ${totalDaysRange}` },
+        { rule: 'Días sin cobertura necesaria', status: 'pass', detail: `${restDays} (descansos) + ${alreadyAbsent} (ya en ausencia)` },
+        { rule: 'Cobertura encontrada', status: coveredDays === workDays && workDays > 0 ? 'pass' : coveredDays > 0 ? 'warning' : (workDays > 0 ? 'fail' : 'pass'), detail: workDays === 0 ? 'Sin jornadas laborables en el rango' : `${coveredDays}/${workDays} días con sustituto legal` },
+        { rule: 'Días huérfanos', status: uncoveredDays === 0 ? 'pass' : 'fail', detail: uncoveredDays === 0 ? 'Ninguno' : `${uncoveredDays} día(s) sin sustituto legal en planta` }
+      ];
+
+      res.json({
+        ok: true,
+        verdict, verdictLabel,
+        worker: worker.name,
+        summary: buildSummary('proposeAbsence', worker, p, {
+          title: `Plan de ausencia · ${absenceType}`,
+          what: `${ABSENCE_LABELS[absenceType] || absenceType} del ${startISO} al ${endISO}`,
+          where: (PLANT_NAMES[worker.planta] || worker.planta || '?') + (worker.role ? ` · ${worker.role}` : '')
+        }),
+        reasoning,
+        absencePlan: {
+          absenceType,
+          absenceLabel: ABSENCE_LABELS[absenceType] || absenceType,
+          startDate: startISO,
+          endDate: endISO,
+          totalDaysRange,
+          summary: { workDays, coveredDays, uncoveredDays, restDays, alreadyAbsent },
+          days
+        }
+      });
+    } catch (err) {
+      console.error('[assistant.proposeAbsence]', err);
+      res.status(500).json({ error: 'Error interno' });
     }
   });
 
