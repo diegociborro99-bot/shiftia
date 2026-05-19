@@ -286,11 +286,21 @@ function parseCell(body) {
   //  - cell.worker            (legacy: detector.js Alt+click)
   //  - cell.workerName        (nuevo: panel + editor de reglas)
   //  - context.workerName     (broadcast del detector)
-  // Igual para workerId — el panel manda en args, el detector en cell.
+  // Fecha: cell.dayISO (panel YYYY-MM-DD) tiene preferencia sobre {year,month,day}
+  // numéricos del detector.
+  let year  = Number.isFinite(cell.year)  ? cell.year  : new Date().getFullYear();
+  let month = Number.isFinite(cell.month) ? cell.month : new Date().getMonth();
+  let day   = Number.isFinite(cell.day)   ? cell.day   : new Date().getDate() - 1;
+  if (typeof cell.dayISO === 'string') {
+    const m = cell.dayISO.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) {
+      year = parseInt(m[1], 10);
+      month = parseInt(m[2], 10) - 1;
+      day = parseInt(m[3], 10) - 1;
+    }
+  }
   return {
-    year: Number.isFinite(cell.year) ? cell.year : new Date().getFullYear(),
-    month: Number.isFinite(cell.month) ? cell.month : new Date().getMonth(),
-    day: Number.isFinite(cell.day) ? cell.day : 0,
+    year, month, day,
     shift: cell.shift || null,
     workerId: cell.workerId ?? cell.workerHint ?? ctx.workerId ?? null,
     workerName: cell.workerName || cell.worker || ctx.workerName || ctx.worker || null,
@@ -917,6 +927,71 @@ function buildAssistantRouter({ pool, authMiddleware }) {
     } catch (err) {
       console.error('[assistant.syncCellChange]', err);
       res.status(500).json({ error: 'Error interno al volcar el cambio' });
+    }
+  });
+
+  // ============================================================================
+  // /syncWorkerMonth — volcado de un mes entero leído del DOM de Actais.
+  // Body: { workerId | workerName, year, month (0-based), cells: [31 strings] }
+  //
+  // Compara cell-by-cell con lo que tiene el backend y registra qué cambió.
+  // Útil tras un cambio manual en Actais — la supervisora pulsa "refrescar y
+  // volcar" en el panel y el motor IA queda sincronizado al instante.
+  // ============================================================================
+  router.post('/syncWorkerMonth', async (req, res) => {
+    try {
+      const p = parseCell(req.body);
+      const data = await loadData(pool, req.user.id);
+      const worker = resolveWorker(data, p);
+      if (!worker) {
+        return res.json({ ok: false, error: workerNotFoundError(p, data) });
+      }
+      const cells = Array.isArray(req.body?.cell?.cells) ? req.body.cell.cells
+                  : Array.isArray(req.body?.cells)        ? req.body.cells
+                  : null;
+      if (!cells) return res.json({ ok: false, error: 'Faltan cells[]' });
+      const year  = Number.isFinite(req.body?.cell?.year)  ? req.body.cell.year  : p.year;
+      const month = Number.isFinite(req.body?.cell?.month) ? req.body.cell.month : p.month;
+
+      if (!data.scheduleData) data.scheduleData = {};
+      const key = `${year}-${month}`;
+      const prev = data.scheduleData[key]?.[worker.id] || new Array(31).fill('');
+      const next = cells.slice(0, 31).map(c => (c == null ? '' : String(c).trim().toUpperCase()));
+      // Pad a 31
+      while (next.length < 31) next.push('');
+
+      // Detectar diff celda a celda
+      const diff = [];
+      for (let i = 0; i < 31; i++) {
+        const a = (prev[i] || '').toString().trim();
+        const b = (next[i] || '').toString().trim();
+        if (a !== b) diff.push({ day: i, from: a, to: b });
+      }
+
+      if (!data.scheduleData[key]) data.scheduleData[key] = {};
+      data.scheduleData[key][worker.id] = next;
+
+      await pool.query(
+        `INSERT INTO schedule_data (user_id, data) VALUES ($1, $2)
+         ON CONFLICT (user_id) DO UPDATE SET data = $2`,
+        [req.user.id, data]
+      );
+
+      res.json({
+        ok: true,
+        worker: worker.name,
+        workerId: worker.id,
+        year, month,
+        diff,
+        cellsChanged: diff.length,
+        cellsTotal: 31,
+        message: diff.length === 0
+          ? 'Sin cambios — la planilla del backend ya estaba sincronizada'
+          : `${diff.length} celda(s) actualizada(s) para ${worker.name}`
+      });
+    } catch (err) {
+      console.error('[assistant.syncWorkerMonth]', err);
+      res.status(500).json({ error: 'Error al sincronizar el mes' });
     }
   });
 
