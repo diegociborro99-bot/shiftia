@@ -1,11 +1,17 @@
 const express = require('express');
 const { matchWorker } = require('../engine/name-matcher');
+const engine = require('../engine/legality');
 
 // ============================================================================
 // Shiftia Assistant — endpoints deterministas (sin LLM, sin coste por consulta)
-// Replica server-side la lógica mínima del motor IA que vive en public/index.html.
-// Cada endpoint recibe { cell, context } desde la extensión y consulta el blob
-// `data` (scheduleData + workers + crossPlantAssignments) del usuario.
+//
+// Para garantizar paridad con el motor de la web, las reglas viven en
+// engine/legality.js. Aquí solo orquestamos: cargar data, resolver worker,
+// invocar engine.evaluateAssignment(), construir respuesta.
+//
+// Cada endpoint devuelve un shape uniforme:
+//   { ok, summary: {action,who,when,what,where}, verdict: 'ok'|'warning'|'blocked',
+//     verdictLabel, reasoning: [{rule,status,detail}], …payload acción específica }
 // ============================================================================
 
 const SP_RULES = {
@@ -46,52 +52,69 @@ function getEffectivePlanta(data, wId, year, month, day) {
   return workerById(data, wId)?.planta || null;
 }
 
-// ===== Legality (versión reducida — para validación rápida server-side) =====
+// ===== Legality (delega en engine/legality.js — paridad con la web) =====
+// La función legacy `checkLegality` solo evaluaba 5 reglas. Ahora delegamos
+// al motor portado que evalúa 7 reglas con cross-month + whitelist post-noche.
+// Cualquier sitio del código que llamaba a checkLegality(data, worker, year, month, day, shift)
+// sigue funcionando — devuelve { legal, reasons }.
 function checkLegality(data, worker, year, month, day, shift) {
-  const reasons = [];
-  let legal = true;
-
   if (!worker) return { legal: false, reasons: ['Trabajador no encontrado'] };
+  const workers = data?.workerMeta || data?.workers || [];
+  return engine.isLegalAssignment(worker.id, day, shift, data?.scheduleData || {}, workers, year, month);
+}
 
-  // Regla 1: restricciones individuales
-  if (worker.rules?.noNights && shift === 'N') {
-    legal = false; reasons.push('No realiza noches (regla individual)');
-  }
-  if (worker.rules?.noCover) {
-    legal = false; reasons.push('Trabajador marcado como "no cubre"');
-  }
+// evaluateFull — devuelve TODOS los checks (pass/fail), incluso los que pasan,
+// para construir el array de razonamiento que ve la supervisora.
+function evaluateFull(data, worker, year, month, day, shift) {
+  if (!worker) return { legal: false, reasons: ['Trabajador no encontrado'], checks: [] };
+  const workers = data?.workerMeta || data?.workers || [];
+  return engine.evaluateAssignment(worker.id, day, shift, data?.scheduleData || {}, workers, year, month);
+}
 
-  // Regla 2: adyacencia N → M/T (post-noche)
-  const prev = cellOf(data, year, month, worker.id, day - 1);
-  if (prev === 'N' && (shift === 'M' || shift === 'T')) {
-    legal = false; reasons.push(`Día anterior fue N: no se permite ${shift} (descanso post-noche)`);
-  }
+// ============================================================================
+// Constructores del shape uniforme de respuesta.
+// ============================================================================
+const ACTION_LABELS = {
+  librar:           { title: 'Librar día',           what: 'Convertir turno actual en descanso' },
+  vacaciones:       { title: 'Marcar vacaciones',    what: 'Asignar VAC a los días indicados' },
+  cambio:           { title: 'Proponer cambio',      what: 'Intercambiar turno con un compañero' },
+  whoCovers:        { title: 'Buscar sustituto',     what: 'Sugerir candidatos para cubrir' },
+  validateConvenio: { title: 'Validar convenio',     what: 'Comprobar legalidad de asignación' },
+  alternativas:     { title: 'Alternativas IA',      what: 'Comparar estrategias de cobertura' }
+};
 
-  // Regla 3: T → M día siguiente
-  if (prev === 'T' && shift === 'M') {
-    legal = false; reasons.push('Día anterior fue T: no se permite M (descanso mínimo)');
-  }
+function formatDate(year, month, day) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${pad(day + 1)}/${pad(month + 1)}/${year}`;
+}
 
-  // Regla 4: noches/mes máximo
-  if (shift === 'N') {
-    const month_shifts = data?.scheduleData?.[ymKey(year, month)]?.[worker.id] || [];
-    const nightCount = month_shifts.filter(s => s === 'N').length;
-    const max = worker.rules?.maxNightsPerMonth ?? SP_RULES.maxNightsPerMonth;
-    if (nightCount >= max) {
-      legal = false; reasons.push(`Ya alcanzó ${nightCount}/${max} noches este mes`);
-    }
-  }
+function buildSummary(action, worker, p, override = {}) {
+  const lbl = ACTION_LABELS[action] || { title: action, what: '' };
+  const where = (PLANT_NAMES[worker?.planta] || worker?.planta || '?') +
+                (worker?.role ? ` · ${worker.role}` : '');
+  return {
+    action,
+    title: override.title || lbl.title,
+    who: worker?.name || '?',
+    workerId: worker?.id,
+    actaisId: worker?.actaisId,
+    when: formatDate(p.year, p.month, p.day),
+    what: override.what || lbl.what,
+    where: override.where || where
+  };
+}
 
-  // Regla 5: días consecutivos
-  const monthSchedule = data?.scheduleData?.[ymKey(year, month)]?.[worker.id] || [];
-  let consec = 0;
-  for (let i = day; i >= 0 && monthSchedule[i] && !['L', 'D', 'VAC', 'LD'].includes(monthSchedule[i]); i--) consec++;
-  if (consec > SP_RULES.maxConsecutiveDays) {
-    legal = false; reasons.push(`Ya lleva ${consec} días consecutivos (máx ${SP_RULES.maxConsecutiveDays})`);
-  }
-
-  if (legal) reasons.push('Cumple las reglas evaluadas');
-  return { legal, reasons };
+// Convierte checks[] del engine en `verdict` global + verdictLabel
+function summarizeVerdict(checks, opts = {}) {
+  const failed = checks.filter(c => c.status === 'fail').length;
+  const warned = checks.filter(c => c.status === 'warning').length;
+  const verdict = failed > 0 ? 'blocked' : warned > 0 ? 'warning' : 'ok';
+  const verdictLabel = opts.labels?.[verdict] || (
+    verdict === 'blocked' ? 'No legal'
+    : verdict === 'warning' ? 'Atención'
+    : 'Cumple'
+  );
+  return { verdict, verdictLabel, failed, warned };
 }
 
 // ===== Scoring básico (reutiliza concepto de scoreCandidate del cliente) =====
@@ -271,8 +294,30 @@ function buildAssistantRouter({ pool, authMiddleware }) {
       const data = await loadData(pool, req.user.id);
       const p = parseCell(req.body);
       const worker = resolveWorker(data, p);
-      if (!worker) return res.json({ legal: false, reasons: ['Trabajador no identificado'] });
-      res.json(checkLegality(data, worker, p.year, p.month, p.day, p.shift || 'M'));
+      if (!worker) {
+        return res.json({
+          ok: false, legal: false, verdict: 'blocked',
+          verdictLabel: 'Trabajador no identificado',
+          error: workerNotFoundError(p, data),
+          summary: buildSummary('validateConvenio', null, p, { where: '?' })
+        });
+      }
+      const targetShift = p.shift || cellOf(data, p.year, p.month, worker.id, p.day) || 'M';
+      const ev = evaluateFull(data, worker, p.year, p.month, p.day, targetShift);
+      const v = summarizeVerdict(ev.checks, {
+        labels: { blocked: 'No cumple', warning: 'Atención', ok: 'Cumple todas las reglas' }
+      });
+      res.json({
+        ok: ev.legal, legal: ev.legal,
+        verdict: v.verdict, verdictLabel: v.verdictLabel,
+        worker: worker.name,
+        summary: buildSummary('validateConvenio', worker, p, { what: `Asignar turno ${targetShift}` }),
+        reasoning: ev.checks,
+        // back-compat
+        reasons: ev.legal ? ['Cumple todas las reglas'] : ev.reasons,
+        date: { year: p.year, month: p.month, day: p.day },
+        shift: targetShift
+      });
     } catch (err) { res.status(500).json({ error: 'Error interno' }); console.error('[assistant.validateConvenio]', err); }
   });
 
@@ -317,27 +362,133 @@ function buildAssistantRouter({ pool, authMiddleware }) {
       const data = await loadData(pool, req.user.id);
       const p = parseCell(req.body);
       const worker = resolveWorker(data, p);
-      if (!worker) return res.json({ ok: false, error: 'Trabajador no identificado' });
+      if (!worker) {
+        return res.json({
+          ok: false,
+          verdict: 'blocked',
+          verdictLabel: 'Trabajador no identificado',
+          error: workerNotFoundError(p, data),
+          summary: buildSummary('librar', null, p, { where: '?' })
+        });
+      }
 
       const originalShift = cellOf(data, p.year, p.month, worker.id, p.day);
       const targetPlanta = worker.planta;
-      const monthSchedules = data?.scheduleData?.[ymKey(p.year, p.month)] || {};
+      const targetPlantaLabel = PLANT_NAMES[targetPlanta] || targetPlanta || '?';
+      const monthSchedules = data?.scheduleData?.[p.year + '-' + p.month] || {};
+
+      // Cobertura ACTUAL del turno en esa planta
       let coveringNow = 0;
+      const otherCoverers = [];
       for (const wId of Object.keys(monthSchedules)) {
         const arr = monthSchedules[wId] || [];
-        if (arr[p.day] === originalShift && getEffectivePlanta(data, wId, p.year, p.month, p.day) === targetPlanta) coveringNow++;
+        if (arr[p.day] !== originalShift) continue;
+        if (getEffectivePlanta(data, wId, p.year, p.month, p.day) !== targetPlanta) continue;
+        coveringNow++;
+        if (String(wId) !== String(worker.id)) {
+          const w2 = workerById(data, wId);
+          if (w2) otherCoverers.push(w2.name);
+        }
       }
       const required = PLANT_COVERAGE[targetPlanta]?.[originalShift] ?? 0;
-      const willBecomeCritical = (coveringNow - 1) < required;
+      const afterIfRemoved = coveringNow - 1;
+      const wouldGenerateGap = afterIfRemoved < required;
+      const atBareMinimum = afterIfRemoved === required && required > 0;
+
+      // Sustitutos POTENCIALES (no detallados, solo count): otros workers
+      // de la misma planta que ese día están en D/L/LD y serían elegibles.
+      let potentialSubstitutes = 0;
+      const workers = data.workerMeta || data.workers || [];
+      for (const w of workers) {
+        if (String(w.id) === String(worker.id)) continue;
+        if (w.planta !== targetPlanta && !w.flotante) continue;
+        const cell = (monthSchedules[w.id] || [])[p.day] || '';
+        if (!['', 'D', 'L', 'LD'].includes(String(cell).trim())) continue;
+        // Pasar el motor para asegurar legalidad del cambio
+        const ev = engine.isLegalAssignment(w.id, p.day, originalShift, data.scheduleData || {}, workers, p.year, p.month);
+        if (ev.legal) potentialSubstitutes++;
+      }
+
+      // Razonamiento — qué reglas miramos para esta acción
+      const reasoning = [];
+
+      // 1. Estado actual del día
+      if (engine.UNAVAILABLE_CODES.includes(originalShift)) {
+        reasoning.push({ rule: 'Estado del día', status: 'fail', detail: `Ya está en ${originalShift} (ausencia). No hay nada que librar.` });
+      } else if (!originalShift || originalShift === 'D') {
+        reasoning.push({ rule: 'Estado del día', status: 'warning', detail: 'El día ya está en descanso o vacío.' });
+      } else {
+        reasoning.push({ rule: 'Estado del día', status: 'pass', detail: `Día asignado a turno ${originalShift}` });
+      }
+
+      // 2. Cobertura
+      if (required === 0) {
+        reasoning.push({ rule: 'Cobertura planta', status: 'pass', detail: `${targetPlantaLabel} no requiere cobertura mínima para ${originalShift}` });
+      } else if (wouldGenerateGap) {
+        reasoning.push({ rule: 'Cobertura planta', status: 'fail', detail: `Tras librar quedarían ${afterIfRemoved} cubriendo, mínimo requerido ${required}` });
+      } else if (atBareMinimum) {
+        reasoning.push({ rule: 'Cobertura planta', status: 'warning', detail: `Tras librar quedan justo ${afterIfRemoved} (= mínimo ${required}). Sin margen.` });
+      } else {
+        reasoning.push({ rule: 'Cobertura planta', status: 'pass', detail: `${coveringNow} cubriendo ahora · ${afterIfRemoved} tras librar · mínimo ${required}` });
+      }
+
+      // 3. Sustitutos disponibles
+      if (potentialSubstitutes === 0 && wouldGenerateGap) {
+        reasoning.push({ rule: 'Sustitutos disponibles', status: 'fail', detail: 'No hay candidatos legales en planta+flotantes para cubrir ese turno' });
+      } else if (potentialSubstitutes === 0) {
+        reasoning.push({ rule: 'Sustitutos disponibles', status: 'warning', detail: 'Ninguno listo, pero hay margen de cobertura' });
+      } else {
+        reasoning.push({ rule: 'Sustitutos disponibles', status: 'pass', detail: `${potentialSubstitutes} candidatos legales para cubrir el turno` });
+      }
+
+      // 4. Otros cubriendo (informativo)
+      if (otherCoverers.length > 0) {
+        reasoning.push({ rule: 'Compañeros en el mismo turno', status: 'pass', detail: otherCoverers.slice(0, 4).join(', ') + (otherCoverers.length > 4 ? `, +${otherCoverers.length - 4} más` : '') });
+      }
+
+      const v = summarizeVerdict(reasoning, {
+        labels: {
+          blocked: 'No se puede librar',
+          warning: 'Cuidado: hueco al límite',
+          ok: 'Se puede librar sin problema'
+        }
+      });
 
       res.json({
-        ok: true, worker: worker.name, originalShift, plantaAffected: PLANT_NAMES[targetPlanta] || targetPlanta,
-        currentCoverage: coveringNow, requiredCoverage: required,
-        wouldGenerateGap: willBecomeCritical,
-        suggestion: willBecomeCritical ? 'Librarle dejará un hueco crítico. Considera primero asignar sustituto.' : 'Se puede librar sin generar hueco.'
+        ok: true,
+        verdict: v.verdict,
+        verdictLabel: v.verdictLabel,
+        worker: worker.name,
+        summary: buildSummary('librar', worker, p, { what: `Convertir turno ${originalShift || '∅'} → descanso` }),
+        reasoning,
+        // payload legacy (back-compat con el frontend viejo)
+        originalShift,
+        plantaAffected: targetPlantaLabel,
+        currentCoverage: coveringNow,
+        requiredCoverage: required,
+        wouldGenerateGap,
+        potentialSubstitutes,
+        suggestion: v.verdict === 'blocked'
+          ? 'No se puede librar este día (revisa razonamiento).'
+          : v.verdict === 'warning'
+            ? 'Se puede librar pero quedará en el mínimo. Considera asignar sustituto antes.'
+            : 'Se puede librar sin generar hueco.'
       });
     } catch (err) { res.status(500).json({ error: 'Error interno' }); console.error('[assistant.librar]', err); }
   });
+
+  // Helper: mensaje rico cuando resolveWorker devuelve null. Da pistas al
+  // supervisor sobre por qué no encuentra al trabajador.
+  function workerNotFoundError(p, data) {
+    const total = (data?.workerMeta || data?.workers || []).length;
+    const name = p.workerName;
+    const id = p.workerId;
+    if (total === 0) return 'No tienes planillas importadas todavía. Sube los PDFs en el tab Importar.';
+    if (name && id) return `No encuentro a "${name}" (Actais id ${id}) entre los ${total} trabajadores importados. ¿Subiste su PDF? Si tiene Mª/abreviaturas, puede que el nombre del PDF no coincida exactamente.`;
+    if (name) return `No encuentro a "${name}" entre los ${total} trabajadores importados.`;
+    if (id) return `No encuentro Actais id ${id} entre los ${total} trabajadores. Hace falta que hagas Alt+click después de seleccionar al empleado en el árbol.`;
+    return `No se pudo identificar (sin nombre ni id en el contexto). Selecciona un empleado en el árbol antes de la acción.`;
+  }
 
   router.post('/vacaciones', async (req, res) => {
     try {
