@@ -986,6 +986,25 @@ function buildAssistantRouter({ pool, authMiddleware }) {
         if (a !== b) diff.push({ day: i, from: a, to: b });
       }
 
+      // ===== DEFENSA: rechaza syncs destructivos =====
+      // Si una sync va a vaciar 4+ celdas no-vacías, lo paramos.
+      // Caso típico: extensión escanea durante render parcial de Actais y
+      // ve celdas vacías que en realidad sí tenían datos.
+      const destructiveCount = diff.filter(d => d.from && !d.to).length;
+      const allowDestructive = req.body?.cell?.allowDestructive === true;
+      if (destructiveCount > 3 && !allowDestructive) {
+        return res.json({
+          ok: false,
+          suspicious: true,
+          reason: 'destructive-sync-blocked',
+          cellsChanged: 0,
+          destructiveCount,
+          diff,
+          worker: worker.name,
+          message: `Se bloqueó por seguridad: ${destructiveCount} celdas perderían su valor (${prev.filter(Boolean).length} → ${next.filter(Boolean).length} celdas con datos). Causa probable: la extensión escaneó durante render parcial de Actais. Si es intencional, marca "Permitir vaciar" antes de reintentar.`
+        });
+      }
+
       if (!data.scheduleData[key]) data.scheduleData[key] = {};
       data.scheduleData[key][worker.id] = next;
 
