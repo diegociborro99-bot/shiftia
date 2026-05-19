@@ -264,14 +264,20 @@ Validación de convenio: pendiente de revisión.`;
 // ===== Helpers de routing =====
 function parseCell(body) {
   const cell = body?.cell || {};
+  const ctx = body?.context || {};
+  // Acepta nombres en varios alias para no perder el dato según el cliente:
+  //  - cell.worker            (legacy: detector.js Alt+click)
+  //  - cell.workerName        (nuevo: panel + editor de reglas)
+  //  - context.workerName     (broadcast del detector)
+  // Igual para workerId — el panel manda en args, el detector en cell.
   return {
     year: Number.isFinite(cell.year) ? cell.year : new Date().getFullYear(),
     month: Number.isFinite(cell.month) ? cell.month : new Date().getMonth(),
     day: Number.isFinite(cell.day) ? cell.day : 0,
     shift: cell.shift || null,
-    workerId: cell.workerId ?? cell.workerHint ?? null,
-    workerName: cell.worker || null,
-    plantaId: cell.plantaId || null
+    workerId: cell.workerId ?? cell.workerHint ?? ctx.workerId ?? null,
+    workerName: cell.workerName || cell.worker || ctx.workerName || ctx.worker || null,
+    plantaId: cell.plantaId || ctx.plantaId || null
   };
 }
 
