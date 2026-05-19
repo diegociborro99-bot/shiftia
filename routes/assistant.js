@@ -113,6 +113,20 @@ function buildSummary(action, worker, p, override = {}) {
 // Filtra estrictamente por rol (DUE→DUE, tec→tec, micro→micro) y por planta
 // (o flotantes) y pasa cada candidato por el motor de legalidad completo.
 // ============================================================================
+function chainContext(data, workerId, p) {
+  // Devuelve el turno del día anterior y el siguiente (con cross-month).
+  // Sirve para mostrar a la supervisora qué le espera al candidato antes y
+  // después — info que ayuda a decidir aunque las reglas ya estén OK.
+  const sd = data?.scheduleData || {};
+  const previous = engine.cellOf(sd, p.year, p.month, workerId, p.day - 1)
+                || engine.getCrossMonthShift(sd, workerId, p.year, p.month, p.day === 0 ? -1 : 0);
+  const sch = sd?.[`${p.year}-${p.month}`]?.[workerId] || [];
+  const lastIdx = sch.length - 1;
+  const next = engine.cellOf(sd, p.year, p.month, workerId, p.day + 1)
+            || (p.day === lastIdx ? engine.getCrossMonthShift(sd, workerId, p.year, p.month, +1) : '');
+  return { previous: previous || '', next: next || '' };
+}
+
 function buildCoverPlan(data, absentWorker, p, targetShift) {
   if (!absentWorker || !targetShift) return null;
   const workers = data.workerMeta || data.workers || [];
@@ -133,6 +147,7 @@ function buildCoverPlan(data, absentWorker, p, targetShift) {
       const nightsDone = myMonth.filter(s => s === 'N').length;
       // Estrategia balance: penaliza al que ya ha currado mucho
       const balancePenalty = Math.max(0, workedDays - 15) * 3;
+      const chain = chainContext(data, w.id, p);
       return {
         workerId: w.id,
         name: w.name,
@@ -146,6 +161,8 @@ function buildCoverPlan(data, absentWorker, p, targetShift) {
         breakdown: scoring.breakdown,
         workedDays,
         nightsDone,
+        previousShift: chain.previous,
+        nextShift: chain.next,
         legalChecks: ev.checks
       };
     })
