@@ -1,7 +1,7 @@
-// Shiftia Service Worker v3.1
+// Shiftia Service Worker v3.2
 // Offline cache — network-first for HTML, cache-first for static assets
 
-const CACHE_NAME = 'shiftia-v3.1';
+const CACHE_NAME = 'shiftia-v3.2';
 const STATIC_ASSETS = [
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'

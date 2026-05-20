@@ -8,7 +8,15 @@ const { Pool } = require('pg');
 const WebSocket = require('ws');
 
 const app = express();
+// Hide Express fingerprint and honor proxy headers (Railway / reverse proxies)
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+app.set('etag', 'strong');
 const server = http.createServer(app);
+// Be friendly to L4/L7 proxies (avoid 502s on idle keepalives)
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
+server.requestTimeout = 120000;
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || (() => {
   const crypto = require('crypto');
@@ -104,8 +112,78 @@ setInterval(() => {
   });
 }, 30000);
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// Body parsing with sane size limits to prevent abuse
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: false, limit: '256kb' }));
+
+// ====== SECURITY HEADERS ======
+// Defense-in-depth: applied to every response before routing.
+const HSTS_VALUE = 'max-age=31536000; includeSubDomains';
+const CSP_VALUE = [
+  "default-src 'self' https: data: blob:",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' data: blob:",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
+  "connect-src 'self' https: wss: ws:",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'"
+].join('; ');
+
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=()');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+  res.setHeader('X-DNS-Prefetch-Control', 'off');
+  res.setHeader('Strict-Transport-Security', HSTS_VALUE);
+  res.setHeader('Content-Security-Policy', CSP_VALUE);
+  // No-store for API responses to prevent stale cached PII
+  if (req.path.startsWith('/api/')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+  }
+  next();
+});
+
+// Hard-block direct access to source / config / backup artefacts.
+// Even if a file accidentally lands in public/ it cannot be served by URL.
+const BLOCKED_PATH_RE = /(?:^|\/)(?:server\.js|package(?:-lock)?\.json|Dockerfile|\.dockerignore|\.env(?:\..*)?|\.git(?:\/|$)|node_modules|engine|routes|landing|.*\.md|index[ _-]?\d+\.html?)$/i;
+app.use((req, res, next) => {
+  try {
+    const decoded = decodeURIComponent(req.path);
+    if (BLOCKED_PATH_RE.test(decoded)) {
+      return res.status(404).type('text/plain').send('Not Found');
+    }
+  } catch (_) {
+    return res.status(400).type('text/plain').send('Bad Request');
+  }
+  next();
+});
+
+// Static assets with proper caching and dotfile / index protection.
+const STATIC_DIR = path.join(__dirname, 'public');
+app.use(express.static(STATIC_DIR, {
+  dotfiles: 'deny',
+  index: false,           // never auto-serve directory index; routing controls HTML delivery
+  redirect: false,
+  etag: true,
+  lastModified: true,
+  maxAge: '1d',
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      // HTML must always be revalidated so deploys take effect immediately
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    } else if (/\.(?:js|css|woff2?|ttf|otf|png|jpe?g|svg|gif|ico|webp|avif)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+    }
+  }
+}));
 
 // CORS específico para la extensión Chrome (no afecta el resto del flujo same-origin)
 app.use((req, res, next) => {
@@ -1283,9 +1361,34 @@ const { buildImportRouter } = require('./routes/import');
 app.use('/api/assistant', buildAssistantRouter({ pool, authMiddleware }));
 app.use('/api/import', buildImportRouter({ pool, authMiddleware }));
 
-// SPA fallback
-app.get('*', (req, res) => {
+// Unknown /api/* routes must return JSON 404 — never the SPA shell.
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// SPA fallback (only for browser GET navigations)
+app.get('*', (req, res, next) => {
+  // Don't leak the SPA for non-GET or asset-looking requests
+  if (req.method !== 'GET') return res.status(405).type('text/plain').send('Method Not Allowed');
+  if (/\.[a-z0-9]{2,5}$/i.test(req.path)) return res.status(404).type('text/plain').send('Not Found');
+  res.setHeader('Cache-Control', 'no-cache, must-revalidate');
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Global error handler — never leak stack traces to clients
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('[Express Error]', req.method, req.path, '-', err && err.message);
+  if (res.headersSent) return;
+  // Body-parser too-large
+  if (err && err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Payload too large' });
+  }
+  // Malformed JSON
+  if (err && err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Invalid JSON payload' });
+  }
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 // ====== DAILY SUMMARY EMAIL (7:00 AM) ======
@@ -1401,5 +1504,34 @@ async function startServer() {
     process.exit(1);
   }
 }
+
+// ====== PROCESS-LEVEL ROBUSTNESS ======
+// Don't crash the server on isolated async failures — log and keep serving.
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err && err.stack || err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason && reason.stack || reason);
+});
+
+// Graceful shutdown — let in-flight requests finish before exit.
+let shuttingDown = false;
+function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`[${signal}] graceful shutdown initiated`);
+  // Stop accepting new connections
+  server.close(() => {
+    console.log('[shutdown] HTTP server closed');
+    pool.end().catch(() => {}).finally(() => process.exit(0));
+  });
+  // Hard-exit fallback
+  setTimeout(() => {
+    console.warn('[shutdown] forced exit after 10s');
+    process.exit(1);
+  }, 10000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 startServer();
