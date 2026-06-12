@@ -1,6 +1,7 @@
 const express = require('express');
 const { matchWorker } = require('../engine/name-matcher');
 const engine = require('../engine/legality');
+const { computeMonthDiff } = require('../engine/month-diff');
 
 // ============================================================================
 // Shiftia Assistant — endpoints deterministas (sin LLM, sin coste por consulta)
@@ -974,23 +975,39 @@ function buildAssistantRouter({ pool, authMiddleware }) {
       if (!data.scheduleData) data.scheduleData = {};
       const key = `${year}-${month}`;
       const prev = data.scheduleData[key]?.[worker.id] || new Array(31).fill('');
-      const next = cells.slice(0, 31).map(c => (c == null ? '' : String(c).trim().toUpperCase()));
-      // Pad a 31
-      while (next.length < 31) next.push('');
 
-      // Detectar diff celda a celda
-      const diff = [];
-      for (let i = 0; i < 31; i++) {
-        const a = (prev[i] || '').toString().trim();
-        const b = (next[i] || '').toString().trim();
-        if (a !== b) diff.push({ day: i, from: a, to: b });
+      // Diff celda a celda (función pura compartida — engine/month-diff.js)
+      const { diff, next, destructiveCount } = computeMonthDiff(prev, cells);
+
+      // ===== DRY-RUN: devuelve el diff SIN persistir =====
+      // La extensión lo usa para mostrar vista previa antes de confirmar.
+      const dryRun = req.body?.cell?.dryRun === true || req.body?.dryRun === true;
+      if (dryRun) {
+        // Garantía de cero escrituras: resolveWorker puede haber marcado un
+        // binding de actaisId (__bindActaisId) que loadData persistiría a los
+        // 500ms. En dryRun lo descartamos — se vinculará en el apply real.
+        for (const w of (data.workerMeta || [])) delete w.__bindActaisId;
+        return res.json({
+          ok: true,
+          dryRun: true,
+          worker: worker.name,
+          workerId: worker.id,
+          year, month,
+          prev,
+          diff,
+          cellsChanged: diff.length,
+          destructiveCount,
+          message: diff.length === 0
+            ? 'Sin cambios — la planilla del backend ya está sincronizada'
+            : `${diff.length} celda(s) cambiarían para ${worker.name}` +
+              (destructiveCount > 0 ? ` (${destructiveCount} se vaciarían)` : '')
+        });
       }
 
       // ===== DEFENSA: rechaza syncs destructivos =====
       // Si una sync va a vaciar 4+ celdas no-vacías, lo paramos.
       // Caso típico: extensión escanea durante render parcial de Actais y
       // ve celdas vacías que en realidad sí tenían datos.
-      const destructiveCount = diff.filter(d => d.from && !d.to).length;
       const allowDestructive = req.body?.cell?.allowDestructive === true;
       if (destructiveCount > 3 && !allowDestructive) {
         return res.json({
