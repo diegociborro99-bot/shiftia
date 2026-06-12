@@ -1,0 +1,9 @@
+node_modules
+data
+.git
+.gitignore
+.DS_Store
+.env
+*.md
+VibeBoxes
+shiftia_v5.html

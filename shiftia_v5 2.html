@@ -1,0 +1,4871 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#5c7a6f">
+<title>Shiftia v5.2 — Planificador Inteligente de Turnos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f6f3;
+  --surface: #ffffff;
+  --surface2: #f2f0ed;
+  --text: #2c2c2c;
+  --text2: #7a7a7a;
+  --text3: #b0b0b0;
+  --accent: #5c7a6f;
+  --accent2: #8faa9b;
+  --morning: #2e8b7a;
+  --afternoon: #4a9dd4;
+  --night: #c5a832;
+  --rest: #cc4444;
+  --vac: #8b2020;
+  --danger: #cc4444;
+  --success: #7aab8a;
+  --for: #d4883a;
+  --caa: #7a8a6a;
+  --ld: #5a8abf;
+  --ae: #a8a832;
+  --ex: #9a9a9a;
+  --baj: #b04050;
+  --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+  --shadow-hover: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05);
+}
+
+[data-theme="dark"] {
+  --bg: #1a1a1e;
+  --surface: #242428;
+  --surface2: #2a2a2e;
+  --text: #e8e6e3;
+  --text2: #9a9a9a;
+  --text3: #5a5a5a;
+  --shadow: 0 1px 3px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.15);
+  --shadow-hover: 0 2px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.2);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background 0.3s ease, color 0.3s ease;
+  line-height: 1.6;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Navigation */
+.topbar {
+  background: var(--surface);
+  padding: 16px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow);
+  margin-bottom: 28px;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  border-bottom: 1px solid var(--surface2);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex: 1;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 32px;
+}
+
+.nav-tab {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 0;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+  font-family: inherit;
+}
+
+.nav-tab:active {
+  transform: scale(0.95);
+}
+
+.nav-tab:hover {
+  color: var(--text);
+}
+
+.nav-tab.active {
+  color: var(--accent);
+}
+
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-btn {
+  background: var(--surface2);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: var(--text2);
+}
+
+.theme-btn:hover {
+  background: var(--accent2);
+  color: var(--surface);
+}
+
+/* Main content */
+.content {
+  flex: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 40px 60px;
+}
+
+.view-panel {
+  display: none;
+  animation: fadeInUp 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.view-panel.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: var(--shadow); }
+  50% { box-shadow: 0 0 0 4px rgba(92, 122, 111, 0.1), var(--shadow-hover); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
+/* Dashboard */
+.dashboard-title {
+  font-size: 36px;
+  font-weight: 300;
+  margin-bottom: 8px;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+
+.dashboard-subtitle {
+  font-size: 13px;
+  color: var(--text3);
+  margin-bottom: 32px;
+}
+
+.stat-pills {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.stat-pill {
+  background: var(--surface);
+  padding: 20px 24px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation: fadeInUp 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.stat-pill:nth-child(1) { animation-delay: 0.05s; }
+.stat-pill:nth-child(2) { animation-delay: 0.1s; }
+.stat-pill:nth-child(3) { animation-delay: 0.15s; }
+
+.stat-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.stat-pill-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.stat-pill-label {
+  font-size: 11px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+.roster-section {
+  margin-bottom: 36px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text3);
+  margin-bottom: 20px;
+}
+
+.roster-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.shift-card {
+  background: var(--surface);
+  padding: 24px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  transition: all 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation: fadeInScale 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.shift-card:nth-child(1) { animation-delay: 0.05s; }
+.shift-card:nth-child(2) { animation-delay: 0.12s; }
+.shift-card:nth-child(3) { animation-delay: 0.19s; }
+
+.shift-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+}
+
+.shift-time {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.shift-workers {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+}
+
+.worker-name {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.divider {
+  height: 1px;
+  background: var(--surface2);
+  margin: 32px 0;
+}
+
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+}
+
+.week-day {
+  background: var(--surface);
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  transition: all 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+  cursor: pointer;
+  animation: fadeInUp 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.week-day:nth-child(1) { animation-delay: 0.05s; }
+.week-day:nth-child(2) { animation-delay: 0.08s; }
+.week-day:nth-child(3) { animation-delay: 0.11s; }
+.week-day:nth-child(4) { animation-delay: 0.14s; }
+.week-day:nth-child(5) { animation-delay: 0.17s; }
+.week-day:nth-child(6) { animation-delay: 0.2s; }
+.week-day:nth-child(7) { animation-delay: 0.23s; }
+
+.week-day:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: var(--shadow-hover);
+}
+
+.week-day-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.week-day-letter {
+  font-size: 9px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.week-day-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+
+.recent-activity {
+  background: var(--surface);
+  padding: 28px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.activity-item {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--surface2);
+  font-size: 13px;
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-date {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 4px;
+}
+
+.activity-text {
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* Schedule View */
+.schedule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-btn {
+  background: var(--surface);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.nav-btn:hover {
+  background: var(--accent);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
+}
+
+.month-name {
+  font-size: 18px;
+  font-weight: 500;
+  min-width: 160px;
+  text-align: center;
+  color: var(--accent);
+}
+
+.search-box {
+  background: var(--surface);
+  border: none;
+  padding: 10px 16px;
+  border-radius: 12px;
+  width: 200px;
+  font-size: 13px;
+  color: var(--text);
+  box-shadow: var(--shadow);
+  font-family: inherit;
+}
+
+.search-box::placeholder {
+  color: var(--text3);
+}
+
+table.schedule tbody tr {
+  transition: background 0.2s ease;
+}
+
+table.schedule tbody tr:hover {
+  background: rgba(92, 122, 111, 0.03);
+}
+
+table.schedule td.name-cell:hover {
+  color: var(--accent);
+}
+
+.conflict-card {
+  transition: all 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation: slideInRight 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.conflict-card:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.timeline-item {
+  transition: all 0.2s ease;
+}
+
+.timeline-item:hover {
+  background: rgba(92, 122, 111, 0.03);
+  border-radius: 8px;
+}
+
+.schedule-table-wrap {
+  background: var(--surface);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+
+table.schedule {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 1000px;
+}
+
+table.schedule th {
+  background: var(--surface2);
+  padding: 12px 4px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 1px solid var(--surface2);
+}
+
+table.schedule th.day-header {
+  min-width: 50px;
+  padding: 12px 2px;
+}
+
+table.schedule th.day-header .day-name {
+  font-size: 9px;
+  color: var(--text3);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+table.schedule th.day-header .day-num {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+table.schedule th.name-col {
+  text-align: left;
+  padding-left: 12px;
+  min-width: 140px;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface2);
+}
+
+table.schedule td {
+  padding: 8px 2px;
+  text-align: center;
+  border-bottom: 1px solid var(--surface2);
+}
+
+table.schedule td.name-cell {
+  text-align: left;
+  padding: 8px 12px;
+  font-weight: 500;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+table.schedule td.name-cell:hover {
+  background: var(--surface2);
+}
+
+.shift-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 32px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+  user-select: none;
+}
+
+.shift-pill:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+  z-index: 2;
+  position: relative;
+}
+
+.shift-pill:active {
+  transform: scale(0.95);
+}
+
+/* Shift Editor Popup */
+.shift-editor-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+
+.shift-editor {
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+  width: 380px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: fadeIn 0.2s ease;
+}
+
+.se-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--surface2);
+}
+
+.se-worker-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.se-date {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.se-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.se-current-label {
+  font-size: 11px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.se-section {
+  padding: 16px 24px;
+}
+
+.se-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  margin-bottom: 12px;
+}
+
+.se-shifts-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.se-shift-btn {
+  background: var(--surface2);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 10px 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.se-shift-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+.se-shift-btn.active {
+  border-color: var(--accent);
+  background: rgba(92, 122, 111, 0.1);
+}
+
+.se-shift-btn .se-code {
+  font-size: 16px;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.se-shift-btn .se-label {
+  font-size: 9px;
+  color: var(--text3);
+  display: block;
+}
+
+.se-alert {
+  margin: 0 24px 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  display: none;
+}
+
+.se-alert.warning {
+  background: rgba(212, 165, 116, 0.12);
+  color: var(--afternoon);
+  display: block;
+}
+
+.se-alert.danger {
+  background: rgba(196, 122, 122, 0.12);
+  color: var(--danger);
+  display: block;
+}
+
+.se-alert.info {
+  background: rgba(92, 122, 111, 0.08);
+  color: var(--accent);
+  display: block;
+}
+
+.se-substitutes {
+  margin: 0 24px 12px;
+  padding: 14px;
+  background: var(--surface2);
+  border-radius: 10px;
+  display: none;
+}
+
+.se-substitutes.visible {
+  display: block;
+}
+
+.se-sub-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+
+.se-sub-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 12px;
+  color: var(--text2);
+  border-bottom: 1px solid var(--surface);
+}
+
+.se-sub-item:last-child {
+  border-bottom: none;
+}
+
+.se-sub-score {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(122, 171, 138, 0.12);
+  color: var(--success);
+}
+
+.se-reason {
+  padding: 12px 24px 16px;
+}
+
+.se-reason input {
+  width: 100%;
+  background: var(--surface2);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--text);
+}
+
+.se-reason input::placeholder {
+  color: var(--text3);
+}
+
+.se-actions {
+  padding: 12px 24px 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.se-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.se-btn-cancel {
+  background: var(--surface2);
+  color: var(--text2);
+}
+
+.se-btn-cancel:hover {
+  background: var(--text3);
+  color: var(--surface);
+}
+
+.se-btn-save {
+  background: var(--accent);
+  color: white;
+}
+
+.se-btn-save:hover {
+  background: var(--accent2);
+  transform: translateY(-1px);
+}
+
+.se-btn-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text);
+  color: var(--bg);
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  z-index: 300;
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.shift-M, .shift-MR {
+  background: #2e8b7a;
+  color: #fff;
+}
+
+.shift-T {
+  background: #4a9dd4;
+  color: #fff;
+}
+
+.shift-N {
+  background: #d4c032;
+  color: #333;
+}
+
+.shift-D {
+  background: #d94444;
+  color: #fff;
+}
+
+.shift-VAC {
+  background: #8b2020;
+  color: #fff;
+  font-size: 9px;
+}
+
+.shift-LD {
+  background: #5a8abf;
+  color: #fff;
+  font-size: 9px;
+}
+
+.shift-FOR {
+  background: #d4883a;
+  color: #fff;
+  font-size: 9px;
+}
+
+.shift-CAA {
+  background: #7a8a6a;
+  color: #fff;
+  font-size: 9px;
+}
+
+.shift-AE {
+  background: #a8a832;
+  color: #fff;
+  font-size: 9px;
+}
+
+.shift-EX {
+  background: #9a9a9a;
+  color: #fff;
+  font-size: 9px;
+}
+
+.shift-BAJ {
+  background: #b04050;
+  color: #fff;
+  font-size: 9px;
+}
+
+.shift-CJ {
+  background: #6a7a9a;
+  color: #fff;
+  font-size: 9px;
+}
+
+.shift-FN {
+  background: #888;
+  color: #fff;
+  font-size: 9px;
+}
+
+.shift-LAC {
+  background: #c06090;
+  color: #fff;
+  font-size: 8px;
+}
+
+.shift-MTC {
+  background: #d070a0;
+  color: #fff;
+  font-size: 8px;
+}
+
+.shift-INT {
+  background: #b04050;
+  color: #fff;
+  font-size: 8px;
+}
+
+.shift-HF {
+  background: #7a5a9a;
+  color: #fff;
+  font-size: 9px;
+}
+
+.shift-HS {
+  background: #5a7a5a;
+  color: #fff;
+  font-size: 9px;
+}
+
+.shift-VAA {
+  background: #8b3030;
+  color: #fff;
+  font-size: 8px;
+}
+
+.shift-DLA {
+  background: #4a7ab0;
+  color: #fff;
+  font-size: 8px;
+}
+
+.shift-M7H {
+  background: #1a7a6a;
+  color: #fff;
+  font-size: 8px;
+}
+
+.shift-M6R {
+  background: #3a9a7a;
+  color: #fff;
+  font-size: 8px;
+}
+
+.shift-M55 {
+  background: #50b0a0;
+  color: #fff;
+  font-size: 8px;
+}
+
+.shift-VAN {
+  background: #8b3535;
+  color: #fff;
+  font-size: 8px;
+}
+
+.shift-IQF {
+  background: #7a5080;
+  color: #fff;
+  font-size: 8px;
+}
+
+.today-col {
+  background: rgba(46, 139, 122, 0.10) !important;
+}
+
+.today-col-header {
+  background: rgba(46, 139, 122, 0.18) !important;
+}
+
+.today-marker {
+  position: relative;
+}
+.today-marker::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background: var(--morning);
+  border-radius: 50%;
+}
+
+/* Coverage summary row */
+.coverage-row td {
+  padding: 4px 2px !important;
+  border-bottom: none !important;
+  font-size: 9px;
+  font-weight: 700;
+}
+.coverage-ok { color: var(--success); }
+.coverage-warn { color: #d4883a; }
+.coverage-fail { color: var(--danger); font-weight: 800; }
+
+/* Worker monthly totals column */
+.month-total-cell {
+  font-size: 9px !important;
+  font-weight: 600;
+  color: var(--text2);
+  white-space: nowrap;
+  padding: 6px 6px !important;
+  text-align: right !important;
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: var(--surface);
+  border-left: 1px solid var(--surface2);
+}
+
+table.schedule th.month-total-header {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  background: var(--surface2);
+  font-size: 9px;
+  min-width: 60px;
+  border-left: 1px solid var(--surface2);
+}
+
+/* Print styles */
+@media print {
+  .topbar, .chat-bubble, .chat-panel, .toast, #shiftEditorContainer { display: none !important; }
+  .content { padding: 0 !important; }
+  .view-panel { display: none !important; }
+  #schedulePanel { display: block !important; }
+  .schedule-table-wrap { box-shadow: none !important; overflow: visible !important; }
+  table.schedule { font-size: 9px; min-width: auto; }
+  .shift-pill { width: 28px; height: 20px; font-size: 8px; border-radius: 4px; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .shift-M, .shift-MR, .shift-T, .shift-N, .shift-D, .shift-VAC, .shift-LD, .shift-FOR, .shift-CAA, .shift-AE, .shift-EX, .shift-BAJ {
+    print-color-adjust: exact; -webkit-print-color-adjust: exact;
+  }
+  .today-col, .today-col-header { background: transparent !important; }
+}
+
+/* Workers Grid */
+.workers-search {
+  margin-bottom: 20px;
+}
+
+.workers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.worker-card {
+  background: var(--surface);
+  padding: 24px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation: fadeInUp 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.worker-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--shadow-hover);
+}
+
+.worker-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.worker-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.worker-avatar.enf {
+  background: var(--accent);
+}
+
+.worker-avatar.tec {
+  background: var(--afternoon);
+}
+
+.worker-info {
+  flex: 1;
+}
+
+.worker-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.worker-role {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.worker-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.worker-stat-item {
+  padding: 8px;
+  background: var(--surface2);
+  border-radius: 8px;
+}
+
+.worker-stat-value {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.worker-stat-label {
+  font-size: 9px;
+  color: var(--text3);
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+.computo-bar {
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.computo-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+}
+
+/* History/Incidents */
+.timeline {
+  background: var(--surface);
+  padding: 28px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.timeline-item {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--surface2);
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 20px;
+}
+
+.timeline-item:last-child {
+  border-bottom: none;
+}
+
+.timeline-date {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.timeline-content {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+.timeline-content strong {
+  color: var(--text);
+}
+
+.incident-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-right: 8px;
+  text-transform: uppercase;
+}
+
+.badge-baja {
+  background: rgba(196, 122, 122, 0.15);
+  color: var(--danger);
+}
+
+.badge-vac {
+  background: rgba(123, 163, 196, 0.15);
+  color: var(--vac);
+}
+
+.badge-for {
+  background: rgba(92, 122, 111, 0.15);
+  color: var(--accent);
+}
+
+/* Conflicts */
+.conflict-card {
+  background: var(--surface);
+  padding: 16px 20px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.conflict-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.conflict-card:active {
+  transform: scale(0.99);
+}
+
+.conflict-card.high {
+  border-left-color: var(--danger);
+}
+
+.conflict-card.medium {
+  border-left-color: var(--afternoon);
+}
+
+.conflict-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.conflict-desc {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+
+/* Floating Chat */
+.chat-bubble {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: var(--shadow-hover);
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.chat-bubble:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 16px rgba(92, 122, 111, 0.3);
+}
+
+.chat-panel {
+  position: fixed;
+  bottom: 96px;
+  right: 24px;
+  width: 400px;
+  max-height: 600px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-panel.open {
+  display: flex;
+}
+
+.chat-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--surface2);
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chat-header-title { display: flex; align-items: center; gap: 8px; }
+.chat-header-badge { font-size: 10px; background: var(--accent); color: white; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+.chat-typing { font-size: 11px; color: var(--text3); display: none; padding: 4px 20px; }
+.chat-typing.active { display: block; }
+
+.chat-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  font-size: 12px;
+  scroll-behavior: smooth;
+}
+
+.chat-message {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface2);
+  color: var(--text);
+  line-height: 1.6;
+  animation: chatFadeIn 0.3s ease;
+}
+
+@keyframes chatFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.chat-msg-user {
+  text-align: right;
+  background: var(--accent);
+  color: white;
+  margin-left: 40px;
+}
+
+.chat-msg-bot {
+  margin-right: 30px;
+}
+
+.chat-msg-insight {
+  border-left: 3px solid var(--accent);
+  background: linear-gradient(135deg, var(--surface2), rgba(92,122,111,0.06));
+}
+
+.chat-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chat-suggestion-btn {
+  background: var(--surface);
+  border: 1px solid var(--surface2);
+  color: var(--accent);
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.chat-suggestion-btn:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.chat-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--accent);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 10px;
+  cursor: pointer;
+  border: none;
+  margin-top: 6px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.chat-action-btn:hover { opacity: 0.85; transform: scale(1.02); }
+
+.chat-section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text3);
+  margin: 12px 0 6px;
+  font-weight: 600;
+}
+
+.chat-metric {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--surface2);
+}
+
+.chat-metric-val { font-weight: 600; color: var(--accent); }
+.chat-metric-warn { font-weight: 600; color: var(--danger); }
+
+.chat-filter-bar {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--surface2);
+  background: var(--surface);
+}
+
+.chat-filter-btn {
+  background: var(--surface2);
+  border: none;
+  color: var(--text2);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.chat-filter-btn.active {
+  background: var(--accent);
+  color: white;
+}
+
+.chat-input-area {
+  padding: 12px;
+  border-top: 1px solid var(--surface2);
+  display: flex;
+  gap: 8px;
+}
+
+.chat-input {
+  flex: 1;
+  background: var(--surface2);
+  border: none;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.chat-input::placeholder {
+  color: var(--text3);
+}
+
+.chat-send {
+  background: var(--accent);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.chat-send:hover {
+  background: var(--accent2);
+  transform: scale(1.05);
+}
+
+/* ========== RESPONSIVE — Tablet ========== */
+@media (max-width: 1024px) {
+  .content {
+    max-width: 100%;
+    padding: 0 20px 40px;
+  }
+
+  .roster-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .stat-pills {
+    gap: 10px;
+  }
+
+  .stat-pill {
+    min-width: 150px;
+    padding: 14px 18px;
+  }
+
+  .workers-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+
+  .shift-editor {
+    width: 340px;
+  }
+}
+
+/* ========== RESPONSIVE — Mobile ========== */
+@media (max-width: 768px) {
+  /* --- Topbar / Navigation --- */
+  .topbar {
+    padding: 12px 16px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .topbar-left {
+    width: 100%;
+    gap: 12px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .logo {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .logo span { display: none; }
+
+  .logo svg { width: 32px; height: 32px; }
+
+  .nav-tabs {
+    gap: 0;
+    font-size: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    flex: 1;
+  }
+
+  .nav-tabs::-webkit-scrollbar { display: none; }
+
+  .nav-tab {
+    padding: 8px 14px;
+    white-space: nowrap;
+    font-size: 12px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .topbar-right {
+    position: absolute;
+    right: 16px;
+    top: 12px;
+  }
+
+  .theme-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* --- Content --- */
+  .content {
+    padding: 0 14px 100px;
+  }
+
+  /* --- Dashboard --- */
+  .dashboard-title {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  .dashboard-subtitle {
+    font-size: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-pills {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .stat-pill {
+    min-width: auto;
+    padding: 12px 8px;
+    border-radius: 12px;
+  }
+
+  .stat-pill-value {
+    font-size: 22px;
+  }
+
+  .stat-pill-label {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+  }
+
+  .roster-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .shift-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .shift-time {
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+
+  .week-strip {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+
+  .week-day {
+    padding: 10px 4px;
+    border-radius: 10px;
+  }
+
+  .week-day-num {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  .week-day-letter {
+    font-size: 8px;
+    margin-bottom: 4px;
+  }
+
+  .divider {
+    margin: 24px 0;
+  }
+
+  .section-title {
+    font-size: 11px;
+    margin-bottom: 14px;
+  }
+
+  .recent-activity {
+    padding: 16px;
+  }
+
+  .roster-section {
+    margin-bottom: 24px;
+  }
+
+  /* --- Schedule Table --- */
+  .schedule-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .month-nav {
+    justify-content: center;
+  }
+
+  .month-name {
+    font-size: 16px;
+    min-width: 140px;
+  }
+
+  .nav-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .schedule-table-wrap {
+    border-radius: 10px;
+    margin: 0 -14px;
+    width: calc(100% + 28px);
+  }
+
+  table.schedule {
+    font-size: 10px;
+    min-width: 800px;
+  }
+
+  table.schedule th {
+    padding: 8px 2px;
+  }
+
+  table.schedule th.day-header {
+    min-width: 38px;
+    padding: 8px 1px;
+  }
+
+  table.schedule th.day-header .day-name {
+    font-size: 8px;
+    margin-bottom: 3px;
+  }
+
+  table.schedule th.day-header .day-num {
+    font-size: 13px;
+  }
+
+  table.schedule th.name-col {
+    min-width: 100px;
+    padding-left: 8px;
+    font-size: 10px;
+  }
+
+  table.schedule td.name-cell {
+    padding: 6px 8px;
+    font-size: 11px;
+    min-width: 100px;
+  }
+
+  .shift-pill {
+    width: 32px;
+    height: 24px;
+    border-radius: 6px;
+    font-size: 9px;
+  }
+
+  .shift-pill:hover {
+    transform: scale(1.1);
+  }
+
+  .month-total-cell {
+    font-size: 8px !important;
+    padding: 4px 4px !important;
+    min-width: 50px;
+  }
+
+  .coverage-row td {
+    font-size: 8px;
+  }
+
+  /* --- Workers --- */
+  .workers-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .worker-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .worker-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
+  .worker-name {
+    font-size: 13px;
+  }
+
+  /* --- Conflicts --- */
+  .conflict-card {
+    padding: 14px 16px;
+    border-radius: 12px;
+  }
+
+  .conflict-title {
+    font-size: 12px;
+  }
+
+  .conflict-desc {
+    font-size: 11px;
+  }
+
+  /* --- Timeline --- */
+  .timeline {
+    padding: 16px;
+  }
+
+  .timeline-item {
+    grid-template-columns: 60px 1fr;
+    gap: 12px;
+    padding: 14px 0;
+  }
+
+  /* --- Shift Editor Popup --- */
+  .shift-editor-overlay {
+    align-items: flex-end;
+  }
+
+  .shift-editor {
+    width: 100%;
+    max-height: 85vh;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .se-shifts-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .se-shift-btn {
+    padding: 8px 4px;
+    border-radius: 8px;
+  }
+
+  .se-shift-btn .se-code {
+    font-size: 14px;
+  }
+
+  .se-btn {
+    min-height: 48px;
+    font-size: 14px;
+  }
+
+  /* --- Chat Panel — full screen on mobile --- */
+  .chat-bubble {
+    width: 50px;
+    height: 50px;
+    bottom: 16px;
+    right: 16px;
+    border-radius: 12px;
+  }
+
+  .chat-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    z-index: 200;
+  }
+
+  .chat-panel.open {
+    display: flex;
+  }
+
+  .chat-header {
+    padding: 14px 16px;
+    position: relative;
+  }
+
+  .chat-header::after {
+    content: 'Cerrar';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .chat-filter-bar {
+    padding: 6px 12px;
+  }
+
+  .chat-input {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  .chat-send {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  /* --- Toast --- */
+  .toast {
+    bottom: 70px;
+    font-size: 12px;
+    padding: 10px 20px;
+    max-width: 90%;
+  }
+}
+
+/* ========== RESPONSIVE — Small phones ========== */
+@media (max-width: 380px) {
+  .stat-pills {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .week-strip {
+    gap: 4px;
+  }
+
+  .week-day {
+    padding: 8px 2px;
+  }
+
+  .week-day-num {
+    font-size: 13px;
+  }
+
+  .shift-pill {
+    width: 28px;
+    height: 22px;
+    font-size: 8px;
+    border-radius: 5px;
+  }
+
+  table.schedule th.day-header {
+    min-width: 32px;
+  }
+
+  .se-shifts-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Schedule Filter Buttons */
+.schedule-filter-btn {
+  background: var(--surface2);
+  border: none;
+  color: var(--text2);
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.schedule-filter-btn:hover {
+  background: var(--accent2);
+  color: white;
+}
+
+.schedule-filter-btn.active {
+  background: var(--accent);
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .schedule-filter-btn {
+    padding: 8px 12px;
+    font-size: 11px;
+    min-height: 36px;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text2);
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+  <!-- Top Navigation -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="logoG" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse"><stop stop-color="#4ecdc4"/><stop offset="1" stop-color="#2980b9"/></linearGradient></defs>
+          <path d="M20 35c-8-2-14-8-12-16s10-12 18-10c-6-1-12 3-13 9s4 12 10 14" stroke="url(#logoG)" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M18 10c8 2 14 8 12 16s-10 12-18 10c6 1 12-3 13-9s-4-12-10-14" stroke="url(#logoG)" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M28 8l4-4 2 5" stroke="url(#logoG)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Sh<span style="color:#2980b9">iftia</span></span>
+      </div>
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-view="dashboard">Hoy</button>
+        <button class="nav-tab" data-view="schedule">Planilla</button>
+        <button class="nav-tab" data-view="workers">Equipo</button>
+        <button class="nav-tab" data-view="incidents">Historial</button>
+        <button class="nav-tab" data-view="conflicts">Conflictos</button>
+        <button class="nav-tab" data-view="import">Importar</button>
+      </nav>
+    </div>
+    <div class="topbar-right">
+      <button class="theme-btn" id="themeToggle">🌙</button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content">
+    <!-- Dashboard -->
+    <div class="view-panel active" id="dashboardPanel">
+      <div class="dashboard-title" id="todayText">Miércoles, 25 de marzo</div>
+      <div class="dashboard-subtitle">Visualiza el estado de hoy y próximos días</div>
+
+      <div class="stat-pills">
+        <div class="stat-pill">
+          <div class="stat-pill-value" id="nowCount">8</div>
+          <div class="stat-pill-label">Trabajando ahora</div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-pill-value" id="alertCount">0</div>
+          <div class="stat-pill-label">Alertas</div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-pill-value" id="pendingCount">2</div>
+          <div class="stat-pill-label">Pendientes</div>
+        </div>
+      </div>
+
+      <div class="roster-section">
+        <div class="section-title">Plantilla de Hoy</div>
+        <div class="roster-grid" id="todayRoster">
+          <!-- Generated -->
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="roster-section">
+        <div class="section-title">Próximos 7 Días</div>
+        <div class="week-strip" id="weekPreview">
+          <!-- Generated -->
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="roster-section">
+        <div class="section-title">Actividad Reciente</div>
+        <div class="recent-activity" id="activityFeed">
+          <!-- Generated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Schedule -->
+    <div class="view-panel" id="schedulePanel">
+      <div class="schedule-header">
+        <div class="month-nav">
+          <button class="nav-btn" id="prevMonth">◀</button>
+          <div class="month-name" id="monthDisplay">Marzo 2026</div>
+          <button class="nav-btn" id="nextMonth">▶</button>
+          <button class="nav-btn" id="todayBtn">Hoy</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <div style="display:flex;gap:4px;" id="scheduleFilterBar">
+            <button class="schedule-filter-btn active" data-filter="all" onclick="setScheduleFilter('all')">Todos</button>
+            <button class="schedule-filter-btn" data-filter="enf" onclick="setScheduleFilter('enf')">Enfermería</button>
+            <button class="schedule-filter-btn" data-filter="tec" onclick="setScheduleFilter('tec')">Técnicos</button>
+          </div>
+          <input type="text" class="search-box" id="workerSearch" placeholder="Buscar trabajador...">
+          <button onclick="exportScheduleCSV()" title="Exportar mes a CSV" style="background:var(--surface2);border:none;padding:8px 14px;border-radius:10px;font-size:11px;cursor:pointer;color:var(--text2);font-family:inherit;font-weight:500;white-space:nowrap;transition:all 0.2s;">CSV</button>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;font-size:10px;align-items:center;">
+        <span style="color:var(--text3);font-weight:500;">Leyenda:</span>
+        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#2e8b7a;display:inline-block;"></span> Mañana</span>
+        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#4a9dd4;display:inline-block;"></span> Tarde</span>
+        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#d4c032;display:inline-block;"></span> Noche</span>
+        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#d94444;display:inline-block;"></span> Descanso</span>
+        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#8b2020;display:inline-block;"></span> VAC</span>
+        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#5a8abf;display:inline-block;"></span> LD</span>
+        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#d4883a;display:inline-block;"></span> FOR</span>
+        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:14px;height:14px;border-radius:4px;background:#7a8a6a;display:inline-block;"></span> CAA</span>
+      </div>
+
+      <div class="schedule-table-wrap">
+        <table class="schedule" id="scheduleTable">
+          <!-- Generated -->
+        </table>
+      </div>
+    </div>
+
+    <!-- Workers -->
+    <div class="view-panel" id="workersPanel">
+      <div class="workers-search" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;gap:4px;" id="workersFilterBar">
+          <button class="schedule-filter-btn active" data-filter="all" onclick="setWorkersFilter('all')">Todos</button>
+          <button class="schedule-filter-btn" data-filter="enf" onclick="setWorkersFilter('enf')">Enfermería</button>
+          <button class="schedule-filter-btn" data-filter="tec" onclick="setWorkersFilter('tec')">Técnicos</button>
+        </div>
+        <input type="text" class="search-box" id="teamSearch" placeholder="Buscar trabajador..." style="width: 240px;">
+      </div>
+      <div class="workers-grid" id="workersGrid">
+        <!-- Generated -->
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="view-panel" id="incidentsPanel">
+      <div class="timeline" id="historyTimeline">
+        <!-- Generated -->
+      </div>
+    </div>
+
+    <!-- Conflicts -->
+    <div class="view-panel" id="conflictsPanel">
+      <div id="conflictsList">
+        <!-- Generated -->
+      </div>
+    </div>
+
+    <!-- Import -->
+    <div class="view-panel" id="importPanel">
+      <div style="max-width:640px;margin:0 auto;">
+        <h2 style="font-size:24px;font-weight:300;margin-bottom:8px;">Importar planillas anuales</h2>
+        <p style="color:var(--text2);font-size:13px;margin-bottom:32px;line-height:1.6;">
+          Sube los PDFs de planificación anual del Hospital de Jove. La IA extraerá automáticamente los turnos, noches, cómputo y días de convenio de cada trabajador.
+        </p>
+
+        <div id="importZone" style="border:2px dashed var(--text3);border-radius:16px;padding:48px 32px;text-align:center;cursor:pointer;transition:all 0.3s;background:var(--surface);"
+             onclick="document.getElementById('fileInput').click()"
+             ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--surface2)'"
+             ondragleave="this.style.borderColor='var(--text3)';this.style.background='var(--surface)'"
+             ondrop="event.preventDefault();this.style.borderColor='var(--text3)';this.style.background='var(--surface)';handleImport(event.dataTransfer.files)">
+          <div style="font-size:36px;margin-bottom:12px;opacity:0.4;">📄</div>
+          <div style="font-size:15px;font-weight:500;margin-bottom:6px;">Arrastra los PDFs aquí</div>
+          <div style="color:var(--text3);font-size:12px;margin-bottom:20px;">o haz clic para seleccionar · Formato: Planificación Anual (.pdf)</div>
+          <button style="padding:10px 24px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:13px;font-family:inherit;cursor:pointer;font-weight:500;" onclick="event.stopPropagation();document.getElementById('fileInput').click()">Seleccionar archivos</button>
+          <input type="file" id="fileInput" accept=".pdf" multiple style="display:none;" onchange="handleImport(this.files)">
+        </div>
+
+        <!-- Processing pipeline -->
+        <div id="importPipeline" style="display:none;margin-top:24px;"></div>
+
+        <!-- Imported list -->
+        <div id="importedList" style="margin-top:24px;"></div>
+
+        <!-- Detail panel -->
+        <div id="importDetailPanel" style="display:none;"></div>
+
+        <div style="margin-top:32px;padding:24px;background:var(--surface);border-radius:14px;box-shadow:var(--shadow);">
+          <div style="font-size:14px;font-weight:500;margin-bottom:14px;">Qué extrae la IA de cada planilla</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;color:var(--text2);line-height:1.6;">
+            <div>✓ Nombre y categoría (DUE/Técnico)</div>
+            <div>✓ Calendario completo de turnos</div>
+            <div>✓ N.º de noches y cómputo generado</div>
+            <div>✓ Vacaciones usadas/disponibles</div>
+            <div>✓ Libre disposición, formación</div>
+            <div>✓ Antigüedad y saldo de jornada</div>
+            <div>✓ Horas totales por tipo de turno</div>
+            <div>✓ Reducción de jornada si aplica</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="text-align:center;padding:40px 20px 20px;font-size:11px;color:var(--text3);letter-spacing:0.5px;">
+    Shiftia v5.1 — vibe coded by <span style="font-weight:600;color:var(--text2)">Highkey Labs</span>
+  </div>
+
+  <!-- Shift Editor Container -->
+  <div id="shiftEditorContainer"></div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Chat Bubble -->
+  <button class="chat-bubble" id="chatBubble"><svg width="18" height="18" viewBox="0 0 40 40" fill="none"><defs><linearGradient id="lG2" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse"><stop stop-color="#4ecdc4"/><stop offset="1" stop-color="#2980b9"/></linearGradient></defs><path d="M20 35c-8-2-14-8-12-16s10-12 18-10c-6-1-12 3-13 9s4 12 10 14" stroke="url(#lG2)" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M18 10c8 2 14 8 12 16s-10 12-18 10c6 1 12-3 13-9s-4-12-10-14" stroke="url(#lG2)" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M28 8l4-4 2 5" stroke="url(#lG2)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <div class="chat-panel" id="chatPanel">
+    <div class="chat-header">
+      <div class="chat-header-title">Asistente IA <span class="chat-header-badge">v2</span></div>
+    </div>
+    <div class="chat-filter-bar">
+      <button class="chat-filter-btn active" data-filter="all" onclick="setChatFilter('all')">Todo</button>
+      <button class="chat-filter-btn" data-filter="enf" onclick="setChatFilter('enf')">Enfermería</button>
+      <button class="chat-filter-btn" data-filter="tec" onclick="setChatFilter('tec')">Técnicos</button>
+    </div>
+    <div class="chat-content" id="chatContent"></div>
+    <div class="chat-typing" id="chatTyping">Analizando...</div>
+    <div class="chat-input-area">
+      <input type="text" class="chat-input" id="chatInput" placeholder="Pregunta lo que sea...">
+      <button class="chat-send" id="chatSend">→</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== DATA MODEL ==========
+const appState = {
+  currentView: 'dashboard',
+  currentMonth: new Date(),
+  theme: 'light',
+  selectedWorker: null,
+  scheduleFilter: 'all', // 'all', 'enf', 'tec'
+  workersFilter: 'all',
+};
+
+const workers = [
+  { id: 1, name: 'Sara Avanzas', role: 'supervisora', type: 'enf', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 2, name: 'Sonia García', role: 'enf', type: 'enf', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: 'Horario reducido' } },
+  { id: 3, name: 'Marta Valle', role: 'enf', type: 'enf', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: 'Horario reducido' } },
+  { id: 4, name: 'Diego Ciborro', role: 'enf', type: 'enf', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: 'N', maxNightsPerMonth: null, conciliacion: false, notes: 'Prefiere noches' } },
+  { id: 5, name: 'Carmen Cerrada', role: 'enf', type: 'enf', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: true, notes: '' } },
+  { id: 6, name: 'Iouri Zhigunov', role: 'enf', type: 'enf', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 7, name: 'Soledad Azpiroz', role: 'enf', type: 'enf', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 8, name: 'Rebeca Goyanes', role: 'enf', type: 'enf', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 9, name: 'Laura Calvo', role: 'enf', type: 'enf', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: true, notes: '' } },
+  { id: 10, name: 'Yolanda Jiménez', role: 'enf', type: 'enf', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 11, name: 'Iris Velarde', role: 'enf', type: 'enf', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 12, name: 'Alejandra Rodríguez', role: 'enf', type: 'enf', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 13, name: 'Salomé Cueto', role: 'tec', type: 'tec', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 14, name: 'Chema', role: 'tec', type: 'tec', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 15, name: 'Graciela', role: 'tec', type: 'tec', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 16, name: 'Guadalupe', role: 'tec', type: 'tec', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: 'M', maxNightsPerMonth: 10, conciliacion: false, notes: '' } },
+  { id: 17, name: 'Jenny', role: 'tec', type: 'tec', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 18, name: 'Patricia', role: 'tec', type: 'tec', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: true, notes: '' } },
+  { id: 19, name: 'Aitor', role: 'tec', type: 'tec', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: true, preferredShift: 'M', maxNightsPerMonth: 0, conciliacion: false, notes: 'Restricción médica: no noches' } },
+  { id: 20, name: 'Desirée', role: 'tec', type: 'tec', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 21, name: 'Beatriz', role: 'tec', type: 'tec', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 22, name: 'Trinidad', role: 'tec', type: 'tec', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 23, name: 'Montserrat', role: 'tec', type: 'tec', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+  { id: 24, name: 'Maria Pilar', role: 'tec', type: 'tec', hours: 0, nights: 0, computoBalance: 0, computoUsed: 0, nightsThisYear: 0, scheduleImported: false, rules: { noNights: false, preferredShift: null, maxNightsPerMonth: null, conciliacion: false, notes: '' } },
+];
+
+const incidents = [];
+
+const predictedConflicts = [];
+
+const scheduleData = {};
+
+// Festivos: España nacional + Asturias + Gijón (2025)
+const FESTIVOS = {
+  '2025-1-1':   'Año Nuevo',
+  '2025-1-6':   'Epifanía del Señor',
+  '2025-3-19':  'San José (Asturias)',
+  '2025-4-17':  'Jueves Santo',
+  '2025-4-18':  'Viernes Santo',
+  '2025-5-1':   'Día del Trabajador',
+  '2025-6-29':  'San Pedro (Gijón)',
+  '2025-8-15':  'Asunción de la Virgen',
+  '2025-9-8':   'Día de Asturias',
+  '2025-10-12': 'Fiesta Nacional de España',
+  '2025-11-1':  'Todos los Santos',
+  '2025-12-6':  'Día de la Constitución',
+  '2025-12-8':  'Inmaculada Concepción',
+  '2025-12-25': 'Navidad',
+  // 2026
+  '2026-1-1':   'Año Nuevo',
+  '2026-1-6':   'Epifanía del Señor',
+  '2026-3-19':  'San José (Asturias)',
+  '2026-4-2':   'Jueves Santo',
+  '2026-4-3':   'Viernes Santo',
+  '2026-5-1':   'Día del Trabajador',
+  '2026-6-29':  'San Pedro (Gijón)',
+  '2026-8-15':  'Asunción de la Virgen',
+  '2026-9-8':   'Día de Asturias',
+  '2026-10-12': 'Fiesta Nacional de España',
+  '2026-11-1':  'Todos los Santos',
+  '2026-12-6':  'Día de la Constitución',
+  '2026-12-8':  'Inmaculada Concepción',
+  '2026-12-25': 'Navidad',
+};
+
+function isFestivo(year, month, day) {
+  return FESTIVOS[`${year}-${month+1}-${day}`] || null;
+}
+
+// Scheduling Engine
+const RULES = {
+  MAX_CONSECUTIVE_NIGHTS: 2,
+  MIN_REST_HOURS: 12,
+  ANNUAL_HOURS: 1519,
+  NIGHT_COMPUTO_HOURS: 2.1,
+  SHIFT_HOURS: { M:7, T:7, N:10, D:0, MR:5.5, VAC:0, LD:0, FOR:0, CAA:0, AE:0, EX:0, BAJ:0, CJ:0, FN:0, LAC:0, MTC:0, INT:0, HF:0, HS:0, VAA:0, DLA:0, M7H:7, M6R:6.5, M55:5, VAN:0, IQF:0 },
+  SHIFT_TIMES: { M:{start:8,end:15}, T:{start:15,end:22}, N:{start:22,end:32}, MR:{start:7.5,end:13.5} },
+  COVERAGE: { M:{enf:3,tec:4}, T:{enf:1,tec:1}, N:{enf:1,tec:1} }
+};
+
+const FIXED_IDS = { SUP: 1, RED: [2, 3] };
+
+function canAssignShift(wId, day, shift, schedule) {
+  const w = workers.find(x => x.id === wId);
+  if (!w) return false;
+  if (['VAC','LD','FOR','CAA','AE','EX','BAJ','D','LAC','MTC','INT','HF','HS','VAA','DLA','CJ','FN','VAN','IQF'].includes(shift)) return true;
+  if (w.rules.noNights && shift === 'N') return false;
+  if (w.rules.maxNightsPerMonth !== null && shift === 'N') {
+    const monthNights = schedule[wId].filter(s => s === 'N').length;
+    if (monthNights >= w.rules.maxNightsPerMonth) return false;
+  }
+  if (shift === 'N') {
+    let consec = 1;
+    for (let i = day - 1; i >= 0; i--) {
+      if (schedule[wId][i] === 'N') consec++; else break;
+    }
+    if (consec > RULES.MAX_CONSECUTIVE_NIGHTS) return false;
+  }
+  if (day > 0) {
+    const prev = schedule[wId][day - 1];
+    const isMorning = ['M','MR','M7H','M6R','M55'].includes(shift);
+    if (prev === 'N' && (isMorning || shift === 'T')) return false; // N→M/MR/M7H/M6R/T all violate 12h rest
+    if (prev === 'T' && (isMorning || shift === 'N')) return false; // T→M/N violate rest
+  }
+  return true;
+}
+
+function calcMonthHours(wId, schedule, days) {
+  let h = 0;
+  for (let d = 0; d < days; d++) h += RULES.SHIFT_HOURS[schedule[wId][d]] || 0;
+  return h;
+}
+
+function genSchedule(year, month) {
+  const key = `${year}-${month}`;
+  if (scheduleData[key]) return scheduleData[key];
+  const days = new Date(year, month + 1, 0).getDate();
+  const sch = {};
+  workers.forEach(w => sch[w.id] = new Array(days).fill(''));
+
+  // If no workers have imported data, return empty
+  const importedWorkers = workers.filter(w => w.scheduleImported);
+  if (importedWorkers.length === 0) {
+    scheduleData[key] = sch;
+    return sch;
+  }
+
+  // For workers with imported schedule data, their data is already in scheduleData
+  // (set by integratePDFData). This function only generates for non-imported workers
+  // or when scheduleData doesn't exist for this month yet.
+  // Since we return early if scheduleData[key] exists, we only reach here for months
+  // that have no data at all. Just store empty.
+  scheduleData[key] = sch;
+  return sch;
+}
+
+function getDayName(date) {
+  const names = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  return names[date.getDay()];
+}
+
+function getDayNameFull(date) {
+  const names = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  return names[date.getDay()];
+}
+
+function getMonthName(date) {
+  const names = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  return names[date.getMonth()];
+}
+
+function getTodayText() {
+  const date = new Date();
+  return `${getDayNameFull(date)}, ${date.getDate()} de ${getMonthName(date)}`;
+}
+
+// Theme Toggle
+function toggleTheme() {
+  appState.theme = appState.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', appState.theme === 'dark' ? 'dark' : '');
+  document.getElementById('themeToggle').textContent = appState.theme === 'dark' ? '☀' : '🌙';
+}
+
+// View Switching
+function switchView(view) {
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(view + 'Panel').classList.add('active');
+
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`[data-view="${view}"]`).classList.add('active');
+
+  appState.currentView = view;
+
+  if (view === 'schedule') renderSchedule();
+  if (view === 'workers') renderWorkers();
+  if (view === 'incidents') renderIncidents();
+  if (view === 'conflicts') { detectConflicts(); renderConflicts(); }
+  if (view === 'import') renderImportedList();
+}
+
+// Render Dashboard
+function renderDashboard() {
+  document.getElementById('todayText').textContent = getTodayText();
+
+  const importedCount = workers.filter(w => w.scheduleImported).length;
+  document.getElementById('pendingCount').textContent = workers.length - importedCount;
+
+  const now = new Date();
+  const hour = now.getHours();
+  const todayFestivo = isFestivo(now.getFullYear(), now.getMonth(), now.getDate());
+  if (todayFestivo) {
+    document.getElementById('todayText').textContent = getTodayText() + ' — ' + todayFestivo;
+  }
+  let currentShift = 'M';
+  if (hour >= 15 && hour < 22) currentShift = 'T';
+  if (hour >= 22 || hour < 8) currentShift = 'N';
+
+  const sch = genSchedule(now.getFullYear(), now.getMonth());
+  const todayIdx = now.getDate() - 1;
+
+  let count = 0;
+  workers.forEach(w => {
+    const s = sch[w.id] ? sch[w.id][todayIdx] : '';
+    if (s === currentShift) count++;
+  });
+  document.getElementById('nowCount').textContent = count;
+  document.getElementById('alertCount').textContent = predictedConflicts.filter(c => c.severity === 'high').length;
+
+  const shiftNames = { M: 'MAÑANA 8-15', T: 'TARDE 15-22', N: 'NOCHE 22-8' };
+  const shiftColors = { M: '#2e8b7a', T: '#4a9dd4', N: '#d4c032' };
+  const rosterHtml = {};
+  ['M', 'T', 'N'].forEach(sh => {
+    const wkrs = workers.filter(w => {
+      const s = sch[w.id] ? sch[w.id][todayIdx] : '';
+      return s === sh || (sh === 'M' && ['MR','M7H','M6R','M55'].includes(s));
+    });
+    rosterHtml[sh] = `<div class="shift-card" style="border-left:4px solid ${shiftColors[sh]};">
+      <div class="shift-time" style="color:${shiftColors[sh]};">${shiftNames[sh]}</div>
+      <div class="shift-workers">${wkrs.length > 0 ? wkrs.map(w => `<div class="worker-name">${w.name}</div>`).join('') : '<div style="color:var(--text3);font-size:12px;">Sin asignaciones — importa planillas</div>'}
+      </div>
+    </div>`;
+  });
+  document.getElementById('todayRoster').innerHTML = Object.values(rosterHtml).join('');
+
+  // Week preview
+  const weekHtml = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+    const weekSch = genSchedule(d.getFullYear(), d.getMonth());
+    const idx = d.getDate() - 1;
+    const shifts = ['M', 'T', 'N'].map(sh => workers.filter(w => weekSch[w.id] && weekSch[w.id][idx] === sh).length);
+    const total = shifts[0] + shifts[1] + shifts[2];
+    const domShift = shifts[0] > 0 ? 'M' : (shifts[1] > 0 ? 'T' : 'N');
+    const colors = { M: '#2e8b7a', T: '#4a9dd4', N: '#d4c032' };
+    const wFestivo = isFestivo(d.getFullYear(), d.getMonth(), d.getDate());
+    const isFest = !!wFestivo || d.getDay() === 0;
+    weekHtml.push(`<div class="week-day" onclick="goToDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})" style="cursor:pointer;" ${wFestivo ? `title="${wFestivo}"` : ''}>
+      <div class="week-day-letter" ${isFest ? 'style="color:var(--danger);"' : ''}>${getDayName(d).substr(0,1)}</div>
+      <div class="week-day-num" ${isFest ? 'style="color:var(--danger);font-weight:700;"' : ''}>${d.getDate()}</div>
+      <div class="week-day-dot" style="background: ${isFest ? 'var(--danger)' : (total > 0 ? colors[domShift] : 'var(--text3)')};"></div>
+    </div>`);
+  }
+  document.getElementById('weekPreview').innerHTML = weekHtml.join('');
+
+  // Activity
+  if (incidents.length === 0) {
+    document.getElementById('activityFeed').innerHTML = `<div class="activity-item"><div class="activity-text" style="color:var(--text3);text-align:center;padding:16px;">Sin incidencias registradas. Los cambios de turno aparecerán aquí.</div></div>`;
+  } else {
+    const actHtml = incidents.sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,5).map(inc => `
+      <div class="activity-item">
+        <div class="activity-date">${new Date(inc.date).toLocaleDateString('es-ES')}</div>
+        <div class="activity-text"><strong>${inc.worker}</strong> · ${inc.type} · ${inc.notes}</div>
+      </div>
+    `).join('');
+    document.getElementById('activityFeed').innerHTML = actHtml;
+  }
+}
+
+// Schedule Filter
+function setScheduleFilter(f) {
+  appState.scheduleFilter = f;
+  document.querySelectorAll('.schedule-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  renderSchedule();
+}
+
+// Render Schedule
+function renderSchedule() {
+  const m = appState.currentMonth;
+  document.getElementById('monthDisplay').textContent = `${getMonthName(m)} ${m.getFullYear()}`;
+
+  const sch = genSchedule(m.getFullYear(), m.getMonth());
+  const days = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+
+  const now = new Date();
+  const todayDay = (m.getFullYear() === now.getFullYear() && m.getMonth() === now.getMonth()) ? now.getDate() : -1;
+
+  // Festivo banner row first
+  let festivoRow = '<tr class="festivo-banner-row"><th class="name-col" style="border:none;padding:0;"></th>';
+  let hasFestivos = false;
+  for (let d = 1; d <= days; d++) {
+    const festivo = isFestivo(m.getFullYear(), m.getMonth(), d);
+    if (festivo) {
+      hasFestivos = true;
+      festivoRow += `<th colspan="1" style="padding:2px 0;border:none;"><div style="font-size:7px;color:var(--danger);font-weight:600;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40px;" title="${festivo}">${festivo.split(' ').slice(0,2).join(' ')}</div></th>`;
+    } else {
+      festivoRow += '<th style="padding:0;border:none;"></th>';
+    }
+  }
+  festivoRow += '</tr>';
+
+  let html = '<thead>';
+  if (hasFestivos) html += festivoRow;
+  html += '<tr><th class="name-col"></th>';
+  for (let d = 1; d <= days; d++) {
+    const date = new Date(m.getFullYear(), m.getMonth(), d);
+    const isToday = d === todayDay;
+    const isSunday = date.getDay() === 0;
+    const festivo = isFestivo(m.getFullYear(), m.getMonth(), d);
+    const isFest = !!festivo || isSunday;
+    const todayCls = isToday ? 'today-col-header today-marker' : '';
+    const festCls = isFest && !isToday ? 'festivo-header' : '';
+    html += `<th class="day-header ${todayCls} ${festCls}" ${festivo ? `title="${festivo}"` : ''}>
+      <div class="day-name" style="${isFest ? 'color:var(--danger);' : ''}${isToday ? 'color:var(--morning);font-weight:800;' : ''}">${getDayName(date).substr(0,1)}</div>
+      <div class="day-num" style="${isToday ? 'color:var(--morning);font-weight:900;font-size:14px;' : ''}${isFest && !isToday ? 'color:var(--danger);font-weight:700;' : ''}">${d}</div>
+    </th>`;
+  }
+  html += '<th class="month-total-header">Mes</th>';
+  html += '</tr></thead><tbody>';
+
+  const filteredWkrs = appState.scheduleFilter === 'all' ? workers : workers.filter(w => w.type === appState.scheduleFilter);
+
+  // Type separator headers
+  const showSeparators = appState.scheduleFilter === 'all';
+  let lastType = null;
+
+  filteredWkrs.forEach(w => {
+    // Add type separator row
+    if (showSeparators && w.type !== lastType) {
+      lastType = w.type;
+      const label = w.type === 'enf' ? 'ENFERMERÍA' : 'TÉCNICOS';
+      html += `<tr><td class="name-cell" style="font-size:9px;font-weight:700;color:var(--accent);letter-spacing:1px;padding:10px 12px 4px;border-bottom:2px solid var(--accent);background:var(--surface);" colspan="1">${label}</td>`;
+      for (let d = 0; d < days; d++) html += '<td style="border-bottom:2px solid var(--surface2);"></td>';
+      html += '<td style="border-bottom:2px solid var(--surface2);"></td></tr>';
+    }
+
+    let wM = 0, wT = 0, wN = 0, wD = 0;
+    html += `<tr><td class="name-cell" onclick="goToWorkerSchedule(${w.id})">${w.name}</td>`;
+    for (let d = 0; d < days; d++) {
+      const s = sch[w.id] ? sch[w.id][d] : '';
+      const isToday = (d + 1) === todayDay;
+      const cls = isToday ? 'today-col' : '';
+      if (['M','MR','M7H','M6R','M55'].includes(s)) wM++;
+      if (s === 'T') wT++;
+      if (s === 'N') wN++;
+      if (s === 'D') wD++;
+      if (s && s !== '') {
+        html += `<td class="${cls}"><span class="shift-pill shift-${s}" data-wid="${w.id}" data-day="${d}" onclick="openShiftEditor(${w.id}, ${d})">${s}</span></td>`;
+      } else {
+        html += `<td class="${cls}"><span class="shift-pill" style="color:var(--text3);opacity:0.4;" data-wid="${w.id}" data-day="${d}" onclick="openShiftEditor(${w.id}, ${d})">·</span></td>`;
+      }
+    }
+    const hasData = wM + wT + wN > 0;
+    html += `<td class="month-total-cell">${hasData ? `<span style="color:#2e8b7a;">${wM}M</span> <span style="color:#4a9dd4;">${wT}T</span> <span style="color:#d4c032;">${wN}N</span>` : '—'}</td>`;
+    html += '</tr>';
+  });
+
+  // Coverage summary row
+  html += '<tr class="coverage-row"><td class="name-cell" style="font-size:10px;font-weight:700;color:var(--accent);">Cobertura</td>';
+  for (let d = 0; d < days; d++) {
+    const isToday = (d + 1) === todayDay;
+    const cls = isToday ? 'today-col' : '';
+    let mCount = 0, tCount = 0, nCount = 0;
+    workers.forEach(w => {
+      const s = sch[w.id] ? sch[w.id][d] : '';
+      if (['M','MR','M7H','M6R','M55'].includes(s)) mCount++;
+      if (s === 'T') tCount++;
+      if (s === 'N') nCount++;
+    });
+    const total = mCount + tCount + nCount;
+    // Min coverage: M needs 7 (3enf+4tec), T needs 2, N needs 2 = 11 total
+    const needM = RULES.COVERAGE.M.enf + RULES.COVERAGE.M.tec; // 7
+    const needT = RULES.COVERAGE.T.enf + RULES.COVERAGE.T.tec; // 2
+    const needN = RULES.COVERAGE.N.enf + RULES.COVERAGE.N.tec; // 2
+    const ok = mCount >= needM && tCount >= needT && nCount >= needN;
+    const partial = total > 0 && !ok;
+    const coverCls = total === 0 ? '' : (ok ? 'coverage-ok' : (partial ? 'coverage-warn' : 'coverage-fail'));
+    const tip = `M:${mCount}/${needM} T:${tCount}/${needT} N:${nCount}/${needN}`;
+    html += `<td class="${cls}" title="${tip}"><span class="${coverCls}">${total > 0 ? total : '·'}</span></td>`;
+  }
+  html += '<td class="month-total-cell"></td></tr>';
+  html += '</tbody>';
+  document.getElementById('scheduleTable').innerHTML = html;
+
+  // Auto-scroll to today column
+  if (todayDay > 0) {
+    setTimeout(() => {
+      const el = document.querySelector('.today-col-header');
+      if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }, 150);
+  }
+}
+
+// Navigate from dashboard week strip to a specific day in Planilla
+function goToDay(year, month, day) {
+  appState.currentMonth = new Date(year, month, 1);
+  // Switch to schedule view
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-view="schedule"]').classList.add('active');
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('schedulePanel').classList.add('active');
+  appState.currentView = 'schedule';
+  renderSchedule();
+  // Scroll to the specific day column
+  setTimeout(() => {
+    const headers = document.querySelectorAll('.day-header');
+    for (const h of headers) {
+      const numEl = h.querySelector('.day-num');
+      if (numEl && parseInt(numEl.textContent) === day) {
+        h.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        // Briefly highlight
+        h.style.background = 'rgba(46,139,122,0.25)';
+        setTimeout(() => h.style.background = '', 2000);
+        break;
+      }
+    }
+  }, 200);
+}
+
+// Navigate from Equipo card to Planilla filtered to that worker
+function goToWorkerSchedule(wId) {
+  const w = workers.find(x => x.id === wId);
+  if (!w) return;
+  // Switch to schedule view
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-view="schedule"]').classList.add('active');
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('schedulePanel').classList.add('active');
+  appState.currentView = 'schedule';
+  renderSchedule();
+  // Highlight/filter the worker
+  setTimeout(() => {
+    document.querySelectorAll('table.schedule tbody tr').forEach(row => {
+      const name = row.querySelector('.name-cell');
+      if (!name) return;
+      if (name.textContent === w.name) {
+        row.style.background = 'rgba(46,139,122,0.08)';
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => row.style.background = '', 3000);
+      }
+    });
+  }, 200);
+}
+
+// Render Workers — stats computed live from actual schedule
+function setWorkersFilter(f) {
+  appState.workersFilter = f;
+  document.querySelectorAll('#workersFilterBar .schedule-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  renderWorkers();
+}
+
+function renderWorkers() {
+  // Compute real stats from all months that have schedule data
+  function getLiveStats(wId) {
+    let nights = 0, mornings = 0, afternoons = 0, totalH = 0;
+    for (const key in scheduleData) {
+      const sch = scheduleData[key];
+      if (!sch[wId]) continue;
+      sch[wId].forEach(s => {
+        if (s === 'N') nights++;
+        if (['M','MR','M7H','M6R','M55'].includes(s)) mornings++;
+        if (s === 'T') afternoons++;
+        totalH += RULES.SHIFT_HOURS[s] || 0;
+      });
+    }
+    return { nights, mornings, afternoons, totalH, computo: parseFloat((nights * 2.1).toFixed(1)) };
+  }
+
+  const filteredW = appState.workersFilter === 'all' ? workers : workers.filter(w => w.type === appState.workersFilter);
+  const whtml = filteredW.map(w => {
+    const live = getLiveStats(w.id);
+    const hasData = live.totalH > 0;
+    const badge = w.scheduleImported
+      ? '<span style="font-size:9px;padding:2px 6px;background:rgba(122,171,138,0.12);color:var(--success);border-radius:4px;margin-left:4px;">Planilla OK</span>'
+      : '';
+    return `
+    <div class="worker-card" onclick="goToWorkerSchedule(${w.id})" title="Clic para ver planilla de ${w.name}">
+      <div class="worker-header">
+        <div class="worker-avatar ${w.type}">${w.name[0]}</div>
+        <div class="worker-info">
+          <div class="worker-name">${w.name}</div>
+          <div class="worker-role">${w.role}${badge}</div>
+        </div>
+      </div>
+      <div class="worker-stats">
+        <div class="worker-stat-item">
+          <div class="worker-stat-value">${hasData ? live.nights : '—'}</div>
+          <div class="worker-stat-label">Noches</div>
+        </div>
+        <div class="worker-stat-item">
+          <div class="worker-stat-value">${hasData ? live.computo + 'h' : '—'}</div>
+          <div class="worker-stat-label">Cómputo</div>
+        </div>
+        <div class="worker-stat-item">
+          <div class="worker-stat-value">${hasData ? live.totalH + 'h' : '—'}</div>
+          <div class="worker-stat-label">Horas</div>
+        </div>
+      </div>
+      ${hasData ? `<div style="display:flex;justify-content:center;gap:12px;font-size:11px;padding-top:6px;">
+            <span style="color:#2e8b7a;font-weight:600;">${live.mornings}M</span>
+            <span style="color:#4a9dd4;font-weight:600;">${live.afternoons}T</span>
+            <span style="color:#d4c032;font-weight:600;">${live.nights}N</span>
+            <span style="color:var(--text2);">${live.totalH}h</span>
+          </div>` : '<div style="font-size:10px;color:var(--text3);text-align:center;padding-top:6px;">Sin turnos — clic para ver planilla</div>'}
+    </div>`;
+  }).join('');
+  document.getElementById('workersGrid').innerHTML = whtml;
+}
+
+// Render Incidents
+function renderIncidents() {
+  if (incidents.length === 0) {
+    document.getElementById('historyTimeline').innerHTML = `
+      <div style="text-align:center;padding:48px 20px;">
+        <div style="font-size:48px;margin-bottom:16px;opacity:0.3;">📝</div>
+        <div style="font-size:16px;font-weight:500;color:var(--text2);margin-bottom:8px;">Sin incidencias</div>
+        <div style="font-size:13px;color:var(--text3);line-height:1.6;">Los cambios de turno, ausencias y sustituciones aparecerán aquí automáticamente.</div>
+      </div>`;
+    return;
+  }
+  const html = incidents.map(inc => {
+    const typeLabel = { ae: 'AUSENCIA', baja: 'BAJA', vac: 'VACACIONES', for: 'FORMACIÓN', ld: 'LICENCIA', swap: 'CAMBIO' }[inc.type] || inc.type;
+    const badgeClass = `badge-${inc.type}`;
+    return `
+      <div class="timeline-item">
+        <div class="timeline-date">${new Date(inc.date).toLocaleDateString('es-ES', {month:'2-digit', day:'2-digit'})}</div>
+        <div class="timeline-content">
+          <span class="incident-badge ${badgeClass}">${typeLabel}</span>
+          <strong>${inc.worker}</strong>
+          ${inc.covered_by ? ` · Cubrió: ${inc.covered_by}` : ''}
+          ${inc.notes ? ` · ${inc.notes}` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('historyTimeline').innerHTML = html;
+}
+
+// Render Conflicts — interactive cards with AI insights
+function renderConflicts() {
+  const container = document.getElementById('conflictsList');
+  if (predictedConflicts.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:48px 20px;">
+        <div style="font-size:48px;margin-bottom:16px;opacity:0.3;">✅</div>
+        <div style="font-size:16px;font-weight:500;color:var(--text2);margin-bottom:8px;">Sin conflictos en los próximos 3 meses</div>
+        <div style="font-size:13px;color:var(--text3);line-height:1.6;">Todo bien. Cuando se detecten problemas de cobertura o descanso, aparecerán aquí.</div>
+      </div>`;
+    return;
+  }
+
+  const highCount = predictedConflicts.filter(c => c.severity === 'high').length;
+  const medCount = predictedConflicts.filter(c => c.severity === 'medium').length;
+  const typeIcons = { coverage: '👥', rest: '🛌', restriction: '⛔' };
+  const sevColors = { high: 'var(--danger)', medium: 'var(--afternoon)' };
+
+  let html = `
+    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+      <div style="background:var(--surface);padding:12px 20px;border-radius:12px;box-shadow:var(--shadow);flex:1;min-width:120px;text-align:center;">
+        <div style="font-size:24px;font-weight:700;color:var(--danger);">${highCount}</div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Graves</div>
+      </div>
+      <div style="background:var(--surface);padding:12px 20px;border-radius:12px;box-shadow:var(--shadow);flex:1;min-width:120px;text-align:center;">
+        <div style="font-size:24px;font-weight:700;color:var(--afternoon);">${medCount}</div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Avisos</div>
+      </div>
+      <div style="background:var(--surface);padding:12px 20px;border-radius:12px;box-shadow:var(--shadow);flex:1;min-width:120px;text-align:center;">
+        <div style="font-size:24px;font-weight:700;color:var(--accent);">${predictedConflicts.length}</div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Total</div>
+      </div>
+    </div>
+  `;
+
+  // Group by date
+  const byDate = {};
+  predictedConflicts.forEach(c => {
+    if (!byDate[c.date]) byDate[c.date] = [];
+    byDate[c.date].push(c);
+  });
+
+  for (const date of Object.keys(byDate)) {
+    const conflicts = byDate[date];
+    const first = conflicts[0];
+    const dateObj = new Date(first.year, first.month, first.day + 1);
+    const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const dateLabel = `${dayNames[dateObj.getDay()]} ${first.day + 1} ${MONTH_NAMES_ES[first.month]}`;
+    const worstSev = conflicts.some(c => c.severity === 'high') ? 'high' : 'medium';
+
+    html += `<div style="margin-bottom:8px;">`;
+    html += `<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;padding-left:4px;">${dateLabel}</div>`;
+
+    conflicts.forEach((c, idx) => {
+      const icon = typeIcons[c.type] || '⚠️';
+      const id = `conflict-${date}-${idx}`;
+      html += `
+        <div class="conflict-card ${c.severity}" id="${id}" style="cursor:pointer;transition:all 0.2s;" onclick="toggleConflictDetail('${id}')">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:18px;">${icon}</span>
+            <div style="flex:1;">
+              <div class="conflict-title">${c.title}</div>
+              <div class="conflict-desc">${c.desc}</div>
+            </div>
+            <span style="font-size:10px;color:var(--text3);">▼</span>
+          </div>
+          <div id="${id}-detail" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+            <div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:10px;">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);font-weight:600;margin-bottom:4px;">Análisis IA</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.6;">${c.ai || ''}</div>
+            </div>
+            <button onclick="event.stopPropagation();goToDay(${c.year},${c.month},${c.day + 1})"
+              style="padding:8px 16px;border-radius:8px;border:none;background:var(--accent);color:white;font-size:12px;font-family:inherit;cursor:pointer;font-weight:500;">
+              Ver en planilla →
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function toggleConflictDetail(id) {
+  const detail = document.getElementById(id + '-detail');
+  if (detail) {
+    detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+// ========== ENHANCED CHAT SYSTEM ==========
+let chatFilter = 'all'; // 'all', 'enf', 'tec'
+let chatHistory = [];
+let chatInitialized = false;
+
+function setChatFilter(f) {
+  chatFilter = f;
+  document.querySelectorAll('.chat-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  // Re-run last analysis with filter
+  const content = document.getElementById('chatContent');
+  addBotMessage(analyzeFilteredTeam(f));
+}
+
+function addBotMessage(html, cls = 'chat-msg-bot') {
+  const content = document.getElementById('chatContent');
+  content.innerHTML += `<div class="chat-message ${cls}">${html}</div>`;
+  content.scrollTop = content.scrollHeight;
+}
+
+function addUserMessage(msg) {
+  const content = document.getElementById('chatContent');
+  content.innerHTML += `<div class="chat-message chat-msg-user">${msg}</div>`;
+  content.scrollTop = content.scrollHeight;
+}
+
+function showTyping() { document.getElementById('chatTyping').classList.add('active'); }
+function hideTyping() { document.getElementById('chatTyping').classList.remove('active'); }
+
+function initChat() {
+  if (chatInitialized) return;
+  chatInitialized = true;
+  const insight = generateProactiveInsight();
+  const content = document.getElementById('chatContent');
+  content.innerHTML = `<div class="chat-message chat-msg-bot">
+    Hola, soy tu asistente inteligente. Analizo turnos, detecto problemas y propongo soluciones.
+  </div>`;
+  if (insight) {
+    content.innerHTML += `<div class="chat-message chat-msg-insight">${insight}</div>`;
+  }
+  content.innerHTML += `<div class="chat-suggestions" id="chatSuggestions">
+    <button class="chat-suggestion-btn" onclick="chatQuickQuery('¿Cómo va la cobertura esta semana?')">Cobertura semanal</button>
+    <button class="chat-suggestion-btn" onclick="chatQuickQuery('¿Quién está sobrecargado?')">Carga de trabajo</button>
+    <button class="chat-suggestion-btn" onclick="chatQuickQuery('¿Necesitamos contratar?')">Análisis plantilla</button>
+    <button class="chat-suggestion-btn" onclick="chatQuickQuery('Resumen del equipo')">Resumen</button>
+  </div>`;
+}
+
+function chatQuickQuery(q) {
+  document.getElementById('chatInput').value = q;
+  sendChatMessage();
+}
+
+document.getElementById('chatBubble').addEventListener('click', () => {
+  const panel = document.getElementById('chatPanel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) initChat();
+});
+
+function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  if (!input.value.trim()) return;
+  const msg = input.value.trim();
+  chatHistory.push({ role: 'user', text: msg, time: Date.now() });
+  addUserMessage(msg);
+  input.value = '';
+  showTyping();
+  setTimeout(() => {
+    hideTyping();
+    const response = handleChatQuery(msg);
+    chatHistory.push({ role: 'bot', text: response, time: Date.now() });
+    addBotMessage(response);
+    // Show contextual follow-ups
+    const followUps = getFollowUpSuggestions(msg);
+    if (followUps.length > 0) {
+      const content = document.getElementById('chatContent');
+      content.innerHTML += `<div class="chat-suggestions">${followUps.map(f => `<button class="chat-suggestion-btn" onclick="chatQuickQuery('${f}')">${f}</button>`).join('')}</div>`;
+      content.scrollTop = content.scrollHeight;
+    }
+  }, 400 + Math.random() * 300);
+}
+
+document.getElementById('chatSend').addEventListener('click', sendChatMessage);
+document.getElementById('chatInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
+});
+
+// Event Listeners
+document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => switchView(tab.dataset.view));
+});
+
+document.getElementById('prevMonth').addEventListener('click', () => {
+  const m = appState.currentMonth;
+  appState.currentMonth = new Date(m.getFullYear(), m.getMonth() - 1, 1);
+  renderSchedule();
+});
+
+document.getElementById('nextMonth').addEventListener('click', () => {
+  const m = appState.currentMonth;
+  appState.currentMonth = new Date(m.getFullYear(), m.getMonth() + 1, 1);
+  renderSchedule();
+});
+
+document.getElementById('todayBtn').addEventListener('click', () => {
+  const now = new Date();
+  appState.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  renderSchedule();
+  // Scroll to today's column
+  setTimeout(() => {
+    const todayEl = document.querySelector('.today-col-header');
+    if (todayEl) todayEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, 100);
+});
+
+document.getElementById('workerSearch').addEventListener('input', (e) => {
+  const term = e.target.value.toLowerCase();
+  document.querySelectorAll('table.schedule tbody tr').forEach(row => {
+    const name = row.querySelector('.name-cell').textContent.toLowerCase();
+    row.style.display = name.includes(term) ? '' : 'none';
+  });
+});
+
+document.getElementById('teamSearch').addEventListener('input', (e) => {
+  const term = e.target.value.toLowerCase();
+  document.querySelectorAll('.worker-card').forEach(card => {
+    const name = card.querySelector('.worker-name').textContent.toLowerCase();
+    card.style.display = name.includes(term) ? '' : 'none';
+  });
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  if (appState.currentView !== 'schedule') return;
+  if (e.target.tagName === 'INPUT') return;
+  const m = appState.currentMonth;
+  if (e.key === 'ArrowLeft') {
+    appState.currentMonth = new Date(m.getFullYear(), m.getMonth() - 1, 1);
+    renderSchedule();
+  } else if (e.key === 'ArrowRight') {
+    appState.currentMonth = new Date(m.getFullYear(), m.getMonth() + 1, 1);
+    renderSchedule();
+  } else if (e.key === 'Home' || e.key === 'h') {
+    const now = new Date();
+    appState.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    renderSchedule();
+  }
+});
+
+// ========== IMPORT WITH AI PIPELINE ==========
+const importedFiles = [];
+
+// pdf.js worker setup
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+const MONTH_NAMES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const VALID_SHIFTS = ['M','T','N','D','MR','VAC','LD','FOR','CAA','AE','EX','BAJ','CJ','FN','LAC','MTC','INT','HF','HS','VAA','DLA','M7H','M6R','M55','VAN','IQF'];
+
+// Match worker from PDF header name (e.g. "CIBORRO GONZALEZ, DIEGO")
+function matchWorkerFromPDFName(pdfName) {
+  if (!pdfName) return null;
+  const upper = pdfName.toUpperCase().trim();
+
+  // Build matching database from workers array
+  const workerSurnames = {
+    'AVANZAS': 1, 'GARCIA': 2, 'VALLE': 3, 'CIBORRO': 4, 'CERRADA': 5,
+    'ZHIGUNOV': 6, 'AZPIROZ': 7, 'GOYANES': 8, 'CALVO': 9, 'JIMENEZ': 10, 'JIMÉNEZ': 10,
+    'VELARDE': 11, 'RODRIGUEZ': 12, 'RODRÍGUEZ': 12, 'CUETO': 13,
+    'CHEMA': 14, 'GRACIELA': 15, 'GUADALUPE': 16, 'JENNY': 17,
+    'PATRICIA': 18, 'AITOR': 19, 'DESIREE': 20, 'DESIRÉE': 20, 'BEATRIZ': 21
+  };
+
+  // Try matching surname from PDF name
+  for (const [surname, id] of Object.entries(workerSurnames)) {
+    if (upper.includes(surname.toUpperCase())) {
+      return workers.find(w => w.id === id);
+    }
+  }
+
+  // Fallback: try matching first name
+  for (const w of workers) {
+    const nameParts = w.name.toUpperCase().split(' ');
+    for (const part of nameParts) {
+      if (part.length > 3 && upper.includes(part)) {
+        return w;
+      }
+    }
+  }
+  return null;
+}
+
+// Also try matching from filename as fallback
+function matchWorkerFromFilename(filename) {
+  const upper = filename.toUpperCase().replace('.PDF','').replace(/_/g,' ');
+  return matchWorkerFromPDFName(upper);
+}
+
+// Extract role/type from PDF header line 2 (e.g. "SANITARIO - HEMATOLOGIA - DUE")
+function parseRoleFromHeader(headerLine) {
+  if (!headerLine) return { role: 'unknown', type: 'enf' };
+  const upper = headerLine.toUpperCase();
+  if (upper.includes('TECNIC') || upper.includes('TEC')) return { role: 'tec', type: 'tec' };
+  if (upper.includes('SUPERVISORA') || upper.includes('SUPERVIS')) return { role: 'supervisora', type: 'enf' };
+  return { role: 'enf', type: 'enf' };
+}
+
+// REAL PDF PARSER using pdf.js — robust version handling char-by-char PDFs
+async function parsePDFFile(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+  const result = {
+    workerName: null,
+    headerLine2: null,
+    year: 2025,
+    shifts: {},
+    monthHours: {},
+    computoData: {},
+    convenioData: {},
+    horariosData: {}
+  };
+
+  // ---- PAGE 1: Calendar ----
+  const page1 = await pdf.getPage(1);
+  const tc1 = await page1.getTextContent();
+
+  // Step 1: Get raw items from pdf.js (individual characters or pre-grouped words)
+  const rawItems = tc1.items
+    .filter(it => it.str && it.str.trim().length > 0)
+    .map(it => ({ text: it.str.trim(), x: it.transform[4], y: it.transform[5], w: it.width || 0 }));
+
+  console.log('[Shiftia PDF] Raw items from pdf.js:', rawItems.length,
+    'Sample:', rawItems.slice(0,5).map(r => `"${r.text}" x=${r.x.toFixed(1)} w=${r.w.toFixed(1)}`).join(', '));
+
+  // Step 2: GROUP characters into words using 15px threshold
+  // This is ONLY used for header extraction (MES, month names, worker name).
+  // Shift codes are extracted separately using column-first mapping.
+  const yBuckets = [];
+  rawItems.forEach(item => {
+    let bucket = yBuckets.find(b => Math.abs(b.y - item.y) <= 1.5);
+    if (!bucket) { bucket = { y: item.y, items: [] }; yBuckets.push(bucket); }
+    bucket.items.push(item);
+  });
+  yBuckets.sort((a, b) => b.y - a.y);
+  yBuckets.forEach(b => b.items.sort((a, c) => a.x - c.x));
+
+  const words = [];
+  yBuckets.forEach(bucket => {
+    const items = bucket.items;
+    if (items.length === 0) return;
+    let cur = { text: items[0].text, x: items[0].x, y: bucket.y, lastX: items[0].x };
+    for (let i = 1; i < items.length; i++) {
+      const it = items[i];
+      const dist = it.x - cur.lastX;
+      if (dist > 0 && dist < 15 && cur.text.length < 25) {
+        cur.text += it.text;
+        cur.lastX = it.x;
+      } else {
+        words.push({ text: cur.text, x: cur.x, y: cur.y });
+        cur = { text: it.text, x: it.x, y: bucket.y, lastX: it.x };
+      }
+    }
+    words.push({ text: cur.text, x: cur.x, y: cur.y });
+  });
+
+  console.log('[Shiftia PDF] After header grouping:', words.length, 'words',
+    'Sample:', words.slice(0,8).map(w => `"${w.text}"`).join(', '));
+
+  // Store diagnostic info for UI display
+  result._rawCount = rawItems.length;
+  result._wordCount = words.length;
+  result._diagSample = rawItems.slice(0,3).map(r => `"${r.text}" w=${(r.w||0).toFixed(1)}`).join(', ');
+
+  // Step 3: Extract header info (worker name, year, role)
+  words.sort((a, b) => b.y - a.y || a.x - b.x);
+  const headerYs = {};
+  words.slice(0, 60).forEach(w => {
+    const ry = Math.round(w.y);
+    if (!headerYs[ry]) headerYs[ry] = [];
+    headerYs[ry].push(w.text);
+  });
+  const headerLines = Object.entries(headerYs)
+    .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+    .map(([y, texts]) => texts.join(' '));
+
+  for (const line of headerLines.slice(0, 6)) {
+    if (line.includes(',') && !line.includes('MES') && !result.workerName) {
+      result.workerName = line.replace(/\s*\d{4}\s*$/, '').trim();
+    }
+    const ym = line.match(/\b(20\d{2})\b/);
+    if (ym) result.year = parseInt(ym[1]);
+    if (/SANITARIO|TECNIC|LABORATORIO|HEMATOLOGIA/i.test(line)) {
+      result.headerLine2 = line;
+    }
+  }
+  console.log('[Shiftia PDF] Worker:', result.workerName, 'Year:', result.year);
+
+  // Step 4: Find column X positions from the MES header row
+  const mesWord = words.find(w => w.text === 'MES');
+  if (!mesWord) {
+    console.error('[Shiftia PDF] MES header not found! Words sample:', words.slice(0,15).map(w=>w.text));
+    return result;
+  }
+  const mesY = mesWord.y;
+  const headerRow = words.filter(w => Math.abs(w.y - mesY) <= 2);
+
+  const colX = {};
+  let horasX = null;
+  headerRow.forEach(w => {
+    const num = parseInt(w.text);
+    if (num >= 1 && num <= 31 && /^\d+$/.test(w.text)) colX[num] = w.x;
+    if (w.text === 'Horas') horasX = w.x;
+  });
+
+  const colCount = Object.keys(colX).length;
+  console.log('[Shiftia PDF] Columns found:', colCount, 'Horas X:', horasX);
+  if (colCount < 20) {
+    console.error('[Shiftia PDF] Too few columns. Header row:', headerRow.map(w=>w.text).join(', '));
+    return result;
+  }
+
+  // Calculate column spacing for accurate day mapping
+  const colSpacings = [];
+  for (let d = 1; d < 31; d++) {
+    if (colX[d] && colX[d+1]) colSpacings.push(colX[d+1] - colX[d]);
+  }
+  const avgSpacing = colSpacings.length > 0 ? colSpacings.reduce((a,b)=>a+b,0)/colSpacings.length : 23;
+  const halfCol = avgSpacing / 2;
+  const minDayX = colX[1] - 10;
+
+  function xToDay(x) {
+    let best = -1, bestDist = 999;
+    for (const day in colX) {
+      const d = Math.abs(x - colX[day]);
+      if (d < bestDist) { bestDist = d; best = parseInt(day); }
+    }
+    return bestDist < halfCol ? best : -1;
+  }
+
+  console.log('[Shiftia PDF] Column spacing:', avgSpacing.toFixed(1), 'px, half:', halfCol.toFixed(1));
+
+  // Step 5: Parse each month
+  // ADAPTIVE approach: works with both char-by-char AND pre-grouped pdf.js output.
+  // If rawItems ≈ words count, pdf.js returned pre-grouped words → use words directly.
+  // If rawItems >> words, pdf.js returned chars → use column-first raw mapping.
+  const preGrouped = (rawItems.length <= words.length * 1.2);
+  console.log('[Shiftia PDF] Pre-grouped?', preGrouped, 'raw:', rawItems.length, 'words:', words.length);
+
+  // Build items to use for shift extraction
+  const shiftItems = preGrouped ? words : rawItems;
+
+  // DEBUG: For Enero, show what's near it
+  const eneroWord = words.find(w => w.text === 'Enero' && w.x < minDayX);
+  if (eneroWord) {
+    const ey = eneroWord.y;
+    // Find ALL items near Enero's Y with wider range to diagnose
+    const nearEnero = shiftItems.filter(it => it.x >= minDayX && Math.abs(it.y - ey) < 20);
+    const byDist = {};
+    nearEnero.forEach(it => {
+      const dist = Math.round(it.y - ey);
+      if (!byDist[dist]) byDist[dist] = [];
+      byDist[dist].push(it.text);
+    });
+    console.log('[Shiftia PDF] Enero Y=' + ey.toFixed(1) + ' nearby items by Y-offset:');
+    for (const d of Object.keys(byDist).sort((a,b) => parseInt(a)-parseInt(b))) {
+      console.log('  offset=' + d + ': ' + byDist[d].length + ' items: ' + byDist[d].slice(0,10).join(','));
+    }
+    // Store for UI display
+    result._diagEnero = 'EneroY=' + ey.toFixed(1) + ' ';
+    for (const d of Object.keys(byDist).sort((a,b) => parseInt(a)-parseInt(b))) {
+      result._diagEnero += 'off' + d + ':' + byDist[d].length + '(' + byDist[d].slice(0,5).join(',') + ') ';
+    }
+  }
+
+  for (let mi = 0; mi < 12; mi++) {
+    const monthName = MONTH_NAMES_ES[mi];
+    const monthWord = words.find(w => w.text === monthName && w.x < minDayX);
+    if (!monthWord) { console.log('[Shiftia PDF] Month not found:', monthName); continue; }
+
+    const daysInMonth = new Date(result.year, mi + 1, 0).getDate();
+    const shifts = new Array(daysInMonth).fill('');
+    const monthY = monthWord.y;
+
+    // Hours value
+    if (horasX) {
+      const hWord = words.find(w =>
+        Math.abs(w.x - horasX) < 30 &&
+        Math.abs(w.y - monthY) < 10 &&
+        /[\d.]/.test(w.text)
+      );
+      if (hWord) result.monthHours[mi] = parseFloat(hWord.text.replace(',', '.'));
+    }
+
+    // WIDE Y range to catch shift items regardless of coordinate system
+    // Then use row-selection to pick the right row
+    const candidates = shiftItems.filter(it =>
+      it.x >= minDayX &&
+      Math.abs(it.y - monthY) <= 15
+    );
+
+    if (mi === 0) {
+      console.log('[Shiftia PDF] Enero candidates (±15 Y):', candidates.length,
+        'sample:', candidates.slice(0,8).map(c => c.text + '@y' + c.y.toFixed(1)).join(', '));
+    }
+
+    // Group candidates by Y row
+    const yMap = {};
+    candidates.forEach(w => {
+      const ry = Math.round(w.y * 2) / 2;
+      if (!yMap[ry]) yMap[ry] = [];
+      yMap[ry].push(w);
+    });
+
+    // Score each row to find the shift row (not the weekday row, not header numbers)
+    let bestRow = null, bestScore = -999;
+    for (const y in yMap) {
+      const row = yMap[y];
+      if (row.length < 3) continue;
+
+      let score = 0;
+      let validCount = 0;
+      let weekdayOnlyCount = 0;
+      const WEEKDAYS = 'LMXJVSD';
+
+      row.forEach(w => {
+        const code = w.text.toUpperCase();
+        if (VALID_SHIFTS.includes(code)) {
+          validCount++;
+          // Bonus for shift-specific codes (not ambiguous M/D)
+          if ('TNMRVACLDCAACJFNFORBAJAEEX'.includes(code) && code !== 'M' && code !== 'D') {
+            score += 5;
+          }
+        }
+        if (code.length === 1 && WEEKDAYS.includes(code)) weekdayOnlyCount++;
+      });
+
+      score += validCount * 2;
+
+      // Penalize if ALL items are single weekday letters (L,M,X,J,V,S,D)
+      if (weekdayOnlyCount === row.length && row.length >= 25) {
+        // Could be weekday row OR M/D-only shift row
+        // Prefer rows closer to monthY (shift row is typically at offset 0 to -3)
+        const yOff = parseFloat(y) - monthY;
+        if (yOff > 3) score -= 100; // Far above = likely weekday row
+      }
+
+      // Penalize rows that are mostly numbers (header row)
+      const numCount = row.filter(w => /^\d+\.?\d*$/.test(w.text)).length;
+      if (numCount > row.length * 0.5) score -= 200;
+
+      // Prefer rows closest to monthY
+      const dist = Math.abs(parseFloat(y) - monthY);
+      score -= dist * 2;
+
+      if (mi === 0) {
+        console.log('[Shiftia PDF] Enero row Y=' + y + ': ' + row.length + ' items, valid=' + validCount +
+          ', score=' + score + ', sample: ' + row.slice(0,8).map(w=>w.text).join(','));
+      }
+
+      if (score > bestScore) { bestScore = score; bestRow = row; }
+    }
+
+    if (!bestRow || bestRow.length < 3) {
+      console.log('[Shiftia PDF]', monthName, ': no valid row found, candidates:', candidates.length);
+      result.shifts[mi] = shifts;
+      continue;
+    }
+
+    // Map best row items to shifts
+    bestRow.forEach(w => {
+      const code = w.text.toUpperCase();
+      // Skip pure weekday letters that are NOT shift codes
+      if (code.length === 1 && 'LXJVS'.includes(code)) return;
+      // Skip numbers
+      if (/^\d+\.?\d*$/.test(code)) return;
+      if (code === 'HORAS' || code === 'MES') return;
+
+      const day = xToDay(w.x);
+      if (day >= 1 && day <= daysInMonth && VALID_SHIFTS.includes(code)) {
+        shifts[day - 1] = code;
+      }
+    });
+
+    result.shifts[mi] = shifts;
+    const cnt = {};
+    shifts.forEach(s => { if (s) cnt[s] = (cnt[s]||0)+1; });
+    console.log('[Shiftia PDF]', monthName, ':', JSON.stringify(cnt), shifts.filter(s=>s).length + '/' + daysInMonth);
+  }
+
+  // ---- PAGE 2: Cómputo and Convenio data ----
+  if (pdf.numPages >= 2) {
+    const page2 = await pdf.getPage(2);
+    const tc2 = await page2.getTextContent();
+    const text2 = tc2.items.map(i => i.str).join(' ');
+
+    // Noches
+    const nochesM = text2.match(/Noches\s+Realizadas.*?(\d+)/i) || text2.match(/(\d+)\s+\d{2}\/\d{2}\/\d{4}/);
+    if (nochesM) result.computoData.noches = parseInt(nochesM[1]);
+
+    // Cómputo values
+    const m1 = text2.match(/efectiva\s+s\/convenio.*?(\d+\.?\d*)/i);
+    if (m1) result.computoData.jornadaConvenio = parseFloat(m1[1]);
+    const m2 = text2.match(/noches\s+realizadas.*?(\d+\.?\d*)/i);
+    if (m2) result.computoData.reduccionNoches = parseFloat(m2[1]);
+    const m3 = text2.match(/te.rica\s+realizada.*?(\d+\.?\d*)/i);
+    if (m3) result.computoData.jornadaRealizada = parseFloat(m3[1]);
+    const m4 = text2.match(/mputo\s+anual\s+de\s+jornada.*?([-]?\d+\.?\d*)/i);
+    if (m4) result.computoData.computoAnual = parseFloat(m4[1]);
+
+    // Convenio
+    const cv = text2.match(/Vacaciones\s+(\d+)\s*\/\s*(\d+)/i);
+    if (cv) result.convenioData.vac = { used: parseInt(cv[1]), total: parseInt(cv[2]) };
+    const cl = text2.match(/Libre\s+Disposici.n\s+(\d+)\s*\/\s*(\d+)/i);
+    if (cl) result.convenioData.ld = { used: parseInt(cl[1]), total: parseInt(cl[2]) };
+    const cf = text2.match(/Formaci.n\s+(\d+)\s*\/\s*(\d+)/i);
+    if (cf) result.convenioData.for = { used: parseInt(cf[1]), total: parseInt(cf[2]) };
+
+    // Horarios
+    const hm = text2.match(/Ma.anas.*?(\d+)\s+(\d+\.?\d*)/i);
+    if (hm) result.horariosData.mornings = { days: parseInt(hm[1]), hours: parseFloat(hm[2]) };
+    const ht = text2.match(/Tardes.*?(\d+)\s+(\d+\.?\d*)/i);
+    if (ht) result.horariosData.afternoons = { days: parseInt(ht[1]), hours: parseFloat(ht[2]) };
+    const hn = text2.match(/Noches.*?22.*?(\d+)\s+(\d+\.?\d*)/i);
+    if (hn) result.horariosData.nights = { days: parseInt(hn[1]), hours: parseFloat(hn[2]) };
+    const hd = text2.match(/Descanso\s+(\d+)/i);
+    if (hd) result.horariosData.rest = parseInt(hd[1]);
+  }
+
+  console.log('[Shiftia PDF] Parse result:', JSON.stringify({
+    worker: result.workerName,
+    year: result.year,
+    monthsExtracted: Object.keys(result.shifts).length,
+    noches: result.computoData.noches
+  }));
+
+  return result;
+}
+
+// Integrate parsed PDF data into the app
+function integratePDFData(parsedData, matchedWorker) {
+  if (!matchedWorker) return false;
+
+  const wId = matchedWorker.id;
+  const year = parsedData.year;
+
+  // Populate scheduleData month by month
+  for (let m = 0; m < 12; m++) {
+    if (!parsedData.shifts[m]) continue;
+
+    const key = `${year}-${m}`;
+    if (!scheduleData[key]) {
+      // Initialize schedule for all workers this month
+      const daysInMonth = new Date(year, m + 1, 0).getDate();
+      scheduleData[key] = {};
+      workers.forEach(w => scheduleData[key][w.id] = new Array(daysInMonth).fill(''));
+    }
+
+    // Set this worker's shifts
+    scheduleData[key][wId] = parsedData.shifts[m];
+  }
+
+  // Mark worker as imported
+  matchedWorker.scheduleImported = true;
+
+  // Update worker computo data
+  if (parsedData.computoData.reduccionNoches) {
+    matchedWorker.computoBalance = parsedData.computoData.reduccionNoches;
+  }
+  if (parsedData.computoData.noches) {
+    matchedWorker.nightsThisYear = parsedData.computoData.noches;
+    matchedWorker.nights = parsedData.computoData.noches;
+  }
+
+  return true;
+}
+
+function renderImportedList() {
+  const list = document.getElementById('importedList');
+  if (importedFiles.length === 0) { list.innerHTML = ''; return; }
+
+  list.innerHTML = `<div style="font-size:14px;font-weight:500;margin-bottom:12px;">Planillas importadas <span style="font-size:11px;color:var(--text3);font-weight:400;">(${importedFiles.length} archivos)</span></div>`;
+  importedFiles.forEach((f, idx) => {
+    list.innerHTML += `<div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--surface);border-radius:12px;box-shadow:var(--shadow);margin-bottom:8px;" id="importedItem${idx}">
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(196,149,106,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;">📄</div>
+      <div style="flex:1;cursor:pointer;" onclick="showImportDetail(${idx})">
+        <div style="font-size:13px;font-weight:600;">${f.name}</div>
+        <div style="font-size:11px;color:var(--text3);">${f.file} · ${f.role}</div>
+      </div>
+      <div style="text-align:right;font-size:10px;color:var(--text2);line-height:1.6;">
+        <div>${f.nights} noches · ${f.totalHours}h total</div>
+        <div>M:${f.mornings} T:${f.afternoons} D:${f.rest}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <div style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:600;background:rgba(122,171,138,0.12);color:var(--success);">Integrado</div>
+        <button onclick="deleteImport(${idx})" title="Eliminar planilla" style="background:rgba(196,122,122,0.1);border:none;width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--danger);display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+    </div>`;
+  });
+}
+
+function deleteImport(idx) {
+  const f = importedFiles[idx];
+  if (!f) return;
+
+  // Remove schedule data for this worker
+  const w = workers.find(x => x.id === f.workerId);
+  if (w) {
+    w.scheduleImported = false;
+    w.nights = 0;
+    w.nightsThisYear = 0;
+    w.hours = 0;
+    w.computoBalance = 0;
+
+    // Clear this worker's shifts from all months
+    for (const key in scheduleData) {
+      if (scheduleData[key][w.id]) {
+        const days = scheduleData[key][w.id].length;
+        scheduleData[key][w.id] = new Array(days).fill('');
+      }
+    }
+  }
+
+  importedFiles.splice(idx, 1);
+  renderImportedList();
+  renderDashboard();
+  showToast(`Planilla de ${f.name} eliminada`);
+}
+
+function showImportDetail(idx) {
+  const f = importedFiles[idx];
+  if (!f) return;
+  const detailPanel = document.getElementById('importDetailPanel');
+  if (!detailPanel) return;
+  detailPanel.style.display = 'block';
+  detailPanel.innerHTML = `
+    <div style="padding:24px;background:var(--surface);border-radius:14px;box-shadow:var(--shadow);margin-top:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:20px;">
+        <div>
+          <div style="font-size:16px;font-weight:600;margin-bottom:4px;">${f.name}</div>
+          <div style="font-size:12px;color:var(--text3);">${f.role} · ${f.file}</div>
+        </div>
+        <button onclick="this.closest('#importDetailPanel').style.display='none'" style="background:var(--surface2);border:none;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--text2);">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+        <div style="background:var(--surface2);padding:14px;border-radius:10px;text-align:center;">
+          <div style="font-size:20px;font-weight:700;color:var(--morning);">${f.mornings}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">MAÑANAS</div>
+        </div>
+        <div style="background:var(--surface2);padding:14px;border-radius:10px;text-align:center;">
+          <div style="font-size:20px;font-weight:700;color:var(--afternoon);">${f.afternoons}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">TARDES</div>
+        </div>
+        <div style="background:var(--surface2);padding:14px;border-radius:10px;text-align:center;">
+          <div style="font-size:20px;font-weight:700;color:var(--night);">${f.nights}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">NOCHES</div>
+        </div>
+        <div style="background:var(--surface2);padding:14px;border-radius:10px;text-align:center;">
+          <div style="font-size:20px;font-weight:700;color:var(--rest);">${f.rest}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">DESCANSO</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px;">Cómputo de Jornada</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+            <div>Jornada convenio: <strong style="color:var(--text);">1.519 h</strong></div>
+            <div>Reducción noches: <strong style="color:var(--text);">${f.computoReduc} h</strong></div>
+            <div>Horas realizadas: <strong style="color:var(--text);">${f.totalHours} h</strong></div>
+            <div>Saldo cómputo: <strong style="color:${f.computoAnual >= 0 ? 'var(--success)' : 'var(--danger)'};">${f.computoAnual >= 0 ? '+' : ''}${f.computoAnual} h</strong></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px;">Variables Convenio</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+            <div>Vacaciones: <strong style="color:var(--text);">${f.vacUsed}/${f.vacTotal}</strong></div>
+            <div>Libre Disposición: <strong style="color:var(--text);">${f.ldUsed}/${f.ldTotal}</strong></div>
+            <div>Formación: <strong style="color:var(--text);">${f.forUsed}/${f.forTotal}</strong></div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:8px;">
+        <button onclick="deleteImport(${idx});this.closest('#importDetailPanel').style.display='none';" style="flex:1;padding:10px;border:1px solid var(--danger);background:rgba(196,122,122,0.06);color:var(--danger);border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;font-family:inherit;">Eliminar planilla</button>
+      </div>
+    </div>`;
+}
+
+async function handleImport(files) {
+  if (!files || files.length === 0) return;
+
+  if (typeof pdfjsLib === 'undefined') {
+    showToast('Error: pdf.js no cargado. Recarga la página.');
+    return;
+  }
+
+  const pipeline = document.getElementById('importPipeline');
+  pipeline.style.display = 'block';
+  const fileArray = Array.from(files);
+
+  for (let fi = 0; fi < fileArray.length; fi++) {
+    const file = fileArray[fi];
+
+    // Show processing animation
+    pipeline.innerHTML = `<div style="padding:24px;background:var(--surface);border-radius:14px;box-shadow:var(--shadow);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(196,149,106,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;"><svg width="18" height="18" viewBox="0 0 40 40" fill="none"><defs><linearGradient id="lG2" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse"><stop stop-color="#4ecdc4"/><stop offset="1" stop-color="#2980b9"/></linearGradient></defs><path d="M20 35c-8-2-14-8-12-16s10-12 18-10c-6-1-12 3-13 9s4 12 10 14" stroke="url(#lG2)" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M18 10c8 2 14 8 12 16s-10 12-18 10c6 1 12-3 13-9s-4-12-10-14" stroke="url(#lG2)" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M28 8l4-4 2 5" stroke="url(#lG2)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div>
+          <div style="font-size:13px;font-weight:600;">IA procesando: ${file.name}</div>
+          <div style="font-size:11px;color:var(--text3);">Archivo ${fi+1} de ${fileArray.length}</div>
+        </div>
+      </div>
+      <div id="pipelineSteps" style="margin-bottom:12px;"></div>
+      <div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;">
+        <div id="pipelineBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width 0.4s ease;"></div>
+      </div>
+    </div>`;
+
+    const stepsEl = document.getElementById('pipelineSteps');
+    const barEl = document.getElementById('pipelineBar');
+
+    function addStep(text, progress) {
+      const prev = stepsEl.querySelector('.step-spinner');
+      if (prev) prev.outerHTML = '<span style="color:var(--success);font-size:13px;">✓</span>';
+      stepsEl.innerHTML += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px;color:var(--text2);animation:fadeIn 0.3s ease;"><span class="step-spinner" style="display:inline-block;width:13px;height:13px;border:2px solid var(--text3);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></span> ' + text + '</div>';
+      barEl.style.width = progress + '%';
+    }
+
+    function completeStep(text, progress) {
+      const prev = stepsEl.querySelector('.step-spinner');
+      if (prev) prev.outerHTML = '<span style="color:var(--success);font-size:13px;">✓</span>';
+      stepsEl.innerHTML += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px;color:var(--text2);animation:fadeIn 0.3s ease;"><span style="color:var(--success);font-size:13px;">✓</span> ' + text + '</div>';
+      barEl.style.width = progress + '%';
+    }
+
+    try {
+      // Step 1: Read PDF
+      addStep('Leyendo PDF (' + (file.size/1024).toFixed(0) + ' KB)...', 10);
+      await new Promise(r => setTimeout(r, 400));
+
+      // Step 2: Parse with pdf.js
+      addStep('Extrayendo texto con pdf.js (v5.1 column-first)...', 25);
+      const parsed = await parsePDFFile(file);
+      await new Promise(r => setTimeout(r, 300));
+
+      // Show extraction summary
+      const diagMonths = Object.keys(parsed.shifts).length;
+      let diagShifts = 0;
+      for (const m in parsed.shifts) { diagShifts += parsed.shifts[m].filter(s=>s).length; }
+      addStep(diagMonths + ' meses analizados, ' + diagShifts + ' turnos extraídos', 35);
+      await new Promise(r => setTimeout(r, 300));
+
+      // Step 3: Identify worker
+      let matchedWorker = null;
+      if (parsed.workerName) {
+        addStep('Trabajador detectado en PDF: ' + parsed.workerName, 40);
+        matchedWorker = matchWorkerFromPDFName(parsed.workerName);
+      }
+      if (!matchedWorker) {
+        addStep('Buscando trabajador por nombre de archivo...', 45);
+        matchedWorker = matchWorkerFromFilename(file.name);
+      }
+      await new Promise(r => setTimeout(r, 400));
+
+      if (!matchedWorker) {
+        completeStep('⚠️ No se pudo identificar al trabajador: ' + (parsed.workerName || file.name), 100);
+        await new Promise(r => setTimeout(r, 2000));
+        continue;
+      }
+
+      addStep('Trabajador identificado: ' + matchedWorker.name + ' (ID #' + matchedWorker.id + ')', 50);
+      await new Promise(r => setTimeout(r, 400));
+
+      // Step 4: Count shifts
+      let totalM = 0, totalT = 0, totalN = 0, totalD = 0, totalH = 0;
+      const monthsFound = Object.keys(parsed.shifts).length;
+      for (const m in parsed.shifts) {
+        parsed.shifts[m].forEach(s => {
+          if (['M','MR','M7H','M6R','M55'].includes(s)) totalM++;
+          if (s === 'T') totalT++;
+          if (s === 'N') totalN++;
+          if (s === 'D') totalD++;
+          totalH += RULES.SHIFT_HOURS[s] || 0;
+        });
+      }
+      addStep(monthsFound + ' meses detectados: ' + totalM + 'M + ' + totalT + 'T + ' + totalN + 'N + ' + totalD + 'D', 65);
+      await new Promise(r => setTimeout(r, 400));
+
+      // Step 5: Cómputo
+      const computoReduc = parsed.computoData.reduccionNoches || parseFloat((totalN * 2.1).toFixed(1));
+      addStep('Cómputo: ' + totalN + ' noches × 2.1h = ' + computoReduc + 'h reducción', 75);
+      await new Promise(r => setTimeout(r, 400));
+
+      // Step 6: Convenio
+      const vacData = parsed.convenioData.vac || { used: 0, total: 30 };
+      const ldData = parsed.convenioData.ld || { used: 0, total: 6 };
+      const forData = parsed.convenioData.for || { used: 0, total: 7 };
+      addStep('Convenio: VAC ' + vacData.used + '/' + vacData.total + ', LD ' + ldData.used + '/' + ldData.total + ', FOR ' + forData.used + '/' + forData.total, 85);
+      await new Promise(r => setTimeout(r, 300));
+
+      // Step 7: Integrate
+      addStep('Volcando turnos al calendario del equipo...', 92);
+      integratePDFData(parsed, matchedWorker);
+      await new Promise(r => setTimeout(r, 400));
+
+      // Step 8: Done
+      const computoAnual = parsed.computoData.computoAnual || parseFloat((totalH - 1519 + computoReduc).toFixed(1));
+      completeStep('Integración completada — ' + totalH + 'h volcadas al calendario', 100);
+
+      // Store in importedFiles
+      const importRecord = {
+        name: matchedWorker.name,
+        workerId: matchedWorker.id,
+        file: file.name,
+        role: parsed.headerLine2 || matchedWorker.role,
+        year: parsed.year,
+        mornings: totalM,
+        afternoons: totalT,
+        nights: totalN,
+        rest: totalD,
+        totalHours: totalH,
+        computoReduc: computoReduc,
+        computoAnual: computoAnual,
+        vacUsed: vacData.used, vacTotal: vacData.total,
+        ldUsed: ldData.used, ldTotal: ldData.total,
+        forUsed: forData.used, forTotal: forData.total,
+        importDate: new Date().toISOString()
+      };
+
+      // Check for duplicate (update if exists)
+      const existIdx = importedFiles.findIndex(f => f.workerId === matchedWorker.id);
+      if (existIdx >= 0) {
+        importedFiles[existIdx] = importRecord;
+      } else {
+        importedFiles.push(importRecord);
+      }
+
+      await new Promise(r => setTimeout(r, 600));
+
+      // Show success
+      pipeline.innerHTML = `<div style="padding:20px;background:rgba(122,171,138,0.08);border-radius:14px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(122,171,138,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;">✓</div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--success);">Planilla integrada correctamente</div>
+            <div style="font-size:11px;color:var(--text2);">${matchedWorker.name} — ${parsed.year}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;font-size:11px;text-align:center;">
+          <div style="background:var(--surface);padding:8px;border-radius:8px;">
+            <div style="font-weight:700;color:var(--morning);">${totalM}</div><div style="color:var(--text3);font-size:9px;">Mañanas</div>
+          </div>
+          <div style="background:var(--surface);padding:8px;border-radius:8px;">
+            <div style="font-weight:700;color:var(--afternoon);">${totalT}</div><div style="color:var(--text3);font-size:9px;">Tardes</div>
+          </div>
+          <div style="background:var(--surface);padding:8px;border-radius:8px;">
+            <div style="font-weight:700;color:var(--night);">${totalN}</div><div style="color:var(--text3);font-size:9px;">Noches</div>
+          </div>
+          <div style="background:var(--surface);padding:8px;border-radius:8px;">
+            <div style="font-weight:700;color:var(--accent);">${totalH}h</div><div style="color:var(--text3);font-size:9px;">Total</div>
+          </div>
+          <div style="background:var(--surface);padding:8px;border-radius:8px;">
+            <div style="font-weight:700;color:var(--vac);">${computoReduc}h</div><div style="color:var(--text3);font-size:9px;">Cómputo</div>
+          </div>
+        </div>
+        ${fi < fileArray.length - 1 ? '<div style="text-align:center;margin-top:12px;font-size:11px;color:var(--text3);">Siguiente archivo en 2s...</div>' : ''}
+      </div>`;
+
+      renderImportedList();
+
+      if (fi < fileArray.length - 1) {
+        await new Promise(r => setTimeout(r, 2000));
+      }
+
+    } catch (err) {
+      console.error('Error parsing PDF:', err);
+      completeStep('❌ Error al procesar: ' + err.message, 100);
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+
+  // Final
+  setTimeout(() => {
+    pipeline.innerHTML = `<div style="padding:20px;background:rgba(122,171,138,0.08);border-radius:14px;text-align:center;animation:fadeInScale 0.3s ease;">
+      <div style="font-size:28px;margin-bottom:8px;">🎉</div>
+      <div style="font-size:16px;font-weight:500;color:var(--success);margin-bottom:4px;">Importación completada</div>
+      <div style="font-size:12px;color:var(--text2);">${fileArray.length} planilla${fileArray.length>1?'s':''} procesada${fileArray.length>1?'s':''} — Turnos volcados al calendario</div>
+    </div>`;
+    // Refresh ALL views with new data
+    renderDashboard();
+    renderSchedule();
+    renderWorkers();
+    renderIncidents();
+    renderConflicts();
+    setTimeout(() => { pipeline.style.display = 'none'; }, 4000);
+  }, 1500);
+}
+
+// ========== SHIFT EDITOR ==========
+const SHIFT_OPTIONS = [
+  { code: 'M', label: 'Mañana', time: '8-15', color: '#2e8b7a' },
+  { code: 'T', label: 'Tarde', time: '15-22', color: '#4a9dd4' },
+  { code: 'N', label: 'Noche', time: '22-8', color: '#d4c032' },
+  { code: 'MR', label: 'M. Reduc.', time: '7:30-14', color: '#2e8b7a' },
+  { code: 'D', label: 'Descanso', time: '', color: '#d94444' },
+  { code: 'VAC', label: 'Vacaciones', time: '', color: '#8b2020' },
+  { code: 'LD', label: 'Libre Disp.', time: '', color: '#5a8abf' },
+  { code: 'FOR', label: 'Formación', time: '', color: '#d4883a' },
+  { code: 'CAA', label: 'Comp. Anual', time: '', color: '#7a8a6a' },
+  { code: 'AE', label: 'Ausencia', time: '', color: '#a8a832' },
+  { code: 'BAJ', label: 'Baja', time: '', color: '#b04050' },
+  { code: 'EX', label: 'Exceso Jorn.', time: '', color: '#9a9a9a' },
+  { code: 'CJ', label: 'Comp. Jornada', time: '', color: '#6a7a9a' },
+  { code: 'FN', label: 'Fest. Nacional', time: '', color: '#888' },
+  { code: 'LAC', label: 'Lactancia', time: '', color: '#c06090' },
+  { code: 'MTC', label: 'Maternidad', time: '', color: '#d070a0' },
+  { code: 'INT', label: 'Baja IT', time: '', color: '#b04050' },
+  { code: 'HF', label: 'Hosp. Familiar', time: '', color: '#7a5a9a' },
+  { code: 'HS', label: 'Sindicales', time: '', color: '#5a7a5a' },
+  { code: 'VAA', label: 'Vac. Año Ant.', time: '', color: '#8b3030' },
+  { code: 'DLA', label: 'D.L. Antigüedad', time: '', color: '#4a7ab0' },
+  { code: 'M7H', label: 'Mañana 7h', time: '7-14', color: '#1a7a6a' },
+  { code: 'M6R', label: 'M. Reduc. 6.5h', time: '7:30-14', color: '#3a9a7a' },
+  { code: 'M55', label: 'Mañana 5h', time: '8-13', color: '#50b0a0' },
+  { code: 'VAN', label: 'Vac. Año Ant.', time: '', color: '#8b3535' },
+  { code: 'IQF', label: 'Int. Quirúrgica', time: '', color: '#7a5080' },
+];
+
+let editorState = { wId: null, day: null, selectedShift: null, originalShift: null };
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+function openShiftEditor(wId, day) {
+  const w = workers.find(x => x.id === wId);
+  if (!w) return;
+
+  const m = appState.currentMonth;
+  const sch = genSchedule(m.getFullYear(), m.getMonth());
+  const currentShift = sch[wId][day];
+  const date = new Date(m.getFullYear(), m.getMonth(), day + 1);
+  const dateStr = `${getDayName(date)}, ${day + 1} de ${getMonthName(date)} ${date.getFullYear()}`;
+
+  editorState = { wId, day, selectedShift: null, originalShift: currentShift };
+
+  const shiftLabels = {};
+  SHIFT_OPTIONS.forEach(s => shiftLabels[s.code] = s.label);
+
+  const container = document.getElementById('shiftEditorContainer');
+  container.innerHTML = `
+    <div class="shift-editor-overlay" onclick="if(event.target===this)closeShiftEditor()">
+      <div class="shift-editor">
+        <div class="se-header">
+          <div class="se-worker-name">${w.name}</div>
+          <div class="se-date">${dateStr}</div>
+          <div class="se-current">
+            <span class="shift-pill shift-${currentShift}" style="width:36px;height:28px;font-size:11px;">${currentShift}</span>
+            <div>
+              <div class="se-current-label">Turno actual</div>
+              <div style="font-weight:600;color:var(--text);">${shiftLabels[currentShift] || currentShift}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="se-section">
+          <div class="se-section-title">Cambiar a</div>
+          <div class="se-shifts-grid">
+            ${SHIFT_OPTIONS.map(s => `
+              <button class="se-shift-btn ${s.code === currentShift ? 'active' : ''}" data-shift="${s.code}" onclick="selectEditorShift('${s.code}')">
+                <span class="se-code" style="color:${s.color};">${s.code}</span>
+                <span class="se-label">${s.label}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="se-alert" id="seAlert"></div>
+        <div class="se-substitutes" id="seSubstitutes"></div>
+
+        <div class="se-reason">
+          <input type="text" id="seReason" placeholder="Motivo del cambio (opcional)..." autocomplete="off">
+        </div>
+
+        <div class="se-actions">
+          <button class="se-btn se-btn-cancel" onclick="closeShiftEditor()">Cancelar</button>
+          <button class="se-btn se-btn-save" id="seSaveBtn" disabled onclick="saveShiftChange()">Guardar cambio</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function selectEditorShift(code) {
+  editorState.selectedShift = code;
+
+  // Update button states
+  document.querySelectorAll('.se-shift-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.shift === code);
+  });
+
+  // Enable save if different from original
+  const saveBtn = document.getElementById('seSaveBtn');
+  saveBtn.disabled = (code === editorState.originalShift);
+
+  // Run validations
+  validateShiftChange(code);
+}
+
+function validateShiftChange(newShift) {
+  const { wId, day } = editorState;
+  const w = workers.find(x => x.id === wId);
+  const m = appState.currentMonth;
+  const sch = genSchedule(m.getFullYear(), m.getMonth());
+  const days = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+  const alertEl = document.getElementById('seAlert');
+  const subsEl = document.getElementById('seSubstitutes');
+  let alerts = [];
+
+  // 1. Check constraint violations for the NEW shift
+  if (newShift === 'N' && w.rules.noNights) {
+    alerts.push({ type: 'danger', msg: `${w.name} tiene restricción médica: NO puede hacer noches.` });
+  }
+
+  if (newShift === 'N') {
+    // Check consecutive nights
+    let consec = 0;
+    if (day > 0 && sch[wId][day-1] === 'N') consec++;
+    if (day > 1 && sch[wId][day-2] === 'N') consec++;
+    if (day < days-1 && sch[wId][day+1] === 'N') consec++;
+    if (consec >= 2) {
+      alerts.push({ type: 'warning', msg: `Atención: superaría 2 noches consecutivas (máx. permitido por convenio).` });
+    }
+  }
+
+  // Check rest after night (N ends 8:00, M starts 8:00 = 0h, T starts 15:00 = 7h — both violate 12h min)
+  if (newShift === 'M' || newShift === 'MR' || newShift === 'T') {
+    if (day > 0 && sch[wId][day-1] === 'N') {
+      const shiftLabel = newShift === 'T' ? 'tarde' : 'mañana';
+      const restH = newShift === 'T' ? 7 : 0;
+      alerts.push({ type: 'danger', msg: `No se puede asignar ${shiftLabel} tras noche — solo ${restH}h de descanso (mínimo 12h por convenio).` });
+    }
+  }
+  // Check rest: assigning N after a day where worker had T (T ends 22:00, N starts 22:00 = 0h)
+  if (newShift === 'N') {
+    if (day > 0 && sch[wId][day-1] === 'T') {
+      alerts.push({ type: 'danger', msg: `No se puede asignar noche tras tarde — 0h de descanso (mínimo 12h por convenio).` });
+    }
+  }
+
+  // 2. Check coverage impact when REMOVING from a working shift
+  const oldShift = editorState.originalShift;
+  const workingShifts = ['M', 'T', 'N', 'MR'];
+  const removingFromWork = workingShifts.includes(oldShift) && !workingShifts.includes(newShift);
+  const changingShiftType = workingShifts.includes(oldShift) && workingShifts.includes(newShift) && oldShift !== newShift;
+
+  if (removingFromWork || changingShiftType) {
+    // Count coverage for the old shift after this change
+    const checkShift = oldShift === 'MR' ? 'M' : oldShift;
+    if (['M', 'T', 'N'].includes(checkShift)) {
+      let enfCount = 0, tecCount = 0;
+      workers.forEach(other => {
+        if (other.id === wId) return;
+        const os = sch[other.id][day];
+        const effectiveShift = ['MR','M7H','M6R','M55'].includes(os) ? 'M' : os;
+        if (effectiveShift === checkShift) {
+          if (other.type === 'enf') enfCount++;
+          else tecCount++;
+        }
+      });
+      const needed = RULES.COVERAGE[checkShift];
+      if (needed) {
+        const enfShort = needed.enf - enfCount;
+        const tecShort = needed.tec - tecCount;
+        if ((w.type === 'enf' && enfCount < needed.enf) || (w.type === 'tec' && tecCount < needed.tec)) {
+          alerts.push({ type: 'warning', msg: `Cobertura ${checkShift}: quedarían ${enfCount} enf (mín ${needed.enf}) + ${tecCount} téc (mín ${needed.tec}). Se necesita sustituto.` });
+
+          // Show substitute suggestions
+          showSubstitutes(checkShift, day, wId, w.type, subsEl);
+        }
+      }
+    }
+  }
+
+  // 3. Check coverage for new shift (adding to it)
+  if (workingShifts.includes(newShift) && newShift !== oldShift) {
+    const checkNew = newShift === 'MR' ? 'M' : newShift;
+    if (['M', 'T', 'N'].includes(checkNew)) {
+      let enfC = 0, tecC = 0;
+      workers.forEach(other => {
+        const os = sch[other.id][day];
+        const eff = ['MR','M7H','M6R','M55'].includes(os) ? 'M' : os;
+        if (eff === checkNew) {
+          if (other.type === 'enf') enfC++;
+          else tecC++;
+        }
+      });
+      // Worker is being added so +1
+      if (w.type === 'enf') enfC++;
+      else tecC++;
+      const need = RULES.COVERAGE[checkNew];
+      if (need && enfC >= need.enf && tecC >= need.tec) {
+        alerts.push({ type: 'info', msg: `Turno ${checkNew} bien cubierto: ${enfC} enf + ${tecC} téc.` });
+      }
+    }
+  }
+
+  if (!removingFromWork && !changingShiftType) {
+    subsEl.classList.remove('visible');
+    subsEl.innerHTML = '';
+  }
+
+  // Render alerts
+  if (alerts.length > 0) {
+    alertEl.className = `se-alert ${alerts[0].type}`;
+    alertEl.style.display = 'block';
+    alertEl.innerHTML = alerts.map(a => `<div style="margin-bottom:4px;">${a.type === 'danger' ? '⛔' : a.type === 'warning' ? '⚠️' : '✓'} ${a.msg}</div>`).join('');
+  } else {
+    alertEl.style.display = 'none';
+  }
+}
+
+function showSubstitutes(shift, day, excludeId, neededType, container) {
+  const m = appState.currentMonth;
+  const sch = genSchedule(m.getFullYear(), m.getMonth());
+  const days = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+
+  // Find workers who are on rest/off that day and could take this shift
+  const candidates = workers
+    .filter(w => w.id !== excludeId && w.type === neededType)
+    .filter(w => {
+      const current = sch[w.id][day];
+      return current === 'D'; // Only suggest people who are resting
+    })
+    .filter(w => canAssignShift(w.id, day, shift, sch))
+    .map(w => {
+      let score = 100;
+      const monthHours = calcMonthHours(w.id, sch, days);
+      const target = RULES.ANNUAL_HOURS / 12;
+      score += (target - monthHours) * 2; // Prefer workers with fewer hours
+      const monthNights = sch[w.id].filter(s => s === 'N').length;
+      if (shift === 'N') score -= monthNights * 10;
+      if (w.rules.preferredShift === shift) score += 25;
+      if (w.rules.conciliacion && shift === 'N') score -= 30;
+      return { w, score: Math.round(score), hours: monthHours };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+
+  if (candidates.length > 0) {
+    container.classList.add('visible');
+    container.innerHTML = `
+      <div class="se-sub-title">Sustitutos disponibles (descanso ese día)</div>
+      ${candidates.map(c => `
+        <div class="se-sub-item">
+          <div>
+            <strong style="color:var(--text);">${c.w.name}</strong>
+            <span style="font-size:10px;color:var(--text3);margin-left:6px;">${c.hours.toFixed(0)}h este mes</span>
+          </div>
+          <div class="se-sub-score">${c.score > 100 ? 'Ideal' : c.score > 70 ? 'Bueno' : 'Posible'}</div>
+        </div>
+      `).join('')}
+    `;
+  } else {
+    container.classList.add('visible');
+    container.innerHTML = `
+      <div class="se-sub-title">Sustitutos disponibles</div>
+      <div style="font-size:12px;color:var(--danger);padding:6px 0;">No hay sustitutos disponibles para ${shift} ese día.</div>
+    `;
+  }
+}
+
+function saveShiftChange() {
+  const { wId, day, selectedShift, originalShift } = editorState;
+  if (!selectedShift || selectedShift === originalShift) return;
+
+  const w = workers.find(x => x.id === wId);
+  const m = appState.currentMonth;
+  const key = `${m.getFullYear()}-${m.getMonth()}`;
+  const sch = genSchedule(m.getFullYear(), m.getMonth());
+  const reason = document.getElementById('seReason').value.trim();
+  const date = new Date(m.getFullYear(), m.getMonth(), day + 1);
+
+  // Apply the change
+  sch[wId][day] = selectedShift;
+  scheduleData[key] = sch;
+
+  // Update worker stats
+  if (selectedShift === 'N' && originalShift !== 'N') {
+    w.nights++;
+    w.nightsThisYear++;
+    w.computoBalance = parseFloat((w.nightsThisYear * RULES.NIGHT_COMPUTO_HOURS).toFixed(1));
+  }
+  if (originalShift === 'N' && selectedShift !== 'N') {
+    w.nights = Math.max(0, w.nights - 1);
+    w.nightsThisYear = Math.max(0, w.nightsThisYear - 1);
+    w.computoBalance = parseFloat((w.nightsThisYear * RULES.NIGHT_COMPUTO_HOURS).toFixed(1));
+  }
+
+  // Recalc hours
+  const days = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+  let totalH = 0;
+  for (let d = 0; d < days; d++) totalH += RULES.SHIFT_HOURS[sch[wId][d]] || 0;
+
+  // Log incident
+  const typeMap = { 'VAC':'vac', 'LD':'ld', 'FOR':'for', 'AE':'ae', 'BAJ':'baja', 'CAA':'ae', 'EX':'ae' };
+  const incType = typeMap[selectedShift] || 'swap';
+  const shiftNames = { M:'Mañana', T:'Tarde', N:'Noche', MR:'M.Reducida', D:'Descanso', VAC:'Vacaciones', LD:'Libre Disp.', FOR:'Formación', AE:'Ausencia', BAJ:'Baja', CAA:'Comp.Anual', EX:'Exceso J.' };
+
+  incidents.unshift({
+    date: `${m.getFullYear()}-${String(m.getMonth()+1).padStart(2,'0')}-${String(day+1).padStart(2,'0')}`,
+    worker: w.name,
+    type: incType,
+    covered_by: null,
+    shift: selectedShift,
+    notes: reason || `${shiftNames[originalShift] || originalShift} → ${shiftNames[selectedShift] || selectedShift}`
+  });
+
+  // Close editor and re-render
+  closeShiftEditor();
+  renderSchedule();
+  showToast(`${w.name}: ${shiftNames[originalShift] || originalShift} → ${shiftNames[selectedShift] || selectedShift}`);
+}
+
+function closeShiftEditor() {
+  const container = document.getElementById('shiftEditorContainer');
+  container.innerHTML = '';
+  editorState = { wId: null, day: null, selectedShift: null, originalShift: null };
+}
+
+// ========== DATA PERSISTENCE (localStorage + server sync) ==========
+function getWorkerMeta() {
+  return workers.map(w => ({
+    id: w.id, scheduleImported: w.scheduleImported,
+    nights: w.nights, nightsThisYear: w.nightsThisYear,
+    computoBalance: w.computoBalance, computoUsed: w.computoUsed, hours: w.hours
+  }));
+}
+
+function applyWorkerMeta(arr) {
+  if (!arr) return;
+  arr.forEach(meta => {
+    const w = workers.find(x => x.id === meta.id);
+    if (w) {
+      w.scheduleImported = meta.scheduleImported;
+      w.nights = meta.nights;
+      w.nightsThisYear = meta.nightsThisYear;
+      w.computoBalance = meta.computoBalance;
+      w.computoUsed = meta.computoUsed;
+      w.hours = meta.hours;
+    }
+  });
+}
+
+function saveToStorage() {
+  try {
+    const data = {
+      scheduleData,
+      importedFiles,
+      incidents,
+      workerMeta: getWorkerMeta()
+    };
+    // Save to localStorage (works offline, instant)
+    localStorage.setItem('shiftia_data', JSON.stringify(data));
+    // Also sync to server if available (for Railway persistence)
+    fetch('/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).catch(() => {}); // Silent fail if no server
+  } catch (e) { console.warn('[Shiftia] Save error:', e); }
+}
+
+async function loadFromStorage() {
+  try {
+    let data = null;
+
+    // Try server first (Railway)
+    try {
+      const res = await fetch('/api/data');
+      if (res.ok) {
+        const serverData = await res.json();
+        if (serverData && Object.keys(serverData.scheduleData || {}).length > 0) {
+          data = serverData;
+          console.log('[Shiftia] Datos cargados del servidor');
+        }
+      }
+    } catch (e) { /* No server available, use localStorage */ }
+
+    // Fallback to localStorage
+    if (!data) {
+      // Try new format first
+      const stored = localStorage.getItem('shiftia_data');
+      if (stored) {
+        data = JSON.parse(stored);
+      } else {
+        // Legacy format migration
+        const sd = localStorage.getItem('shiftia_scheduleData');
+        const imp = localStorage.getItem('shiftia_importedFiles');
+        const inc = localStorage.getItem('shiftia_incidents');
+        const wm = localStorage.getItem('shiftia_workerMeta');
+        if (sd) {
+          data = {
+            scheduleData: JSON.parse(sd),
+            importedFiles: imp ? JSON.parse(imp) : [],
+            incidents: inc ? JSON.parse(inc) : [],
+            workerMeta: wm ? JSON.parse(wm) : []
+          };
+          // Save in new format
+          localStorage.setItem('shiftia_data', JSON.stringify(data));
+          // Clean up old keys
+          localStorage.removeItem('shiftia_scheduleData');
+          localStorage.removeItem('shiftia_importedFiles');
+          localStorage.removeItem('shiftia_incidents');
+          localStorage.removeItem('shiftia_workerMeta');
+        }
+      }
+    }
+
+    if (data) {
+      for (const key in (data.scheduleData || {})) scheduleData[key] = data.scheduleData[key];
+      if (data.importedFiles) { importedFiles.length = 0; data.importedFiles.forEach(f => importedFiles.push(f)); }
+      if (data.incidents) { incidents.length = 0; data.incidents.forEach(i => incidents.push(i)); }
+      applyWorkerMeta(data.workerMeta);
+    }
+
+    const hasData = Object.keys(scheduleData).length > 0;
+    if (hasData) console.log('[Shiftia] Datos restaurados:', Object.keys(scheduleData).length, 'meses,', importedFiles.length, 'planillas');
+    return hasData;
+  } catch (e) { console.warn('[Shiftia] Load error:', e); return false; }
+}
+
+// Auto-save after mutations
+const _origIntegrate = integratePDFData;
+integratePDFData = function(pd, mw) { const r = _origIntegrate(pd, mw); saveToStorage(); detectConflicts(); return r; };
+const _origSave = saveShiftChange;
+saveShiftChange = function() { _origSave(); saveToStorage(); detectConflicts(); };
+const _origDelete = deleteImport;
+deleteImport = function(idx) { _origDelete(idx); saveToStorage(); detectConflicts(); };
+
+// ========== CONFLICT DETECTION ENGINE ==========
+function detectConflicts() {
+  predictedConflicts.length = 0;
+  const now = new Date();
+  const startKey = `${now.getFullYear()}-${now.getMonth()}`;
+  const endDate = new Date(now.getFullYear(), now.getMonth() + 3, 0);
+  const endKey = `${endDate.getFullYear()}-${endDate.getMonth()}`;
+
+  // Only scan current month + next 3 months
+  for (let offset = 0; offset <= 3; offset++) {
+    const checkDate = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    const year = checkDate.getFullYear();
+    const month = checkDate.getMonth();
+    const key = `${year}-${month}`;
+    const sch = scheduleData[key];
+    if (!sch) continue;
+
+    const days = new Date(year, month + 1, 0).getDate();
+    const monthName = MONTH_NAMES_ES[month];
+
+    let workersWithData = 0;
+    workers.forEach(w => {
+      if (sch[w.id] && sch[w.id].some(s => s && s !== '')) workersWithData++;
+    });
+    if (workersWithData === 0) continue;
+
+    for (let d = 0; d < days; d++) {
+      // Skip past days in current month
+      if (offset === 0 && d < now.getDate() - 1) continue;
+
+      let mEnf = 0, mTec = 0, tEnf = 0, tTec = 0, nEnf = 0, nTec = 0;
+      workers.forEach(w => {
+        const s = sch[w.id] ? sch[w.id][d] : '';
+        const eff = ['MR','M7H','M6R','M55'].includes(s) ? 'M' : s;
+        if (eff === 'M') { if (w.type === 'enf') mEnf++; else mTec++; }
+        if (eff === 'T') { if (w.type === 'enf') tEnf++; else tTec++; }
+        if (eff === 'N') { if (w.type === 'enf') nEnf++; else nTec++; }
+      });
+
+      const dayStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d+1).padStart(2,'0')}`;
+      const dayLabel = `${d+1} ${monthName}`;
+      const dayOfWeek = new Date(year, month, d + 1).getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+      // Coverage checks
+      if (mEnf + mTec > 0 && (mEnf < RULES.COVERAGE.M.enf || mTec < RULES.COVERAGE.M.tec)) {
+        const gap = (RULES.COVERAGE.M.enf - mEnf) + (RULES.COVERAGE.M.tec - mTec);
+        predictedConflicts.push({
+          date: dayStr, year, month, day: d, severity: gap >= 3 ? 'high' : 'medium',
+          type: 'coverage', shift: 'M',
+          title: `Cobertura M insuficiente`,
+          desc: `${mEnf} enf (mín ${RULES.COVERAGE.M.enf}) + ${mTec} téc (mín ${RULES.COVERAGE.M.tec})`,
+          ai: `Faltan ${Math.max(0, RULES.COVERAGE.M.enf - mEnf)} enfermeros y ${Math.max(0, RULES.COVERAGE.M.tec - mTec)} técnicos en mañana. ${isWeekend ? 'Es fin de semana, puede ser normal.' : 'Revisa quién puede cubrir.'}`
+        });
+      }
+      if (tEnf + tTec > 0 && (tEnf < RULES.COVERAGE.T.enf || tTec < RULES.COVERAGE.T.tec)) {
+        predictedConflicts.push({
+          date: dayStr, year, month, day: d, severity: 'high', type: 'coverage', shift: 'T',
+          title: `Sin cobertura T`,
+          desc: `${tEnf} enf (mín ${RULES.COVERAGE.T.enf}) + ${tTec} téc (mín ${RULES.COVERAGE.T.tec})`,
+          ai: `La tarde necesita cubrir. ${tEnf + tTec === 0 ? 'No hay nadie asignado.' : 'Faltan ' + (RULES.COVERAGE.T.enf + RULES.COVERAGE.T.tec - tEnf - tTec) + ' personas.'}`
+        });
+      }
+      if (nEnf + nTec > 0 && (nEnf < RULES.COVERAGE.N.enf || nTec < RULES.COVERAGE.N.tec)) {
+        predictedConflicts.push({
+          date: dayStr, year, month, day: d, severity: 'high', type: 'coverage', shift: 'N',
+          title: `Sin cobertura N`,
+          desc: `${nEnf} enf (mín ${RULES.COVERAGE.N.enf}) + ${nTec} téc (mín ${RULES.COVERAGE.N.tec})`,
+          ai: `La noche necesita ${RULES.COVERAGE.N.enf} enf + ${RULES.COVERAGE.N.tec} téc. Busca voluntarios o haz cambio.`
+        });
+      }
+
+      // Worker-specific violations
+      workers.forEach(w => {
+        const s = sch[w.id] ? sch[w.id][d] : '';
+        if (s === 'N' && d >= 2 && sch[w.id][d-1] === 'N' && sch[w.id][d-2] === 'N') {
+          predictedConflicts.push({
+            date: dayStr, year, month, day: d, severity: 'medium', type: 'rest',
+            title: `3+ noches seguidas — ${w.name}`,
+            desc: `Lleva 3+ noches consecutivas (máx convenio: ${RULES.MAX_CONSECUTIVE_NIGHTS})`,
+            ai: `${w.name} acumula fatiga. El convenio permite máximo ${RULES.MAX_CONSECUTIVE_NIGHTS} noches seguidas. Planifica relevo.`
+          });
+        }
+        const isMorn = ['M','MR','M7H','M6R','M55'].includes(s);
+        if (d > 0 && sch[w.id] && sch[w.id][d-1] === 'N' && (isMorn || s === 'T')) {
+          const restH = s === 'T' ? 7 : 0;
+          predictedConflicts.push({
+            date: dayStr, year, month, day: d, severity: 'high', type: 'rest',
+            title: `${s === 'T' ? 'Tarde' : 'Mañana'} tras noche — ${w.name}`,
+            desc: `${s} después de N (solo ${restH}h descanso, mín 12h)`,
+            ai: `${w.name} tiene ${restH}h entre noche y ${s}. Mínimo legal son 12h. Hay que cambiar el turno.`
+          });
+        }
+        if (d > 0 && sch[w.id] && sch[w.id][d-1] === 'T' && (s === 'N' || isMorn)) {
+          predictedConflicts.push({
+            date: dayStr, year, month, day: d, severity: 'high', type: 'rest',
+            title: `${s === 'N' ? 'Noche' : 'Mañana'} tras tarde — ${w.name}`,
+            desc: `${s} después de T (${s === 'N' ? '0' : '10'}h descanso, mín 12h)`,
+            ai: `${w.name} no descansa lo suficiente entre tarde y ${s}. Cambia uno de los dos turnos.`
+          });
+        }
+        if (s === 'N' && w.rules.noNights) {
+          predictedConflicts.push({
+            date: dayStr, year, month, day: d, severity: 'high', type: 'restriction',
+            title: `Restricción noches — ${w.name}`,
+            desc: `Asignado a noche con restricción médica`,
+            ai: `${w.name} tiene restricción médica de noches. Reasigna a otro trabajador urgentemente.`
+          });
+        }
+      });
+    }
+  }
+
+  predictedConflicts.sort((a, b) => a.date.localeCompare(b.date));
+  const alertEl = document.getElementById('alertCount');
+  if (alertEl) alertEl.textContent = predictedConflicts.filter(c => c.severity === 'high').length;
+}
+
+// ========== INTELLIGENT ASSISTANT ENGINE v2 ==========
+
+// Deep analysis helpers
+function getWorkerStats(wId, filterMonths) {
+  let m=0,t=0,n=0,d=0,h=0,vac=0,baj=0,other=0;
+  const keys = filterMonths || Object.keys(scheduleData);
+  keys.forEach(key => {
+    const sch = scheduleData[key];
+    if (!sch || !sch[wId]) return;
+    sch[wId].forEach(s => {
+      if(['M','MR','M7H','M6R','M55'].includes(s)) m++;
+      else if(s==='T') t++;
+      else if(s==='N') n++;
+      else if(s==='D') d++;
+      else if(s==='VAC'||s==='VAA') vac++;
+      else if(s==='BAJ'||s==='INT'||s==='MTC'||s==='LAC') baj++;
+      else if(s&&s!=='') other++;
+      h += RULES.SHIFT_HOURS[s]||0;
+    });
+  });
+  return {m,t,n,d,h,vac,baj,other,total:m+t+n};
+}
+
+function getTeamWorkloadAnalysis(typeFilter) {
+  const wkrs = typeFilter ? workers.filter(w=>w.type===typeFilter) : workers;
+  const stats = wkrs.map(w => ({w, s: getWorkerStats(w.id)}));
+  const activeStats = stats.filter(x => x.s.total > 0);
+  if (activeStats.length === 0) return null;
+  const avgN = activeStats.reduce((a,x)=>a+x.s.n,0)/activeStats.length;
+  const avgH = activeStats.reduce((a,x)=>a+x.s.h,0)/activeStats.length;
+  const avgT = activeStats.reduce((a,x)=>a+x.s.total,0)/activeStats.length;
+  const maxN = Math.max(...activeStats.map(x=>x.s.n));
+  const minN = Math.min(...activeStats.map(x=>x.s.n));
+  const mostNights = activeStats.filter(x=>x.s.n===maxN).map(x=>x.w.name);
+  const leastNights = activeStats.filter(x=>x.s.n===minN).map(x=>x.w.name);
+  const overloaded = activeStats.filter(x=>x.s.n > avgN*1.3 || x.s.h > avgH*1.2);
+  const underloaded = activeStats.filter(x=>x.s.total < avgT*0.7 && x.s.baj===0);
+  const onLeave = stats.filter(x=>x.s.baj > 0);
+  const nightSpread = maxN - minN;
+  return { stats: activeStats, avgN, avgH, avgT, maxN, minN, mostNights, leastNights, overloaded, underloaded, onLeave, nightSpread, total: wkrs.length };
+}
+
+function getCoverageForWeek(startDate, numDays) {
+  const results = [];
+  for (let i = 0; i < numDays; i++) {
+    const d = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
+    const sch = genSchedule(d.getFullYear(), d.getMonth());
+    const idx = d.getDate() - 1;
+    let mE=0,mT=0,tE=0,tT=0,nE=0,nT=0;
+    workers.forEach(w => {
+      const s = sch[w.id] ? sch[w.id][idx] : '';
+      const eff = ['MR','M7H','M6R','M55'].includes(s)?'M':s;
+      if(eff==='M'){if(w.type==='enf')mE++;else mT++;}
+      if(eff==='T'){if(w.type==='enf')tE++;else tT++;}
+      if(eff==='N'){if(w.type==='enf')nE++;else nT++;}
+    });
+    const mOk = mE>=RULES.COVERAGE.M.enf && mT>=RULES.COVERAGE.M.tec;
+    const tOk = tE>=RULES.COVERAGE.T.enf && tT>=RULES.COVERAGE.T.tec;
+    const nOk = nE>=RULES.COVERAGE.N.enf && nT>=RULES.COVERAGE.N.tec;
+    const fest = isFestivo(d.getFullYear(), d.getMonth(), d.getDate());
+    results.push({date:d, day:d.getDate(), dow:d.getDay(), fest, mE,mT,tE,tT,nE,nT,mOk,tOk,nOk, allOk:mOk&&tOk&&nOk});
+  }
+  return results;
+}
+
+function findSwapCandidates(workerFromId, day, month, year, shiftNeeded) {
+  const key = `${year}-${month}`;
+  const sch = scheduleData[key];
+  if (!sch) return [];
+  const wFrom = workers.find(w=>w.id===workerFromId);
+  const candidates = [];
+  workers.forEach(w => {
+    if (w.id === workerFromId) return;
+    if (chatFilter !== 'all' && w.type !== chatFilter) return;
+    const s = sch[w.id] ? sch[w.id][day] : '';
+    if (s === 'D' || s === '') {
+      if (canAssignShift(w.id, day, shiftNeeded, sch)) {
+        candidates.push({w, currentShift: s, reason: s==='D'?'tiene descanso':'sin turno asignado'});
+      }
+    }
+  });
+  return candidates;
+}
+
+function analyzeHiringNeeds() {
+  const analysis = getTeamWorkloadAnalysis();
+  if (!analysis) return '<em>No hay datos suficientes para analizar.</em>';
+  const enfs = workers.filter(w=>w.type==='enf');
+  const tecs = workers.filter(w=>w.type==='tec');
+  const enfLeave = enfs.filter(w => { const s = getWorkerStats(w.id); return s.baj > 5; });
+  const tecLeave = tecs.filter(w => { const s = getWorkerStats(w.id); return s.baj > 5; });
+  const coverageWeek = getCoverageForWeek(new Date(), 30);
+  const failDays = coverageWeek.filter(d => !d.allOk).length;
+  const failPct = Math.round(failDays/30*100);
+  let html = `<div class="chat-section-label">Analisis de plantilla</div>`;
+  html += `<div class="chat-metric"><span>Enfermeros activos</span><span class="chat-metric-val">${enfs.length - enfLeave.length}/${enfs.length}</span></div>`;
+  html += `<div class="chat-metric"><span>Tecnicos activos</span><span class="chat-metric-val">${tecs.length - tecLeave.length}/${tecs.length}</span></div>`;
+  html += `<div class="chat-metric"><span>Dias sin cobertura (30d)</span><span class="${failPct>30?'chat-metric-warn':'chat-metric-val'}">${failDays} (${failPct}%)</span></div>`;
+  html += `<div class="chat-metric"><span>Desviacion noches</span><span class="${analysis.nightSpread>8?'chat-metric-warn':'chat-metric-val'}">${analysis.nightSpread} noches</span></div>`;
+  if (enfLeave.length > 0) html += `<div style="margin-top:8px;font-size:11px;">De baja/maternidad: ${enfLeave.map(x=>x.w.name).join(', ')}</div>`;
+  if (tecLeave.length > 0) html += `<div style="font-size:11px;">Tecnicos de baja: ${tecLeave.map(x=>x.w.name).join(', ')}</div>`;
+  // Recommendation
+  html += `<div style="margin-top:10px;padding:8px;background:rgba(92,122,111,0.08);border-radius:8px;font-size:11px;">`;
+  if (failPct > 40) {
+    html += `<strong>Recomendacion:</strong> Con ${failPct}% de dias sin cobertura completa, seria conveniente valorar una contratacion temporal${enfLeave.length>0?' para cubrir las bajas':''}.`;
+  } else if (failPct > 15) {
+    html += `<strong>Observacion:</strong> ${failPct}% de dias tienen gaps de cobertura. Redistribuir turnos podria mejorar la situacion sin contratar.`;
+  } else {
+    html += `<strong>Estado:</strong> La plantilla actual cubre bien la demanda. Cobertura al ${100-failPct}%.`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+function analyzeFilteredTeam(filter) {
+  if (filter === 'all') return 'Mostrando datos de todo el equipo.';
+  const label = filter === 'enf' ? 'enfermeria' : 'tecnicos';
+  const analysis = getTeamWorkloadAnalysis(filter);
+  if (!analysis) return `No hay datos para ${label}.`;
+  let html = `<div class="chat-section-label">${label} — Resumen</div>`;
+  html += `<div class="chat-metric"><span>Plantilla</span><span class="chat-metric-val">${analysis.total}</span></div>`;
+  html += `<div class="chat-metric"><span>Media noches</span><span class="chat-metric-val">${analysis.avgN.toFixed(1)}</span></div>`;
+  html += `<div class="chat-metric"><span>Media horas</span><span class="chat-metric-val">${analysis.avgH.toFixed(0)}h</span></div>`;
+  if (analysis.overloaded.length > 0) {
+    html += `<div style="margin-top:6px;font-size:11px;color:var(--danger);">Sobrecargados: ${analysis.overloaded.map(x=>x.w.name).join(', ')}</div>`;
+  }
+  if (analysis.onLeave.length > 0) {
+    html += `<div style="font-size:11px;">De baja: ${analysis.onLeave.map(x=>x.w.name).join(', ')}</div>`;
+  }
+  return html;
+}
+
+function generateProactiveInsight() {
+  const hasData = Object.keys(scheduleData).length > 0;
+  if (!hasData) return null;
+  const now = new Date();
+  const insights = [];
+  // Check today's coverage
+  const todayCov = getCoverageForWeek(now, 1)[0];
+  if (todayCov && !todayCov.allOk) {
+    let gaps = [];
+    if (!todayCov.mOk) gaps.push('manana');
+    if (!todayCov.tOk) gaps.push('tarde');
+    if (!todayCov.nOk) gaps.push('noche');
+    insights.push(`Hoy hay gaps de cobertura en ${gaps.join(' y ')}. Revisa la planilla.`);
+  }
+  // Check this week
+  const weekCov = getCoverageForWeek(now, 7);
+  const weekFails = weekCov.filter(d=>!d.allOk);
+  if (weekFails.length >= 3) {
+    insights.push(`${weekFails.length} de los proximos 7 dias tienen problemas de cobertura.`);
+  }
+  // Check workload equity
+  const analysis = getTeamWorkloadAnalysis();
+  if (analysis && analysis.nightSpread > 10) {
+    insights.push(`Desigualdad de noches: ${analysis.mostNights[0]} tiene ${analysis.maxN} noches vs ${analysis.leastNights[0]} con ${analysis.minN}. Diferencia de ${analysis.nightSpread}.`);
+  }
+  // High severity conflicts
+  detectConflicts();
+  const highConflicts = predictedConflicts.filter(c=>c.severity==='high');
+  if (highConflicts.length > 5) {
+    insights.push(`${highConflicts.length} alertas graves activas. Las mas urgentes son violaciones de descanso.`);
+  }
+  if (insights.length === 0) return null;
+  return `<div class="chat-section-label">Insight automatico</div>${insights.map(i=>`<div style="font-size:11px;margin-bottom:4px;">${i}</div>`).join('')}`;
+}
+
+function getFollowUpSuggestions(query) {
+  const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (q.includes('cobertura') || q.includes('semana')) return ['¿Quien esta sobrecargado?', '¿Necesitamos contratar?'];
+  if (q.includes('noche')) return ['¿Que enfermero tiene mas noches?', 'Equidad del equipo'];
+  if (q.includes('conflicto') || q.includes('alerta')) return ['Cobertura esta semana', 'Ver todas las alertas'];
+  if (q.includes('contratar') || q.includes('plantilla')) return ['Resumen del equipo', 'Cobertura semanal'];
+  if (q.includes('sobrecargado') || q.includes('carga') || q.includes('equidad')) return ['Ranking noches', '¿Necesitamos contratar?'];
+  if (q.includes('resumen') || q.includes('equipo')) return ['¿Quien trabaja hoy?', 'Conflictos activos'];
+  return [];
+}
+
+function handleChatQuery(query) {
+  const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const now = new Date();
+  const sch = genSchedule(now.getFullYear(), now.getMonth());
+  const todayIdx = now.getDate() - 1;
+  const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const monthName = getMonthName(now);
+  const typeLabel = chatFilter === 'enf' ? ' (enfermeria)' : chatFilter === 'tec' ? ' (tecnicos)' : '';
+  const filteredWorkers = chatFilter === 'all' ? workers : workers.filter(w => w.type === chatFilter);
+
+  // === WHO IS WORKING ===
+  if (q.includes('quien trabaja') || q.includes('quien esta') || (q.includes('hoy') && !q.includes('cobertura')) || q.includes('guardia') || q.includes('turno hoy') || q.includes('ahora')) {
+    const hour = now.getHours();
+    let currentShift = 'M';
+    if (hour >= 15 && hour < 22) currentShift = 'T';
+    if (hour >= 22 || hour < 8) currentShift = 'N';
+    const shiftNames = { M: 'Manana', T: 'Tarde', N: 'Noche' };
+    const onShift = filteredWorkers.filter(w => {
+      const s = sch[w.id] ? sch[w.id][todayIdx] : '';
+      return s === currentShift || (currentShift === 'M' && ['MR','M7H','M6R','M55'].includes(s));
+    });
+    if (onShift.length === 0) return `No hay datos de turno para hoy${typeLabel}. Importa las planillas primero.`;
+    let html = `<div class="chat-section-label">Turno ${shiftNames[currentShift]} (${hour}h)${typeLabel}</div>`;
+    onShift.forEach(w => {
+      const s = sch[w.id][todayIdx];
+      html += `<div style="font-size:12px;padding:2px 0;">${w.name} <span style="color:var(--text3);">${w.type} — ${s}</span></div>`;
+    });
+    html += `<div style="margin-top:6px;font-size:11px;color:var(--text2);">${onShift.length} personas en turno</div>`;
+    html += `<button class="chat-action-btn" onclick="goToDay(${now.getFullYear()},${now.getMonth()},${now.getDate()})">Ver en planilla</button>`;
+    return html;
+  }
+
+  // === WEEKLY COVERAGE ===
+  if (q.includes('cobertura') && (q.includes('semana') || q.includes('semanal') || q.includes('proxim'))) {
+    const weekCov = getCoverageForWeek(now, 7);
+    const dayNames = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+    let html = `<div class="chat-section-label">Cobertura proximos 7 dias${typeLabel}</div>`;
+    weekCov.forEach(d => {
+      const ok = d.allOk;
+      const issues = [];
+      if (!d.mOk) issues.push('M');
+      if (!d.tOk) issues.push('T');
+      if (!d.nOk) issues.push('N');
+      html += `<div class="chat-metric"><span>${dayNames[d.dow]} ${d.day}${d.fest?' *':''}</span><span class="${ok?'chat-metric-val':'chat-metric-warn'}">${ok?'OK':issues.join(',')+' gap'}</span></div>`;
+    });
+    const failCount = weekCov.filter(d=>!d.allOk).length;
+    if (failCount > 0) {
+      html += `<div style="margin-top:8px;padding:8px;background:rgba(204,68,68,0.08);border-radius:8px;font-size:11px;"><strong>${failCount} dia${failCount>1?'s':''} con gaps.</strong> Revisa turnos o busca coberturas.</div>`;
+    } else {
+      html += `<div style="margin-top:8px;font-size:11px;color:var(--success);">Cobertura completa toda la semana.</div>`;
+    }
+    return html;
+  }
+
+  // === TODAY'S COVERAGE ===
+  if (q.includes('cobertura') || q.includes('faltan') || q.includes('cubrir')) {
+    let mEnf=0,mTec=0,tEnf=0,tTec=0,nEnf=0,nTec=0;
+    filteredWorkers.forEach(w => {
+      const s = sch[w.id] ? sch[w.id][todayIdx] : '';
+      const eff = ['MR','M7H','M6R','M55'].includes(s)?'M':s;
+      if(eff==='M'){if(w.type==='enf')mEnf++;else mTec++;}
+      if(eff==='T'){if(w.type==='enf')tEnf++;else tTec++;}
+      if(eff==='N'){if(w.type==='enf')nEnf++;else nTec++;}
+    });
+    const checks = [
+      {s:'M',label:'Manana',enf:mEnf,tec:mTec,need:RULES.COVERAGE.M},
+      {s:'T',label:'Tarde',enf:tEnf,tec:tTec,need:RULES.COVERAGE.T},
+      {s:'N',label:'Noche',enf:nEnf,tec:nTec,need:RULES.COVERAGE.N}
+    ];
+    let html = `<div class="chat-section-label">Cobertura hoy dia ${now.getDate()}${typeLabel}</div>`;
+    checks.forEach(c => {
+      const ok = c.enf>=c.need.enf && c.tec>=c.need.tec;
+      html += `<div class="chat-metric"><span>${c.label}</span><span class="${ok?'chat-metric-val':'chat-metric-warn'}">${c.enf}e+${c.tec}t ${ok?'OK':'FALTA'}</span></div>`;
+      if (!ok) {
+        const gapE = Math.max(0,c.need.enf-c.enf);
+        const gapT = Math.max(0,c.need.tec-c.tec);
+        html += `<div style="font-size:10px;color:var(--danger);padding-left:8px;">Faltan: ${gapE>0?gapE+' enf ':''}${gapT>0?gapT+' tec':''}</div>`;
+      }
+    });
+    html += `<button class="chat-action-btn" onclick="goToDay(${now.getFullYear()},${now.getMonth()},${now.getDate()})">Ver en planilla</button>`;
+    return html;
+  }
+
+  // === WORKLOAD / OVERLOAD ===
+  if (q.includes('sobrecargado') || q.includes('carga') || q.includes('equidad') || q.includes('equilibrio') || q.includes('distribucion') || q.includes('justo') || q.includes('injusto')) {
+    const analysis = getTeamWorkloadAnalysis(chatFilter==='all'?null:chatFilter);
+    if (!analysis) return 'No hay datos suficientes. Importa planillas primero.';
+    let html = `<div class="chat-section-label">Analisis de carga${typeLabel}</div>`;
+    html += `<div class="chat-metric"><span>Media noches</span><span class="chat-metric-val">${analysis.avgN.toFixed(1)}</span></div>`;
+    html += `<div class="chat-metric"><span>Media horas</span><span class="chat-metric-val">${analysis.avgH.toFixed(0)}h</span></div>`;
+    html += `<div class="chat-metric"><span>Rango noches</span><span class="${analysis.nightSpread>8?'chat-metric-warn':'chat-metric-val'}">${analysis.minN}-${analysis.maxN} (dif ${analysis.nightSpread})</span></div>`;
+    if (analysis.overloaded.length > 0) {
+      html += `<div class="chat-section-label" style="color:var(--danger);">Sobrecargados</div>`;
+      analysis.overloaded.forEach(x => {
+        html += `<div style="font-size:11px;padding:2px 0;">${x.w.name}: ${x.s.n} noches, ${x.s.h}h</div>`;
+      });
+    }
+    if (analysis.underloaded.length > 0) {
+      html += `<div class="chat-section-label" style="color:var(--accent);">Menos carga (disponibles)</div>`;
+      analysis.underloaded.forEach(x => {
+        html += `<div style="font-size:11px;padding:2px 0;">${x.w.name}: ${x.s.n} noches, ${x.s.h}h</div>`;
+      });
+    }
+    // Equity recommendation
+    if (analysis.nightSpread > 6) {
+      html += `<div style="margin-top:8px;padding:8px;background:rgba(92,122,111,0.08);border-radius:8px;font-size:11px;">`;
+      html += `<strong>Sugerencia:</strong> Redistribuir noches de ${analysis.mostNights[0]} hacia ${analysis.leastNights[0]} reduciria la desigualdad.`;
+      html += `</div>`;
+    }
+    return html;
+  }
+
+  // === HIRING ANALYSIS ===
+  if (q.includes('contratar') || q.includes('contratacion') || q.includes('plantilla') || q.includes('necesitamos') || q.includes('faltan personas') || q.includes('refuerzo')) {
+    return analyzeHiringNeeds();
+  }
+
+  // === WORKER LOOKUP ===
+  const workerMatch = workers.find(w => {
+    const wn = w.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return q.includes(wn) || wn.split(' ').some(part => part.length > 3 && q.includes(part));
+  });
+  if (workerMatch) {
+    const stats = getWorkerStats(workerMatch.id);
+    const curMonth = `${now.getFullYear()}-${now.getMonth()}`;
+    const monthStats = getWorkerStats(workerMatch.id, [curMonth]);
+    const avgN = getTeamWorkloadAnalysis(workerMatch.type)?.avgN || 0;
+    const nightDiff = stats.n - avgN;
+    let html = `<div class="chat-section-label">${workerMatch.name}</div>`;
+    html += `<div style="font-size:11px;color:var(--text2);margin-bottom:6px;">${workerMatch.type==='enf'?'Enfermero/a':'Tecnico/a'}${workerMatch.rules.noNights?' — Sin noches':''}${workerMatch.rules.conciliacion?' — Conciliacion':''}</div>`;
+    html += `<div class="chat-section-label">Acumulado anual</div>`;
+    html += `<div class="chat-metric"><span>Mananas</span><span class="chat-metric-val">${stats.m}</span></div>`;
+    html += `<div class="chat-metric"><span>Tardes</span><span class="chat-metric-val">${stats.t}</span></div>`;
+    html += `<div class="chat-metric"><span>Noches</span><span class="${nightDiff>5?'chat-metric-warn':'chat-metric-val'}">${stats.n}${nightDiff>3?' (+'+nightDiff.toFixed(0)+' vs media)':''}</span></div>`;
+    html += `<div class="chat-metric"><span>Descansos</span><span class="chat-metric-val">${stats.d}</span></div>`;
+    html += `<div class="chat-metric"><span>Horas totales</span><span class="chat-metric-val">${stats.h}h</span></div>`;
+    if (stats.vac > 0) html += `<div class="chat-metric"><span>Vacaciones</span><span class="chat-metric-val">${stats.vac} dias</span></div>`;
+    if (stats.baj > 0) html += `<div class="chat-metric"><span>Baja/Maternidad</span><span class="chat-metric-warn">${stats.baj} dias</span></div>`;
+    html += `<div class="chat-section-label">${monthName}</div>`;
+    html += `<div style="font-size:11px;">M:${monthStats.m} T:${monthStats.t} N:${monthStats.n} D:${monthStats.d} — ${monthStats.h}h</div>`;
+    // AI insight
+    let insight = '';
+    if (nightDiff > 5) insight = `${workerMatch.name} tiene significativamente mas noches que la media del equipo. Considera redistribuir.`;
+    else if (stats.baj > 10) insight = `De baja prolongada. Evalua si necesitas cobertura temporal.`;
+    else if (stats.h > RULES.ANNUAL_HOURS * 0.9) insight = `Cerca del limite anual de ${RULES.ANNUAL_HOURS}h. Vigila la asignacion.`;
+    else insight = `Carga equilibrada respecto al equipo.`;
+    html += `<div style="margin-top:8px;padding:8px;background:rgba(92,122,111,0.08);border-radius:8px;font-size:11px;">${insight}</div>`;
+    html += `<button class="chat-action-btn" onclick="switchView('workers')">Ver ficha</button>`;
+    return html;
+  }
+
+  // === CONFLICTS ===
+  if (q.includes('conflicto') || q.includes('alerta') || q.includes('problema') || q.includes('error') || q.includes('violacion')) {
+    detectConflicts();
+    const filtered = chatFilter==='all' ? predictedConflicts : predictedConflicts.filter(c => {
+      const w = workers.find(w2 => c.title.includes(w2.name));
+      return !w || w.type === chatFilter;
+    });
+    const high = filtered.filter(c => c.severity === 'high');
+    const med = filtered.filter(c => c.severity === 'medium');
+    if (high.length === 0 && med.length === 0) return `Sin conflictos detectados${typeLabel} en los proximos 3 meses.`;
+    let html = `<div class="chat-section-label">Alertas activas${typeLabel}</div>`;
+    html += `<div class="chat-metric"><span>Graves</span><span class="chat-metric-warn">${high.length}</span></div>`;
+    html += `<div class="chat-metric"><span>Avisos</span><span class="chat-metric-val">${med.length}</span></div>`;
+    html += `<div class="chat-section-label">Mas urgentes</div>`;
+    high.slice(0,4).forEach(c => {
+      html += `<div style="font-size:11px;padding:4px 0;border-bottom:1px solid var(--surface2);">`;
+      html += `<div>${c.title}</div>`;
+      html += `<div style="color:var(--text3);font-size:10px;">${c.desc}</div>`;
+      html += `<button class="chat-action-btn" onclick="goToDay(${c.year},${c.month},${c.day+1})">Ir al dia</button>`;
+      html += `</div>`;
+    });
+    if (high.length > 4) html += `<div style="font-size:11px;color:var(--text3);margin-top:4px;">... y ${high.length-4} mas</div>`;
+    html += `<button class="chat-action-btn" onclick="switchView('conflicts')" style="margin-top:8px;">Ver todas las alertas</button>`;
+    return html;
+  }
+
+  // === NIGHT RANKING ===
+  if (q.includes('noche') || q.includes('ranking') || q.includes('nocturno')) {
+    const nightData = filteredWorkers.map(w => ({w, n: getWorkerStats(w.id).n})).filter(d=>d.n>0).sort((a,b)=>b.n-a.n);
+    if (nightData.length === 0) return 'No hay datos de noches importados.';
+    const avg = nightData.reduce((a,x)=>a+x.n,0)/nightData.length;
+    let html = `<div class="chat-section-label">Ranking noches (anual)${typeLabel}</div>`;
+    nightData.forEach((d,i) => {
+      const over = d.n > avg*1.3;
+      html += `<div class="chat-metric"><span>${i+1}. ${d.w.name}</span><span class="${over?'chat-metric-warn':'chat-metric-val'}">${d.n}</span></div>`;
+    });
+    html += `<div style="margin-top:6px;font-size:11px;color:var(--text2);">Media: ${avg.toFixed(1)} noches/persona</div>`;
+    const spread = nightData[0].n - nightData[nightData.length-1].n;
+    if (spread > 8) {
+      html += `<div style="margin-top:6px;padding:8px;background:rgba(204,68,68,0.08);border-radius:8px;font-size:11px;">Diferencia de ${spread} noches entre el primero y el ultimo. Redistribuir mejoraria la equidad.</div>`;
+    }
+    return html;
+  }
+
+  // === TEAM SUMMARY ===
+  if (q.includes('estadistica') || q.includes('resumen') || q.includes('equipo') || q.includes('total') || q.includes('general') || q.includes('dashboard')) {
+    const imported = workers.filter(w => w.scheduleImported).length;
+    const analysis = getTeamWorkloadAnalysis(chatFilter==='all'?null:chatFilter);
+    let html = `<div class="chat-section-label">Resumen del equipo${typeLabel}</div>`;
+    html += `<div class="chat-metric"><span>Plantilla</span><span class="chat-metric-val">${filteredWorkers.length} (${filteredWorkers.filter(w=>w.type==='enf').length}e + ${filteredWorkers.filter(w=>w.type==='tec').length}t)</span></div>`;
+    html += `<div class="chat-metric"><span>Planillas importadas</span><span class="${imported<workers.length?'chat-metric-warn':'chat-metric-val'}">${imported}/${workers.length}</span></div>`;
+    html += `<div class="chat-metric"><span>Meses con datos</span><span class="chat-metric-val">${Object.keys(scheduleData).length}</span></div>`;
+    if (analysis) {
+      html += `<div class="chat-metric"><span>Media horas</span><span class="chat-metric-val">${analysis.avgH.toFixed(0)}h</span></div>`;
+      html += `<div class="chat-metric"><span>Media noches</span><span class="chat-metric-val">${analysis.avgN.toFixed(1)}</span></div>`;
+      if (analysis.onLeave.length > 0) {
+        html += `<div style="margin-top:6px;font-size:11px;">De baja: ${analysis.onLeave.map(x=>x.w.name).join(', ')}</div>`;
+      }
+    }
+    if (imported < workers.length) {
+      const missing = workers.filter(w => !w.scheduleImported).map(w=>w.name);
+      html += `<div style="margin-top:8px;padding:8px;background:rgba(204,68,68,0.08);border-radius:8px;font-size:11px;">Faltan planillas de: ${missing.slice(0,5).join(', ')}${missing.length>5?` y ${missing.length-5} mas`:''}</div>`;
+    }
+    return html;
+  }
+
+  // === TOMORROW / MANANA ===
+  if (q.includes('manana') && (q.includes('turno') || q.includes('quien') || q.includes('que hay'))) {
+    const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1);
+    const tomSch = genSchedule(tom.getFullYear(), tom.getMonth());
+    const tomIdx = tom.getDate()-1;
+    let html = `<div class="chat-section-label">Manana ${tom.getDate()}/${tom.getMonth()+1}</div>`;
+    ['M','T','N'].forEach(sh => {
+      const wkrs = filteredWorkers.filter(w => {
+        const s = tomSch[w.id] ? tomSch[w.id][tomIdx] : '';
+        return s === sh || (sh === 'M' && ['MR','M7H','M6R','M55'].includes(s));
+      });
+      const label = {M:'Manana',T:'Tarde',N:'Noche'}[sh];
+      html += `<div style="font-size:11px;font-weight:600;margin-top:6px;">${label} (${wkrs.length})</div>`;
+      wkrs.forEach(w => html += `<div style="font-size:11px;padding:1px 0;color:var(--text2);">${w.name}</div>`);
+    });
+    html += `<button class="chat-action-btn" onclick="goToDay(${tom.getFullYear()},${tom.getMonth()},${tom.getDate()})">Ver en planilla</button>`;
+    return html;
+  }
+
+  // === VACATIONS ===
+  if (q.includes('vacacion') || q.includes('vac') || q.includes('libre') || q.includes('descanso')) {
+    const vacData = filteredWorkers.map(w => {
+      const s = getWorkerStats(w.id);
+      return {w, vac: s.vac, d: s.d};
+    }).filter(x => x.vac > 0 || x.d > 5).sort((a,b)=>b.vac-a.vac);
+    let html = `<div class="chat-section-label">Vacaciones y descansos${typeLabel}</div>`;
+    if (vacData.length === 0) return `No hay datos de vacaciones importados${typeLabel}.`;
+    vacData.forEach(x => {
+      html += `<div class="chat-metric"><span>${x.w.name}</span><span class="chat-metric-val">${x.vac} vac / ${x.d} desc</span></div>`;
+    });
+    return html;
+  }
+
+  // === HELP ===
+  if (q.includes('ayuda') || q.includes('help') || q.includes('que puedo') || q.includes('que sabes') || q.includes('opciones') || q.includes('comandos')) {
+    return `<div class="chat-section-label">Que puedo hacer</div>
+    <div style="font-size:11px;line-height:1.8;">
+    <strong>Cobertura:</strong> "cobertura hoy", "cobertura semanal"<br>
+    <strong>Equipo:</strong> "resumen", "ranking noches", "vacaciones"<br>
+    <strong>Analisis:</strong> "quien esta sobrecargado", "equidad", "distribucion"<br>
+    <strong>Plantilla:</strong> "necesitamos contratar?", "faltan personas"<br>
+    <strong>Personas:</strong> nombre del trabajador para ver su ficha<br>
+    <strong>Turnos:</strong> "quien trabaja hoy", "manana que turno hay"<br>
+    <strong>Alertas:</strong> "conflictos", "problemas", "errores"<br>
+    </div>
+    <div style="margin-top:6px;font-size:10px;color:var(--text3);">Usa los filtros de arriba para ver solo enfermeria o tecnicos.</div>`;
+  }
+
+  // === FUZZY FALLBACK — try to understand intent ===
+  if (q.includes('mejor') || q.includes('suger') || q.includes('recomienda') || q.includes('propone') || q.includes('que hago') || q.includes('consejo')) {
+    const analysis = getTeamWorkloadAnalysis();
+    const weekCov = getCoverageForWeek(now, 7);
+    const fails = weekCov.filter(d=>!d.allOk).length;
+    let html = `<div class="chat-section-label">Mis recomendaciones</div>`;
+    const recs = [];
+    if (fails > 2) recs.push(`Hay ${fails} dias con gaps esta semana. Prioridad: cubrir esos huecos.`);
+    if (analysis && analysis.overloaded.length > 0) recs.push(`${analysis.overloaded.map(x=>x.w.name).join(', ')} estan sobrecargados. Balancea noches.`);
+    if (analysis && analysis.onLeave.length > 0) recs.push(`${analysis.onLeave.length} persona(s) de baja. Revisa si hay cobertura suficiente.`);
+    const imported = workers.filter(w=>w.scheduleImported).length;
+    if (imported < workers.length) recs.push(`Faltan ${workers.length-imported} planillas por importar. Sube los PDFs.`);
+    if (recs.length === 0) recs.push('Todo parece en orden. Sigue revisando periodicamente.');
+    recs.forEach(r => html += `<div style="font-size:11px;padding:4px 0;border-bottom:1px solid var(--surface2);">${r}</div>`);
+    return html;
+  }
+
+  return `<div style="font-size:12px;">No entendi la pregunta. Intenta algo como:</div>
+  <div class="chat-suggestions" style="margin-top:6px;">
+    <button class="chat-suggestion-btn" onclick="chatQuickQuery('¿Quien trabaja hoy?')">Turno actual</button>
+    <button class="chat-suggestion-btn" onclick="chatQuickQuery('Cobertura semanal')">Cobertura</button>
+    <button class="chat-suggestion-btn" onclick="chatQuickQuery('Resumen del equipo')">Resumen</button>
+    <button class="chat-suggestion-btn" onclick="chatQuickQuery('Ayuda')">Ver opciones</button>
+  </div>`;
+}
+
+// ========== EXPORT SCHEDULE ==========
+function exportScheduleCSV() {
+  const m = appState.currentMonth;
+  const sch = genSchedule(m.getFullYear(), m.getMonth());
+  const days = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+  const monthName = getMonthName(m);
+
+  let csv = 'Trabajador,Tipo';
+  for (let d = 1; d <= days; d++) csv += `,${d}`;
+  csv += ',Total_H\n';
+
+  workers.forEach(w => {
+    csv += `"${w.name}",${w.type}`;
+    let h = 0;
+    for (let d = 0; d < days; d++) {
+      const s = sch[w.id] ? sch[w.id][d] : '';
+      csv += `,${s}`;
+      h += RULES.SHIFT_HOURS[s] || 0;
+    }
+    csv += `,${h}\n`;
+  });
+
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Shiftia_${monthName}_${m.getFullYear()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`Exportado: ${a.download}`);
+}
+
+// Initialize (loadFromStorage is async — handle gracefully)
+(async function init() {
+  try {
+    await loadFromStorage();
+  } catch(e) {
+    console.warn('[Shiftia] Async load failed, using localStorage fallback');
+  }
+  detectConflicts();
+  renderDashboard();
+  console.log('[Shiftia v5.2] Iniciado correctamente');
+})();
+</script>
+
+</body>
+</html>

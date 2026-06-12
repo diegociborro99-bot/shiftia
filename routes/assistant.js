@@ -961,7 +961,29 @@ function buildAssistantRouter({ pool, authMiddleware }) {
     try {
       const p = parseCell(req.body);
       const data = await loadData(pool, req.user.id);
-      const worker = resolveWorker(data, p);
+      if (!data.workerMeta) data.workerMeta = [];
+      let worker = resolveWorker(data, p);
+
+      // AUTO-CREACIÓN: si el trabajador no existe en Shiftia pero la extensión
+      // manda nombre oficial (del árbol de Actais) + actaisId, lo creamos al
+      // vuelo en lugar de exigir importar el PDF primero. En dryRun solo se
+      // anuncia (willCreate), sin tocar nada.
+      let toCreate = null;
+      if (!worker && p.workerName && p.workerId) {
+        const nextId = data.workerMeta.reduce((m, w) => Math.max(m, parseInt(w.id, 10) || 0), 0) + 1;
+        toCreate = {
+          id: nextId,
+          name: p.workerName,
+          actaisId: String(p.workerId),
+          role: 'enf',
+          planta: null,
+          flotante: false,
+          modalidad: 'fijo',
+          rules: {},
+          createdFromActais: true
+        };
+        worker = toCreate;
+      }
       if (!worker) {
         return res.json({ ok: false, error: workerNotFoundError(p, data) });
       }
@@ -992,17 +1014,21 @@ function buildAssistantRouter({ pool, authMiddleware }) {
           dryRun: true,
           worker: worker.name,
           workerId: worker.id,
+          willCreate: !!toCreate,
           year, month,
           prev,
           diff,
           cellsChanged: diff.length,
           destructiveCount,
-          message: diff.length === 0
+          message: (toCreate ? `${worker.name} se crearía en Shiftia. ` : '') + (diff.length === 0
             ? 'Sin cambios — la planilla del backend ya está sincronizada'
             : `${diff.length} celda(s) cambiarían para ${worker.name}` +
-              (destructiveCount > 0 ? ` (${destructiveCount} se vaciarían)` : '')
+              (destructiveCount > 0 ? ` (${destructiveCount} se vaciarían)` : ''))
         });
       }
+
+      // Apply con worker nuevo: materializar la creación antes de guardar
+      if (toCreate) data.workerMeta.push(toCreate);
 
       // ===== DEFENSA: rechaza syncs destructivos =====
       // Si una sync va a vaciar 4+ celdas no-vacías, lo paramos.
@@ -1035,13 +1061,15 @@ function buildAssistantRouter({ pool, authMiddleware }) {
         ok: true,
         worker: worker.name,
         workerId: worker.id,
+        created: !!toCreate,
         year, month,
         diff,
         cellsChanged: diff.length,
         cellsTotal: 31,
-        message: diff.length === 0
-          ? 'Sin cambios — la planilla del backend ya estaba sincronizada'
-          : `${diff.length} celda(s) actualizada(s) para ${worker.name}`
+        message: (toCreate ? `${worker.name} creado en Shiftia (actaisId ${worker.actaisId}). ` : '') +
+          (diff.length === 0
+            ? 'Sin cambios — la planilla del backend ya estaba sincronizada'
+            : `${diff.length} celda(s) actualizada(s) para ${worker.name}`)
       });
     } catch (err) {
       console.error('[assistant.syncWorkerMonth]', err);
