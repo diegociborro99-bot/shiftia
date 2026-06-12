@@ -47,8 +47,9 @@ function buildImportRouter({ pool, authMiddleware }) {
     let nextId = data.workerMeta.reduce((m, w) => Math.max(m, parseInt(w.id, 10) || 0), 0) + 1;
     const items = [];
 
+    const confirmationsB = req.body?.confirmations || {};
     for (const sched of schedules) {
-      const item = processSchedule(data, sched, () => nextId++);
+      const item = processSchedule(data, sched, () => nextId++, confirmationsB[sched.filename]);
       items.push(item);
     }
 
@@ -83,6 +84,8 @@ function buildImportRouter({ pool, authMiddleware }) {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'Sin archivos. Envía files[] como multipart/form-data.' });
     }
+    let confirmations = {};
+    try { confirmations = JSON.parse(req.body?.confirmations || '{}'); } catch (_) {}
 
     let data;
     try {
@@ -115,7 +118,7 @@ function buildImportRouter({ pool, authMiddleware }) {
           categoria: parsed.categoria,
           scheduleByMonth: parsed.scheduleByMonth
         };
-        const item = processSchedule(data, sched, () => nextId++);
+        const item = processSchedule(data, sched, () => nextId++, confirmations[file.originalname]);
         items.push(item);
       } catch (err) {
         console.error('[import.pdf-upload] file:', file.originalname, err);
@@ -158,6 +161,7 @@ function buildImportRouter({ pool, authMiddleware }) {
   // ============================================================================
   router.post('/parsed-batch', async (req, res) => {
     const files = Array.isArray(req.body?.files) ? req.body.files : [];
+    const confirmations = req.body?.confirmations || {};
     if (files.length === 0) return res.status(400).json({ error: 'Sin archivos. Envía files[] en JSON.' });
 
     let data;
@@ -192,7 +196,7 @@ function buildImportRouter({ pool, authMiddleware }) {
         continue;
       }
       // Guardar también monthHours, computoData, convenioData en el worker tras processSchedule
-      const item = processSchedule(data, parsed, () => nextId++);
+      const item = processSchedule(data, parsed, () => nextId++, confirmations[parsed.filename]);
       // Adjuntar computo/convenio al worker (datos extra de la web)
       if (item.status === 'created' || item.status === 'updated') {
         const worker = data.workerMeta.find(w => String(w.id) === String(item.workerId));
@@ -230,7 +234,7 @@ function buildImportRouter({ pool, authMiddleware }) {
   return router;
 }
 
-function processSchedule(data, sched, nextIdFn) {
+function processSchedule(data, sched, nextIdFn, confirmed) {
   // Estructura esperada del cliente:
   // { filename, workerName, year, role, plantaHint, actaisId,
   //   scheduleByMonth: { 0: ['','','M7H',...], 1: [...], ... } }
@@ -239,6 +243,24 @@ function processSchedule(data, sched, nextIdFn) {
   }
   const monthsKeys = Object.keys(sched.scheduleByMonth);
   if (monthsKeys.length === 0) return { filename: sched.filename, status: 'failed', reason: 'Sin meses' };
+
+  // CONFIRMACIÓN MANUAL (items que quedaron 'pending'): el gestor eligió
+  // destino explícito — workerId existente o '__new__' para crear.
+  if (confirmed === '__new__') {
+    const worker = {
+      id: nextIdFn(), name: sched.workerName, role: sched.role || 'enf',
+      planta: sched.plantaHint || null, flotante: false, modalidad: 'fijo',
+      rules: {}, scheduleImported: true
+    };
+    if (sched.actaisId) worker.actaisId = sched.actaisId;
+    data.workerMeta.push(worker);
+    return mergeMonths(data, sched, worker, 'created', 100);
+  }
+  if (confirmed != null) {
+    const worker = data.workerMeta.find(w => String(w.id) === String(confirmed));
+    if (!worker) return { filename: sched.filename, status: 'failed', reason: 'Worker confirmado no existe (id ' + confirmed + ')' };
+    return mergeMonths(data, sched, worker, 'updated', 100);
+  }
 
   // Matching V2 contra workerMeta existente
   const matchResult = matchWorker(sched.workerName, data.workerMeta);
@@ -280,10 +302,14 @@ function processSchedule(data, sched, nextIdFn) {
     status = 'created';
   }
 
-  // Merge de la planilla mes a mes
+  return mergeMonths(data, sched, worker, status, matchResult.confidence);
+}
+
+// Merge de la planilla mes a mes (admite años parciales: solo los meses que vengan)
+function mergeMonths(data, sched, worker, status, confidence) {
   const year = sched.year;
   let cellsMerged = 0;
-  for (const monthStr of monthsKeys) {
+  for (const monthStr of Object.keys(sched.scheduleByMonth)) {
     const month = parseInt(monthStr, 10);
     if (Number.isNaN(month) || month < 0 || month > 11) continue;
     const monthArr = sched.scheduleByMonth[monthStr];
@@ -293,13 +319,12 @@ function processSchedule(data, sched, nextIdFn) {
     data.scheduleData[key][worker.id] = monthArr.slice(0, 31);
     cellsMerged += monthArr.filter(Boolean).length;
   }
-
   return {
     filename: sched.filename,
     status,
     workerId: worker.id,
     workerName: worker.name,
-    confidence: matchResult.confidence,
+    confidence,
     cellsMerged
   };
 }

@@ -2,6 +2,12 @@ const express = require('express');
 const { matchWorker } = require('../engine/name-matcher');
 const engine = require('../engine/legality');
 const { computeMonthDiff } = require('../engine/month-diff');
+const { isOnLongAbsence } = require('../engine/availability');
+
+// Fecha ISO del día parseado (para evaluar ausencias indefinidas)
+function isoOf(p) {
+  return `${p.year}-${String(p.month + 1).padStart(2, '0')}-${String(p.day + 1).padStart(2, '0')}`;
+}
 
 // ============================================================================
 // Shiftia Assistant — endpoints deterministas (sin LLM, sin coste por consulta)
@@ -155,6 +161,7 @@ function buildCoverPlan(data, absentWorker, p, targetShift) {
 
   const scored = workers
     .filter(w => String(w.id) !== String(absentWorker.id))
+    .filter(w => !isOnLongAbsence(w, isoOf(p)))
     .filter(w => !targetRole || engine.roleOf(w) === targetRole)
     .filter(w => w.planta === targetPlanta || w.flotante)
     .map(w => {
@@ -456,10 +463,16 @@ function buildAssistantRouter({ pool, authMiddleware }) {
       const targetRole = engine.roleOf(absentWorker);
       const workers = data.workerMeta || data.workers || [];
 
+      // Ausencias indefinidas (baja maternidad, excedencia…): fuera del pool,
+      // y se explica en el razonamiento.
+      const excludedAbsent = workers.filter(w =>
+        String(w.id) !== String(absentWorker.id) && isOnLongAbsence(w, isoOf(p)));
+
       // Solo candidatos del MISMO ROL — un técnico no sustituye a una DUE.
       // Si no encontramos role, abrimos a todos (defensiva).
       const candidates = workers
         .filter(w => String(w.id) !== String(absentWorker.id))
+        .filter(w => !isOnLongAbsence(w, isoOf(p)))
         .filter(w => !targetRole || engine.roleOf(w) === targetRole)
         .map(w => {
           const ev = engine.evaluateAssignment(w.id, p.day, targetShift, data.scheduleData || {}, workers, p.year, p.month);
@@ -489,6 +502,11 @@ function buildAssistantRouter({ pool, authMiddleware }) {
         summary: buildSummary('whoCovers', absentWorker, p, { what: `Buscar sustituto ${roleLabel} para turno ${targetShift}` }),
         reasoning: [
           { rule: 'Búsqueda por rol', status: 'pass', detail: `Solo ${roleLabel}s en planta ${PLANT_NAMES[targetPlanta] || targetPlanta} o flotantes` },
+          ...(excludedAbsent.length > 0 ? [{
+            rule: 'Ausencias indefinidas', status: 'warning',
+            detail: excludedAbsent.map(w => `${w.name} descartada: ${w.longAbsence.label || w.longAbsence.code}` +
+              (w.longAbsence.until ? ` (hasta ${w.longAbsence.until})` : ' (hasta nuevo aviso)')).join(' · ')
+          }] : []),
           { rule: 'Legalidad de cada candidato', status: 'pass', detail: 'Cada uno pasó las 7 reglas del motor (cross-month, whitelist post-noche, máx noches, etc.)' },
           { rule: 'Dos estrategias', status: 'pass', detail: 'Primary = mejor score · Alternative = mejor balance de carga' }
         ],
@@ -725,6 +743,7 @@ function buildAssistantRouter({ pool, authMiddleware }) {
 
       const pool_ = workers
         .filter(w => String(w.id) !== String(worker.id))
+        .filter(w => !isOnLongAbsence(w, isoOf(p)))
         .filter(w => !targetRole || engine.roleOf(w) === targetRole)
         .filter(w => w.planta === targetPlanta || w.flotante)
         .map(w => {
@@ -848,6 +867,53 @@ function buildAssistantRouter({ pool, authMiddleware }) {
         message: `Reglas actualizadas para ${worker.name}`
       });
     } catch (err) { res.status(500).json({ error: 'Error interno' }); console.error('[assistant.worker.setRules]', err); }
+  });
+
+  // ============================================================================
+  // /worker/setStatus — marca o quita una AUSENCIA INDEFINIDA (baja maternidad,
+  // excedencia, IT larga…). Body: { cell: { workerId|workerName, code, label?,
+  // since?, until? } }. code null/'' = quitar. until null = hasta nuevo aviso.
+  // El motor deja de proponer al trabajador como sustituto mientras esté activa.
+  // ============================================================================
+  router.post('/worker/setStatus', async (req, res) => {
+    try {
+      const p = parseCell(req.body);
+      const data = await loadData(pool, req.user.id);
+      const worker = resolveWorker(data, p);
+      if (!worker) return res.json({ ok: false, error: workerNotFoundError(p, data) });
+
+      const code = req.body?.cell?.code ?? null;
+      if (!code) {
+        delete worker.longAbsence;
+      } else {
+        worker.longAbsence = {
+          code: String(code).toUpperCase(),
+          label: req.body?.cell?.label || null,
+          since: req.body?.cell?.since || new Date().toISOString().slice(0, 10),
+          until: req.body?.cell?.until || null
+        };
+      }
+
+      await pool.query(
+        `INSERT INTO schedule_data (user_id, data) VALUES ($1, $2)
+         ON CONFLICT (user_id) DO UPDATE SET data = $2`,
+        [req.user.id, data]
+      );
+
+      res.json({
+        ok: true,
+        worker: worker.name,
+        workerId: worker.id,
+        longAbsence: worker.longAbsence || null,
+        message: worker.longAbsence
+          ? `${worker.name} marcada: ${worker.longAbsence.label || worker.longAbsence.code}` +
+            (worker.longAbsence.until ? ` hasta ${worker.longAbsence.until}` : ' hasta nuevo aviso')
+          : `${worker.name} vuelve a estar disponible`
+      });
+    } catch (err) {
+      console.error('[assistant.setStatus]', err);
+      res.status(500).json({ error: 'Error al actualizar el estado' });
+    }
   });
 
   router.post('/fragilePlantas', async (req, res) => {
