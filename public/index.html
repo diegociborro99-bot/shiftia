@@ -16697,14 +16697,39 @@ function classifyWorkerExclusion(w, day, month, year, shiftNeeded, excludeId, ab
   // Self-exclusion
   if (excludeId != null && excludeId >= 0 && w.id === excludeId) return { excluded: true, reason: 'Es el trabajador ausente', category: 'self' };
 
-  // Rule-based exclusions
+  // === FILTROS DURÍSIMOS PRIMERO ===
+  // Categoría (enf vs tec): un técnico NUNCA cubre a enfermería ni viceversa.
+  // Es la base del modelo: distintos roles, distintos turnos, distinta
+  // formación. Debe ir ANTES de cualquier otro filtro, porque un cruce de
+  // categorías es un bug grave aunque las demás reglas pasen.
+  const noTypeFilter = !absentType;
+  if (!noTypeFilter && w.type !== absentType)
+    return { excluded: true, reason: `Categoría ${w.type === 'enf' ? 'enfermería' : 'técnico'} ≠ ${absentType === 'enf' ? 'enfermería' : 'técnico'}`, category: 'type' };
+
+  // Sección (lab vs micro vs urgencias): igual de duro. Una enfermera de
+  // hematología no cubre microbiología, una micro no cubre lab, etc.
+  // También antes del resto.
+  if (absentArea) {
+    if (w.rules && w.rules.noLab && absentArea !== 'micro')
+      return { excluded: true, reason: 'No puede cubrir laboratorio (noLab)', category: 'section' };
+    if (w.rules && w.rules.noMicro && absentArea === 'micro')
+      return { excluded: true, reason: 'No puede cubrir microbiología (noMicro)', category: 'section' };
+    if (w.type === 'enf' && absentArea === 'micro')
+      return { excluded: true, reason: 'Enfermería no cubre microbiología', category: 'section' };
+    if (w.area === 'micro' && absentArea !== 'micro')
+      return { excluded: true, reason: 'Personal micro no cubre laboratorio', category: 'section' };
+    if (w.area === 'urgencias' && absentArea !== 'urgencias')
+      return { excluded: true, reason: 'Personal de Urgencias no cubre Hematología/Micro', category: 'section' };
+  }
+
+  // === Reglas individuales subjetivas ===
   if (w.rules && w.rules.noSwap) return { excluded: true, reason: 'Marcado como no intercambiable (noSwap)', category: 'rule' };
   if (w.rules && w.rules.noCover) return { excluded: true, reason: 'Excluido de coberturas (noCover)', category: 'rule' };
 
   // Refuerzos con aviso mínimo (Aitor, otros bajo demanda): requieren X días
-  // de antelación entre HOY y el día objetivo. Si no hay aviso suficiente,
-  // se excluye con categoría 'reinforcement-notice' para que la UI lo trate
-  // como "necesidad de contratación pendiente" en lugar de invisibilizarlo.
+  // de antelación entre HOY y el día objetivo. Va DESPUÉS de tipo/sección
+  // para que la categoría 'reinforcement-notice' solo se devuelva si el
+  // refuerzo realmente pertenece a la categoría/sección correcta.
   if (w.rules && w.rules.minNoticeDays) {
     const _now = new Date();
     const _today = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate());
@@ -16729,8 +16754,8 @@ function classifyWorkerExclusion(w, day, month, year, shiftNeeded, excludeId, ab
   // hoy está de BAJ/INT/MTC/RE no se puede contar con ella. Antes excluíamos
   // todo el mes si tenía aunque sea 1 día de BAJ pasado: falso positivo
   // grave (una enfermera 2 días de baja en abril quedaba fuera el resto del
-  // mes ya recuperada). El umbral del 30% queda como protección contra
-  // ausencias crónicas cuando el toggle aiExcludeBaja está OFF.
+  // mes ya recuperada). El umbral del 50% queda como protección contra
+  // ausencias crónicas.
   if (sch[w.id]) {
     const bajaDays = sch[w.id].filter(s => s === 'BAJ' || s === 'INT' || s === 'MTC' || s === 'RE').length;
     const daysInMonth = sch[w.id].length;
@@ -16739,26 +16764,9 @@ function classifyWorkerExclusion(w, day, month, year, shiftNeeded, excludeId, ab
       const modeTag = appState.aiExcludeBaja ? '' : ' (modo IA permisivo)';
       return { excluded: true, reason: `De baja/IT (${todayCode}) ese día${modeTag}`, category: 'leave' };
     }
-    // Ausencia crónica: >50% del mes con códigos de baja → no es realista
-    // proponerla. Aplica con o sin toggle.
     if (bajaDays > daysInMonth * 0.5) {
       return { excluded: true, reason: `Ausencia crónica: ${bajaDays} de ${daysInMonth} días de baja/IT este mes`, category: 'leave' };
     }
-  }
-
-  // Type mismatch
-  const noTypeFilter = !absentType;
-  if (!noTypeFilter && w.type !== absentType)
-    return { excluded: true, reason: `Categoría ${w.type === 'enf' ? 'enfermería' : 'técnico'} ≠ ${absentType === 'enf' ? 'enfermería' : 'técnico'}`, category: 'type' };
-
-  // Section boundaries
-  if (absentArea) {
-    if (w.rules && w.rules.noLab && absentArea !== 'micro')
-      return { excluded: true, reason: 'No puede cubrir laboratorio (noLab)', category: 'section' };
-    if (w.type === 'enf' && absentArea === 'micro')
-      return { excluded: true, reason: 'Enfermería no cubre microbiología', category: 'section' };
-    if (w.area === 'micro' && absentArea !== 'micro')
-      return { excluded: true, reason: 'Personal micro no cubre laboratorio', category: 'section' };
   }
 
   if (!sch[w.id]) return { excluded: true, reason: 'Sin horario asignado', category: 'data' };
@@ -18284,12 +18292,28 @@ function getContingencyOptions(originalWorker, dayIdx, year, month, shiftToCover
   // Refuerzos pendientes de contratar: pasan TODAS las reglas excepto el aviso
   // mínimo. Aparecen como "necesidad de contratación" para que el supervisor
   // los avise con antelación si los va a usar.
+  //
+  // BELT & SUSPENDERS: aunque classifyWorkerExclusion ya filtra tipo y
+  // sección ANTES que minNoticeDays, repetimos el chequeo aquí para que
+  // ningún refuerzo de la categoría/sección equivocada pueda colarse
+  // jamás como "necesidad de contratación" para un perfil que no le toca.
+  // Caso reportado: Aitor (tec) aparecía como contratación para una enf.
   const _now = new Date();
   const _today = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate());
   const _target = new Date(year, month, dayIdx + 1);
   const _daysAhead = Math.round((_target - _today) / 86400000);
+  const absentArea = originalWorker.area || 'lab';
   const pendingContract = excluded
     .filter(e => e.category === 'reinforcement-notice')
+    .filter(e => e.w && e.w.type === originalWorker.type)               // tipo correcto
+    .filter(e => {                                                       // sección correcta
+      if (!e.w.rules) return true;
+      if (e.w.rules.noLab   && absentArea !== 'micro') return false;
+      if (e.w.rules.noMicro && absentArea === 'micro') return false;
+      if (e.w.area === 'micro' && absentArea !== 'micro') return false;
+      if (e.w.area === 'urgencias' && absentArea !== 'urgencias') return false;
+      return true;
+    })
     .map(e => ({
       w: e.w,
       reason: e.reason,
