@@ -6154,6 +6154,192 @@ table.schedule th.month-total-header {
   background: var(--text2);
 }
 
+/* ============================================================
+   GUARDIA · plan de contingencia + bajas largas (mobile-first)
+   ============================================================ */
+.guardia-cont {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.guardia-cont-head { margin-bottom: 10px; }
+.guardia-cont-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #7a3aaa;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.guardia-cont-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.guardia-cont-empty,
+.guardia-cont-none {
+  color: var(--text3);
+  font-size: 12px;
+  padding: 8px;
+}
+.guardia-cont-none {
+  background: rgba(204,68,68,0.08);
+  border-left: 3px solid #cc4444;
+  color: #cc4444;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.guardia-cont-block {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.guardia-cont-block-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.guardia-cont-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.guardia-cont-block-name { flex: 1; min-width: 0; }
+.cc-fail-line {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cc-fail-meta {
+  font-size: 10.5px;
+  color: var(--text3);
+  font-weight: 500;
+  margin-top: 2px;
+}
+.guardia-cont-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  border-left: 3px solid transparent;
+  margin-bottom: 6px;
+}
+.guardia-cont-opt:last-child { margin-bottom: 0; }
+.cco-rank {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 46px;
+  flex-shrink: 0;
+}
+.cco-body { flex: 1 1 auto; min-width: 0; }
+.cco-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cco-meta {
+  font-size: 10.5px;
+  color: var(--text3);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cco-btn {
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 5px 12px;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease;
+}
+.cco-btn:active { transform: scale(0.95); }
+
+.guardia-longleave {
+  background: rgba(176,64,80,0.06);
+  border: 1px solid rgba(176,64,80,0.2);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.gll-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #b04050;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.gll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gll-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid rgba(176,64,80,0.15);
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.gll-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text1);
+}
+.gll-code {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(176,64,80,0.12);
+  color: #b04050;
+  letter-spacing: 0.4px;
+}
+.gll-reason {
+  font-size: 11px;
+  color: var(--text3);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gll-hint {
+  margin-top: 8px;
+  font-size: 10.5px;
+  color: var(--text3);
+  font-style: italic;
+}
+
 /* FEATURE 1: Daily Briefing Panel */
 .daily-briefing {
   background: linear-gradient(135deg, var(--surface) 0%, var(--surface3, var(--surface2)) 100%);
@@ -7100,6 +7286,34 @@ html {
   /* Nav-tabs hidden on mobile — replaced by FAB blob menu */
   .nav-tabs { display: none !important; }
   .nav-tab-more { display: none !important; }
+
+  /* === GUARDIA · plan de contingencia mobile-first === */
+  .guardia-cont, .guardia-longleave { padding: 14px 14px !important; }
+  .guardia-cont-block { padding: 10px !important; margin-bottom: 8px !important; }
+  .guardia-cont-block-head { gap: 8px !important; margin-bottom: 8px !important; }
+  .guardia-cont-block-name .cc-fail-line { font-size: 12.5px !important; line-height: 1.25; }
+  .guardia-cont-block-name .cc-fail-meta { font-size: 10px !important; margin-top: 1px; }
+  .guardia-cont-opt {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 8px 10px !important;
+  }
+  .guardia-cont-opt .cco-rank {
+    font-size: 9.5px !important;
+    min-width: 42px !important;
+    line-height: 1.1;
+  }
+  .guardia-cont-opt .cco-body { min-width: 0 !important; flex: 1 1 auto !important; }
+  .guardia-cont-opt .cco-name { font-size: 12.5px !important; }
+  .guardia-cont-opt .cco-meta { font-size: 10px !important; }
+  .guardia-cont-opt .cco-btn {
+    flex-shrink: 0 !important;
+    min-width: 56px;
+    min-height: 36px;
+    font-size: 11px !important;
+    padding: 6px 10px !important;
+  }
 
   /* === FAB BLOB MENU (mobile main nav) === */
   .fab-menu {
@@ -17605,6 +17819,70 @@ function getGuardiaCountdown(currentShift, now) {
   return { hours, minutes, text: hours + 'h ' + minutes + 'm', pct };
 }
 
+// ============================================================================
+// getContingencyOptions — para una persona ASIGNADA a un turno, devuelve hasta
+// `max` substitutos LEGALES usando el motor IA del programa (findCoverageCandidates).
+//
+// Delega 100% en el motor existente: hereda exclusión de Iris por RE/MTC/LAC,
+// boundaries de sección, fatiga, N→M, equidad multi-mes, etc. — exactamente
+// lo mismo que usa el resto de la app. NO se inventa scoring paralelo.
+//
+// El motor devuelve candidatos ordenados por `score` ascendente (menor = mejor).
+// Cada candidato trae `w, score, scoreBreakdown[], warnings[], fatigue, confidence`.
+// Aquí extraemos una "razón corta" para mostrar al supervisor en una línea.
+// ============================================================================
+function getContingencyOptions(originalWorker, dayIdx, year, month, shiftToCover, max) {
+  if (!originalWorker) return [];
+  max = max || 3;
+  const candidates = findCoverageCandidates(dayIdx, month, year, shiftToCover, originalWorker.id);
+  if (!Array.isArray(candidates) || candidates.length === 0) return [];
+
+  // Construye una razón corta legible móvil — toma las 2 señales más fuertes
+  // del scoreBreakdown que ya calcula el motor.
+  return candidates.slice(0, max).map(c => {
+    const hints = [];
+    if (c.currentShift === 'D') hints.push('Descansa');
+    else if (!c.currentShift) hints.push('Libre');
+    if (c.fatigue && c.fatigue.level === 'low') hints.push('Fresco');
+    else if (c.fatigue && c.fatigue.level === 'high') hints.push('⚠ Cansado');
+    if (c.w.area === originalWorker.area) hints.push('Misma sección');
+    if (c.w.rules && c.w.rules.preferredShift === shiftToCover) hints.push('Turno preferido');
+    if (c.consecutiveDays >= 4) hints.push(c.consecutiveDays + 'd seguidos');
+    if (parseFloat(c.nightsVsAvg) < -0.5) hints.push('Pocas noches');
+    return {
+      w: c.w,
+      score: c.score,
+      confidence: c.confidence,
+      hints: hints.slice(0, 3),
+      warnings: c.warnings || []
+    };
+  });
+}
+
+// Detecta bajas largas para hoy con motivo legible.
+// Mira el código del día Y el contexto (cuántos días lleva el código en el mes)
+// para distinguir "1 día puntual" de "baja extendida".
+function getLongLeaveToday(sch, dayIdx) {
+  const LONG_CODES = ['RE','LAC','MTC','BAJ','INT'];
+  const result = [];
+  for (const w of workers) {
+    const cell = (sch[w.id] && sch[w.id][dayIdx] || '').toString().trim();
+    if (!LONG_CODES.includes(cell)) continue;
+    const monthCount = (sch[w.id] || []).filter(s => LONG_CODES.includes(s)).length;
+    const isExtended = monthCount >= 10; // mitad del mes o más
+    let reason = '';
+    if (cell === 'MTC') reason = 'Maternidad';
+    else if (cell === 'LAC') reason = 'Lactancia';
+    else if (cell === 'RE') reason = 'Reducción / Reserva';
+    else if (cell === 'INT') reason = 'Incapacidad Temporal';
+    else if (cell === 'BAJ') reason = 'Baja médica';
+    // Heurística adicional: notas del trabajador suelen mencionar embarazo
+    if (w.rules && w.rules.notes && /embarazo|maternidad/i.test(w.rules.notes)) reason += ' (embarazo)';
+    result.push({ id: w.id, name: w.name, code: cell, reason, isExtended, monthCount });
+  }
+  return result;
+}
+
 function getGuardiaCoverageRisk(year, month, day, sch) {
   // Analyze next 3 shifts for coverage risk
   const shifts = [];
@@ -17708,19 +17986,11 @@ function renderGuardia() {
   const handoffKey = year + '-' + month + '-' + day + '-' + currentShift;
   const existingNote = guardiaHandoffNotes[handoffKey] || '';
 
-  // Smart ranking for available workers: score by fatigue (less=better), type need
-  const needEnf = !covOk && enfNow < (covReq.enf || 0);
-  const needTec = !covOk && tecNow < (covReq.tec || 0);
-  const rankedAvailable = available.map(w => {
-    const fat = getGuardiaFatigueInfo(w.id, dayIdx, sch);
-    let priority = 0;
-    if (needEnf && w.type === 'enf') priority -= 10;
-    if (needTec && w.type === 'tec') priority -= 10;
-    if (fat.level === 'high') priority += 20;
-    else if (fat.level === 'medium') priority += 5;
-    priority += fat.streak; // prefer less fatigued
-    return { ...w, fatigue: fat, priority };
-  }).sort((a, b) => a.priority - b.priority);
+  // Bajas largas hoy — visibilidad explícita para el supervisor
+  const longLeaveToday = getLongLeaveToday(sch, dayIdx);
+
+  // (Eliminado el ranking de "refuerzos disponibles" — sustituido por el
+  // plan de contingencia del turno siguiente, que es lo que realmente importa.)
 
   // Build HTML
   let html = `
@@ -17759,6 +18029,22 @@ function renderGuardia() {
       <div style="font-size:12px;color:#e67e22;font-weight:600;">
         ⚡ ${riskyCount} de los proximos 3 turnos con cobertura insuficiente
       </div>` : ''}
+    </div>` : ''}
+
+    <!-- Bajas largas (Iris embarazo, etc) — visibilidad explícita -->
+    ${longLeaveToday.length > 0 ? `
+    <div class="guardia-longleave">
+      <div class="gll-title">🏥 Bajas extendidas hoy</div>
+      <div class="gll-list">
+        ${longLeaveToday.map(l => `
+          <div class="gll-item">
+            <span class="gll-name">${escHtml(l.name.split(' ')[0])}</span>
+            <span class="gll-code">${escHtml(l.code)}</span>
+            <span class="gll-reason">${escHtml(l.reason)}${l.isExtended ? ' · ' + l.monthCount + 'd este mes' : ''}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="gll-hint">La IA del programa no las propondrá como sustitutas.</div>
     </div>` : ''}
 
     <!-- Turno actual con fatigue badges -->
@@ -17835,33 +18121,45 @@ function renderGuardia() {
     </div>
     ` : ''}
 
-    <!-- Refuerzos disponibles (ranked by priority) -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div style="font-size:13px;font-weight:700;color:#e67e22;text-transform:uppercase;letter-spacing:1px;">📞 Disponibles para refuerzo (${available.length})</div>
-        ${!covOk ? '<div style="font-size:10px;color:#cc4444;font-weight:600;">Se necesita: ' + (needEnf ? 'ENF ' : '') + (needTec ? 'TEC' : '') + '</div>' : ''}
+    <!-- PLAN DE CONTINGENCIA (motor IA real findCoverageCandidates) -->
+    <div class="guardia-cont">
+      <div class="guardia-cont-head">
+        <div class="guardia-cont-title">🛡 Si alguien falla en ${escHtml(nextLabel.split(' ')[0])}</div>
+        <div class="guardia-cont-sub">Sustitutos legales propuestos por la IA del programa, ordenados por menor disrupción. Bajas largas (Iris, etc.) ya quedan fuera automáticamente.</div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">
-        ${rankedAvailable.map((w, idx) => {
-          const fatColor = w.fatigue.level === 'high' ? '#cc4444' : w.fatigue.level === 'medium' ? '#e67e22' : '#27ae60';
-          const isRecommended = idx < 3 && !covOk;
-          return `
-          <div style="background:var(--bg);border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px;border:1px solid ${isRecommended ? 'rgba(39,174,96,0.4)' : 'var(--border)'};">
-            <div style="width:28px;height:28px;border-radius:50%;background:rgba(230,126,34,0.12);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#e67e22;">${escHtml(w.name.charAt(0))}</div>
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:12px;font-weight:600;color:var(--text2);">
-                ${escHtml(w.name)} <span style="font-size:9px;color:var(--text3);">${w.type === 'enf' ? 'ENF' : 'TEC'}${w.area === 'micro' ? ' · Micro' : ''}</span>
-                ${isRecommended ? '<span style="font-size:8px;background:#27ae6020;color:#27ae60;padding:1px 6px;border-radius:4px;font-weight:700;margin-left:4px;">RECOMENDADO</span>' : ''}
-              </div>
-              <div style="font-size:9px;color:${fatColor};">${w.fatigue.streak > 0 ? w.fatigue.streak + 'd seguidos · ' : ''}${w.fatigue.weekHours}h/sem</div>
+      ${onNext.length === 0 ? `
+        <div class="guardia-cont-empty">Nadie asignado al siguiente turno — sin contingencias que calcular.</div>
+      ` : onNext.map(scheduled => {
+        const options = getContingencyOptions(scheduled, nextDayIdx, year, month, nextShift, 3);
+        const planLabels = ['Plan A', 'Plan B', 'Plan C'];
+        const planColors = ['#27ae60', '#4a9dd4', '#7a8a6a'];
+        return `
+        <div class="guardia-cont-block">
+          <div class="guardia-cont-block-head">
+            <div class="guardia-cont-avatar" style="background:${shiftColors[nextShift]}24;color:${shiftColors[nextShift]};">${escHtml(scheduled.name.charAt(0))}</div>
+            <div class="guardia-cont-block-name">
+              <div class="cc-fail-line">Si falla <strong>${escHtml(scheduled.name)}</strong></div>
+              <div class="cc-fail-meta">${scheduled.type === 'enf' ? 'ENF' : 'TEC'}${scheduled.area === 'micro' ? ' · Micro' : ''}</div>
             </div>
-            <button onclick="guardiaCallIn(${w.id},'${currentShift}',${dayIdx},${year},${month})" style="padding:4px 10px;border-radius:8px;border:1px solid #e67e2240;background:rgba(230,126,34,0.08);color:#e67e22;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;" title="Asignar al turno actual">
-              + Llamar
-            </button>
-          </div>`;
-        }).join('')}
-        ${available.length === 0 ? '<div style="color:var(--text3);font-size:12px;padding:8px;">No hay personal de descanso disponible</div>' : ''}
-      </div>
+          </div>
+          ${options.length === 0 ? `
+            <div class="guardia-cont-none">⚠ Sin alternativas legales — necesitarías refuerzo externo o reasignar carga del turno.</div>
+          ` : options.map((opt, i) => {
+            const c = planColors[i];
+            const conf = opt.confidence || 0;
+            const confTag = conf >= 80 ? '✓' : conf >= 60 ? '~' : '⚠';
+            return `
+            <div class="guardia-cont-opt" style="background:${c}0d;border-left-color:${c};">
+              <div class="cco-rank" style="color:${c};">${planLabels[i]}</div>
+              <div class="cco-body">
+                <div class="cco-name">${escHtml(opt.w.name)}</div>
+                <div class="cco-meta">${opt.w.type === 'enf' ? 'ENF' : 'TEC'}${opt.w.area === 'micro' ? ' · Micro' : ''} · ${opt.hints.length ? opt.hints.map(escHtml).join(' · ') : 'Disponible'} · <span title="Confianza del motor IA">${confTag} ${conf}</span></div>
+              </div>
+              <button class="cco-btn" onclick="guardiaCallIn(${opt.w.id},'${nextShift}',${nextDayIdx},${year},${month})" style="background:${c}1a;border-color:${c}40;color:${c};" title="Asignar al turno siguiente">Llamar</button>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }).join('')}
     </div>
 
     <!-- Notas de traspaso -->
