@@ -157,6 +157,10 @@ function buildCoverPlan(data, absentWorker, p, targetShift) {
   const workers = data.workerMeta || data.workers || [];
   const targetRole = engine.roleOf(absentWorker);
   const targetPlanta = absentWorker.planta;
+  // Área de la persona ausente — sirve para enforcement noLab/noMicro en cover.
+  const absentArea = absentWorker.area
+    || (targetRole === 'micro' || engine.isMicroPlanta(targetPlanta) ? 'micro' : 'lab');
+  const evalOpts = { purpose: 'cover', absentArea };
   const monthSch = data?.scheduleData?.[p.year + '-' + p.month] || {};
 
   const scored = workers
@@ -165,7 +169,7 @@ function buildCoverPlan(data, absentWorker, p, targetShift) {
     .filter(w => !targetRole || engine.roleOf(w) === targetRole)
     .filter(w => w.planta === targetPlanta || w.flotante)
     .map(w => {
-      const ev = engine.evaluateAssignment(w.id, p.day, targetShift, data.scheduleData || {}, workers, p.year, p.month);
+      const ev = engine.evaluateAssignment(w.id, p.day, targetShift, data.scheduleData || {}, workers, p.year, p.month, evalOpts);
       if (!ev.legal) return null;
       const scoring = scoreCandidate(data, w, p.year, p.month, p.day, targetShift, targetPlanta);
       const myMonth = monthSch[w.id] || [];
@@ -470,12 +474,15 @@ function buildAssistantRouter({ pool, authMiddleware }) {
 
       // Solo candidatos del MISMO ROL — un técnico no sustituye a una DUE.
       // Si no encontramos role, abrimos a todos (defensiva).
+      const absentAreaWho = absentWorker.area
+        || (targetRole === 'micro' || engine.isMicroPlanta(targetPlanta) ? 'micro' : 'lab');
+      const evalOptsWho = { purpose: 'cover', absentArea: absentAreaWho };
       const candidates = workers
         .filter(w => String(w.id) !== String(absentWorker.id))
         .filter(w => !isOnLongAbsence(w, isoOf(p)))
         .filter(w => !targetRole || engine.roleOf(w) === targetRole)
         .map(w => {
-          const ev = engine.evaluateAssignment(w.id, p.day, targetShift, data.scheduleData || {}, workers, p.year, p.month);
+          const ev = engine.evaluateAssignment(w.id, p.day, targetShift, data.scheduleData || {}, workers, p.year, p.month, evalOptsWho);
           if (!ev.legal) return null;
           const scoring = scoreCandidate(data, w, p.year, p.month, p.day, targetShift, targetPlanta);
           return {
@@ -544,7 +551,8 @@ function buildAssistantRouter({ pool, authMiddleware }) {
       const monthSchedules = data?.scheduleData?.[p.year + '-' + p.month] || {};
       const workers = data.workerMeta || data.workers || [];
       const myRole = engine.roleOf(worker);
-      const isWE = engine.isWeekendOrHoliday(p.year, p.month, p.day);
+      // p.day es 0-based; isWeekendOrHoliday espera 1-based (lo pasa a new Date).
+      const isWE = engine.isWeekendOrHoliday(p.year, p.month, p.day + 1);
 
       // Cobertura ACTUAL del turno en esa planta, FILTRANDO POR ROL.
       // Un técnico no cuenta como cobertura de una DUE y viceversa — el web
@@ -561,13 +569,18 @@ function buildAssistantRouter({ pool, authMiddleware }) {
         coveringNow++;
         if (String(wId) !== String(worker.id)) otherCoverers.push(w2.name);
       }
-      const required = engine.getRequiredForShift(targetPlanta, myRole, originalShift, p.year, p.month, p.day);
+      // getRequiredForShift espera day 1-based (lo pasa a `new Date(year, month, day).getDay()`).
+      // parseCell() devuelve p.day en 0-based, así que sumamos 1 aquí.
+      const required = engine.getRequiredForShift(targetPlanta, myRole, originalShift, p.year, p.month, p.day + 1);
       const afterIfRemoved = coveringNow - 1;
       const wouldGenerateGap = afterIfRemoved < required;
       const atBareMinimum = afterIfRemoved === required && required > 0;
 
       // Sustitutos POTENCIALES: workers del MISMO ROL en la planta o flotantes
       // que ese día estén en D/L/LD/vacío y pasen el motor de legalidad.
+      const absentAreaLib = worker.area
+        || (myRole === 'micro' || engine.isMicroPlanta(targetPlanta) ? 'micro' : 'lab');
+      const evalOptsLib = { purpose: 'cover', absentArea: absentAreaLib };
       let potentialSubstitutes = 0;
       const substituteNames = [];
       for (const w of workers) {
@@ -576,7 +589,7 @@ function buildAssistantRouter({ pool, authMiddleware }) {
         if (w.planta !== targetPlanta && !w.flotante) continue;
         const cell = (monthSchedules[w.id] || [])[p.day] || '';
         if (!['', 'D', 'L', 'LD'].includes(String(cell).trim())) continue;
-        const ev = engine.isLegalAssignment(w.id, p.day, originalShift, data.scheduleData || {}, workers, p.year, p.month);
+        const ev = engine.isLegalAssignment(w.id, p.day, originalShift, data.scheduleData || {}, workers, p.year, p.month, evalOptsLib);
         if (ev.legal) { potentialSubstitutes++; substituteNames.push(w.name); }
       }
 
@@ -741,13 +754,16 @@ function buildAssistantRouter({ pool, authMiddleware }) {
       const workers = data.workerMeta || data.workers || [];
       const monthSch = data?.scheduleData?.[p.year + '-' + p.month] || {};
 
+      const absentAreaAlt = worker.area
+        || (targetRole === 'micro' || engine.isMicroPlanta(targetPlanta) ? 'micro' : 'lab');
+      const evalOptsAlt = { purpose: 'cover', absentArea: absentAreaAlt };
       const pool_ = workers
         .filter(w => String(w.id) !== String(worker.id))
         .filter(w => !isOnLongAbsence(w, isoOf(p)))
         .filter(w => !targetRole || engine.roleOf(w) === targetRole)
         .filter(w => w.planta === targetPlanta || w.flotante)
         .map(w => {
-          const ev = engine.evaluateAssignment(w.id, p.day, targetShift, data.scheduleData || {}, workers, p.year, p.month);
+          const ev = engine.evaluateAssignment(w.id, p.day, targetShift, data.scheduleData || {}, workers, p.year, p.month, evalOptsAlt);
           if (!ev.legal) return null;
           const scoring = scoreCandidate(data, w, p.year, p.month, p.day, targetShift, targetPlanta);
           const sch = monthSch[w.id] || [];

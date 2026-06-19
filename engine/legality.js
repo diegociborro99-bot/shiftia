@@ -21,7 +21,7 @@ const RULES = {
   MIN_REST_HOURS: 12,
   ANNUAL_HOURS: 1519,
   NIGHT_COMPUTO_HOURS: 2.1,
-  SHIFT_HOURS: { M:7, T:7, N:10, D:0, MR:5.5, VAC:0, LD:0, FOR:0, CAA:0, AE:0, EX:0, BAJ:0, CJ:0, FN:0, LAC:0, MTC:0, INT:0, HF:0, HS:0, VAA:0, DLA:0, M7H:7, M6R:6.5, M55:5, VAN:0, IQF:0, PM:0 },
+  SHIFT_HOURS: { M:7, T:7, N:10, D:0, MR:5.5, VAC:0, LD:0, FOR:0, CAA:0, AE:0, EX:0, BAJ:0, CJ:0, FN:0, LAC:0, MTC:0, INT:0, HF:0, HS:0, VAA:0, DLA:0, M7H:7, M8:8, M6:6, M55:5, M4H:4, M65:6.5, M75:7.5, M6H:6, M6R:6.5, M3H:3, M85:8.5, M5H:5, VAN:0, IQF:0, PM:0, RE:0, FFP:0, FLL:0 },
   COVERAGE:          { M:{enf:3,tec:2}, T:{enf:1,tec:1}, N:{enf:1,tec:1} },
   COVERAGE_WEEKEND:  { M:{enf:1,tec:1}, T:{enf:1,tec:1}, N:{enf:1,tec:1} },
   COVERAGE_MICRO:         { M: 3 },
@@ -29,13 +29,15 @@ const RULES = {
 };
 
 // Códigos de ausencia / no-trabajo (mismos que la web).
-const UNAVAILABLE_CODES = ['VAC','VAA','VAN','BAJ','LD','LAC','FOR','CAA','AE','EX','MTC','INT','HF','HS','DLA','CJ','FN','IQF','PM'];
+// `RE` (reducción/reserva), `FFP` y `FLL` (fallecimiento) son ausencias que
+// la web ya excluye en classifyWorkerExclusion — el backend debe espejar.
+const UNAVAILABLE_CODES = ['VAC','VAA','VAN','BAJ','LD','LAC','FOR','CAA','AE','EX','MTC','INT','HF','HS','DLA','CJ','FN','IQF','PM','RE','FFP','FLL'];
 
 // Tras una NOCHE solo se admiten estos códigos (whitelist). Cualquier otro =
 // descanso obligatorio violado.
 const ALLOWED_AFTER_NIGHT = ['', 'D', 'N', ...UNAVAILABLE_CODES];
 
-const MORNING_SHIFTS = ['M','MR','M7H','M6R','M55'];
+const MORNING_SHIFTS = ['M','MR','M7H','M8','M6','M55','M4H','M65','M75','M6H','M6R','M3H','M85','M5H'];
 
 function isMorningShift(shift) { return MORNING_SHIFTS.includes(shift); }
 
@@ -63,11 +65,19 @@ function cellOf(scheduleData, year, month, workerId, day) {
 // ============================================================================
 // evaluateAssignment — devuelve TODOS los checks (pass/warning/fail), no solo
 // los que fallan. Sirve para construir el array `reasoning` que ve la super.
+//
+// `opts.purpose` = 'cover' cuando la asignación es para cubrir a otra persona.
+//   Es el único caso en el que noSwap/noCover bloquean: si la super valida su
+//   propio turno fijo no debería salir "no legal" sólo por tener noCover=true.
+// `opts.absentArea` = 'micro' | 'lab' | 'urgencias' — sección de la persona
+//   ausente. Permite enforcement de boundaries noLab / noMicro.
 // ============================================================================
-function evaluateAssignment(workerId, dayIdx, shift, scheduleData, workers, year, month) {
+function evaluateAssignment(workerId, dayIdx, shift, scheduleData, workers, year, month, opts) {
   const checks = [];
   const reasons = [];
   let legal = true;
+  const isCover = (opts && opts.purpose) === 'cover';
+  const absentArea = opts && opts.absentArea;
 
   const w = (workers || []).find(x => String(x.id) === String(workerId) || String(x.actaisId || '') === String(workerId));
   if (!w) {
@@ -79,10 +89,13 @@ function evaluateAssignment(workerId, dayIdx, shift, scheduleData, workers, year
 
   // 1. Restricciones individuales subjetivas
   //    - noNights         → no puede hacer noches
-  //    - noSwap           → no acepta sustituciones
-  //    - noCover          → no cubre a otros (típico: supervisora)
+  //    - noSwap           → no acepta sustituciones (solo bloquea coberturas)
+  //    - noCover          → no cubre a otros (solo bloquea coberturas — típico: supervisora)
   //    - onlyMornings     → conciliación familiar — solo M (y descansos/ausencias)
   //    - noWeekends       → no trabaja fines de semana
+  //    - conciliacion     → conciliación familiar — no puede hacer noches
+  //    - noLab            → no cubre sección de Lab/Hematología
+  //    - noMicro          → no cubre sección de Microbiología
   const isShiftRestful = shift === '' || shift === 'D' || shift === 'L' || shift === 'LD' || UNAVAILABLE_CODES.includes(shift);
   const dow = new Date(year, month, dayIdx + 1).getDay(); // 0=Dom 6=Sáb
   const isWeekend = dow === 0 || dow === 6;
@@ -105,15 +118,40 @@ function evaluateAssignment(workerId, dayIdx, shift, scheduleData, workers, year
   } else if (w.rules?.noNights && shift !== 'N') {
     checks.push({ rule: 'No noches', status: 'pass', detail: 'noNights pero turno no es N' });
   }
-  if (w.rules?.noSwap) {
+  if (w.rules?.conciliacion && shift === 'N' && !isShiftRestful) {
+    checks.push({ rule: 'Conciliación familiar', status: 'fail', detail: 'conciliacion=true → no puede hacer noches' });
+    reasons.push('Conciliación familiar: sin noches'); legal = false;
+  }
+  // noSwap / noCover sólo bloquean cuando estamos evaluando una cobertura.
+  // Validar el propio turno fijo de la supervisora NO debe salir "no legal".
+  if (isCover && w.rules?.noSwap) {
     checks.push({ rule: 'No sustituciones', status: 'fail', detail: 'Trabajador no acepta sustituir' });
     reasons.push('No acepta sustituciones'); legal = false;
   }
-  if (w.rules?.noCover) {
+  if (isCover && w.rules?.noCover) {
     checks.push({ rule: 'No cubre', status: 'fail', detail: 'Trabajador marcado noCover (típicamente supervisora)' });
     reasons.push('No cubre a otros'); legal = false;
   }
-  const anyRestriction = w.rules?.noNights || w.rules?.noSwap || w.rules?.noCover || w.rules?.onlyMornings || w.rules?.noWeekends;
+  // Boundaries de sección — solo aplican si conocemos el área de la persona ausente.
+  if (isCover && absentArea) {
+    if (w.rules?.noLab && absentArea !== 'micro') {
+      checks.push({ rule: 'Sección', status: 'fail', detail: 'No cubre laboratorio (noLab)' });
+      reasons.push('No cubre laboratorio'); legal = false;
+    }
+    if (w.rules?.noMicro && absentArea === 'micro') {
+      checks.push({ rule: 'Sección', status: 'fail', detail: 'No cubre microbiología (noMicro)' });
+      reasons.push('No cubre microbiología'); legal = false;
+    }
+    if (roleOf(w) === 'enf' && absentArea === 'micro') {
+      checks.push({ rule: 'Sección', status: 'fail', detail: 'Enfermería no cubre microbiología' });
+      reasons.push('Enfermería no cubre microbiología'); legal = false;
+    }
+    if (w.area === 'micro' && absentArea !== 'micro') {
+      checks.push({ rule: 'Sección', status: 'fail', detail: 'Personal de microbiología no cubre lab' });
+      reasons.push('Personal micro no cubre lab'); legal = false;
+    }
+  }
+  const anyRestriction = w.rules?.noNights || w.rules?.noSwap || w.rules?.noCover || w.rules?.onlyMornings || w.rules?.noWeekends || w.rules?.conciliacion || w.rules?.noLab || w.rules?.noMicro;
   if (!anyRestriction) {
     checks.push({ rule: 'Restricciones individuales', status: 'pass', detail: 'Sin restricciones subjetivas' });
   }
@@ -228,8 +266,8 @@ function evaluateAssignment(workerId, dayIdx, shift, scheduleData, workers, year
 }
 
 // Wrapper estilo viejo para sustituir el checkLegality del backend.
-function isLegalAssignment(workerId, dayIdx, shift, scheduleData, workers, year, month) {
-  const r = evaluateAssignment(workerId, dayIdx, shift, scheduleData, workers, year, month);
+function isLegalAssignment(workerId, dayIdx, shift, scheduleData, workers, year, month, opts) {
+  const r = evaluateAssignment(workerId, dayIdx, shift, scheduleData, workers, year, month, opts);
   return { legal: r.legal, reasons: r.reasons };
 }
 

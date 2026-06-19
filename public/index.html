@@ -10010,7 +10010,18 @@ const FIXED_IDS = { SUP: 1, RED: [2, 3] };
 function canAssignShift(wId, day, shift, schedule) {
   const w = workers.find(x => x.id === wId);
   if (!w) return false;
-  if (['VAC','LD','FOR','CAA','AE','EX','BAJ','D','LAC','MTC','INT','HF','HS','VAA','DLA','CJ','FN','VAN','IQF','PM'].includes(shift)) return true;
+  // Defensa: si alguien intenta asignar un código de ausencia como si fuera
+  // turno de cobertura (shiftNeeded='BAJ' por bug upstream), bloqueamos antes
+  // de devolver true por la rama de absences-permitidas.
+  const ABSENCE_CODES = ['VAC','LD','FOR','CAA','AE','EX','BAJ','D','LAC','MTC','INT','HF','HS','VAA','DLA','CJ','FN','VAN','IQF','PM','RE','FFP','FLL'];
+  if (ABSENCE_CODES.includes(shift)) {
+    // Solo permitir asignar la ausencia si el día no está ya ocupado por un
+    // turno real (M/T/N). Si el cell actual es M/T/N, asignar BAJ encima
+    // sería una asignación destructiva y debe pasar por la UI de edición.
+    const current = (schedule[wId] && schedule[wId][day] || '').toString().trim();
+    if (['M','T','N','MR','M7H','M8','M6','M55','M4H','M65','M75','M6H','M6R','M3H','M85','M5H'].includes(current)) return false;
+    return true;
+  }
   if (w.rules && w.rules.noNights && shift === 'N') return false;
   if (w.rules && w.rules.maxNightsPerMonth !== null && shift === 'N') {
     const monthNights = schedule[wId].filter(s => (s || '').toString().trim() === 'N').length;
@@ -15907,18 +15918,22 @@ function getAccumulatedFatigue(wId, currentDay, currentMonth, currentYear) {
 function getConsecutiveWorkDays(wId, dayIdx, month, year) {
   const key = `${year}-${month}`;
   const sch = scheduleData[key] || genSchedule(year, month);
-  if (!sch[wId]) return { before: 0, after: 0, total: 0 };
+  if (!sch[wId]) return { before: 0, after: 0, total: 0, streak: 0 };
   const days = sch[wId].length;
-  const isWork = s => s && s !== '' && s !== 'D' && s !== 'VAC' && s !== 'VAA' && s !== 'LD' && s !== 'BAJ';
+  // Cualquier código que NO sea trabajo efectivo no rompe pero tampoco cuenta.
+  // Alineado con getAccumulatedFatigue: todos los códigos de ausencia + libranza.
+  const NON_WORK = new Set(['', 'D', 'VAC', 'VAA', 'VAN', 'LD', 'BAJ', 'FOR', 'INT', 'MTC', 'LAC', 'HF', 'HS', 'AE', 'CAA', 'EX', 'DLA', 'CJ', 'FN', 'IQF', 'PM', 'RE', 'FFP', 'FLL']);
+  const isWork = s => !NON_WORK.has((s || '').toString().trim());
 
   let before = 0;
   for (let i = dayIdx - 1; i >= 0; i--) {
     if (isWork(sch[wId][i])) before++; else break;
   }
-  // If at start of month, check previous month
-  if (dayIdx - before <= 0 && month > 0) {
-    const prevKey = `${year}-${month - 1}`;
-    const prevSch = scheduleData[prevKey];
+  // Cruzar el límite de mes (incluye Dic→Nov para enero del año siguiente).
+  if (dayIdx - before <= 0) {
+    let prevY = year, prevM = month - 1;
+    if (prevM < 0) { prevM = 11; prevY--; }
+    const prevSch = scheduleData[`${prevY}-${prevM}`];
     if (prevSch && prevSch[wId]) {
       for (let i = prevSch[wId].length - 1; i >= 0; i--) {
         if (isWork(prevSch[wId][i])) before++; else break;
@@ -15930,8 +15945,19 @@ function getConsecutiveWorkDays(wId, dayIdx, month, year) {
   for (let i = dayIdx + 1; i < days; i++) {
     if (isWork(sch[wId][i])) after++; else break;
   }
+  // Cruzar el límite hacia adelante también (Dic→Ene del siguiente año).
+  if (dayIdx + 1 + after >= days) {
+    let nextY = year, nextM = month + 1;
+    if (nextM > 11) { nextM = 0; nextY++; }
+    const nextSch = scheduleData[`${nextY}-${nextM}`];
+    if (nextSch && nextSch[wId]) {
+      for (let i = 0; i < nextSch[wId].length; i++) {
+        if (isWork(nextSch[wId][i])) after++; else break;
+      }
+    }
+  }
 
-  return { before, after, total: before + 1 + after, streak: before };
+  return { before, after, total: before + 1 + after, streak: before + after };
 }
 
 // Count consecutive nights around a given day (backward + forward)
@@ -16062,10 +16088,13 @@ function simulateFutureImpact(wId, dayIdx, month, year, shiftToAssign) {
     let checkMonth = month;
     let checkYear = year;
     if (checkDay >= days) {
+      checkDay = checkDay - days;
       checkMonth = month + 1;
       if (checkMonth > 11) { checkMonth = 0; checkYear++; }
+      // Importante: nextMonthDays se calcula a partir del mes recién incrementado
+      // (`checkMonth` ya apunta al mes siguiente). new Date(year, m+1, 0) devuelve
+      // el último día de ese mes, así que pasamos `checkMonth + 1` para obtenerlo.
       const nextMonthDays = new Date(checkYear, checkMonth + 1, 0).getDate();
-      checkDay = checkDay - days;
       if (checkDay >= nextMonthDays) continue; // Skip if still out of bounds
     }
 
@@ -16133,11 +16162,13 @@ function calculatePlanConfidence(plan, daysNeedingCoverage) {
     else if (da.candidates.length <= 2) confidence -= 5;
   });
 
-  // Bonus for multi-day consistency (fewer workers = more reliable)
+  // Penalty for re-using the same worker for many days — concentrar coberturas
+  // en una sola persona NO aumenta la confianza, la quema. Antes premiaba con
+  // +2 cada repetición; ahora penaliza con −3 (bug invertido).
   const uniqueWorkers = new Set();
   plan.assignments.forEach(a => { if (a.candidate) uniqueWorkers.add(a.candidate.w.id); });
   if (uniqueWorkers.size > 0 && uniqueWorkers.size < covered) {
-    confidence += (covered - uniqueWorkers.size) * 2;
+    confidence -= (covered - uniqueWorkers.size) * 3;
   }
 
   return Math.max(0, Math.min(100, Math.round(confidence)));
@@ -16190,23 +16221,24 @@ function classifyWorkerExclusion(w, day, month, year, shiftNeeded, excludeId, ab
   if (sch[w.id] && sch[w.id].some(s => s === 'LAC' || s === 'RE'))
     return { excluded: true, reason: 'En LAC/RE (lactancia o reducción)', category: 'leave' };
 
-  // Baja/IT exclusion — when aiExcludeBaja is on (default), ANY BAJ/INT/MTC/RE
-  // day in the month removes the worker from AI consideration. When off,
-  // we fall back to the previous heuristic (>30% of the month).
+  // Baja/IT exclusion — el primer check (día exacto) cubre el caso real: si
+  // hoy está de BAJ/INT/MTC/RE no se puede contar con ella. Antes excluíamos
+  // todo el mes si tenía aunque sea 1 día de BAJ pasado: falso positivo
+  // grave (una enfermera 2 días de baja en abril quedaba fuera el resto del
+  // mes ya recuperada). El umbral del 30% queda como protección contra
+  // ausencias crónicas cuando el toggle aiExcludeBaja está OFF.
   if (sch[w.id]) {
     const bajaDays = sch[w.id].filter(s => s === 'BAJ' || s === 'INT' || s === 'MTC' || s === 'RE').length;
     const daysInMonth = sch[w.id].length;
-    if (appState.aiExcludeBaja) {
-      // Specific day-of-target check first (most precise reason)
-      const todayCode = (sch[w.id][day] || '').toString().trim();
-      if (todayCode === 'BAJ' || todayCode === 'INT' || todayCode === 'MTC' || todayCode === 'RE') {
-        return { excluded: true, reason: `De baja/IT (${todayCode}) ese día`, category: 'leave' };
-      }
-      if (bajaDays > 0) {
-        return { excluded: true, reason: `De baja/IT este mes (${bajaDays} ${bajaDays === 1 ? 'día' : 'días'}) — excluida por configuración`, category: 'leave' };
-      }
-    } else if (bajaDays > daysInMonth * 0.3) {
-      return { excluded: true, reason: `De baja/IT ${bajaDays} de ${daysInMonth} días del mes`, category: 'leave' };
+    const todayCode = (sch[w.id][day] || '').toString().trim();
+    if (todayCode === 'BAJ' || todayCode === 'INT' || todayCode === 'MTC' || todayCode === 'RE') {
+      const modeTag = appState.aiExcludeBaja ? '' : ' (modo IA permisivo)';
+      return { excluded: true, reason: `De baja/IT (${todayCode}) ese día${modeTag}`, category: 'leave' };
+    }
+    // Ausencia crónica: >50% del mes con códigos de baja → no es realista
+    // proponerla. Aplica con o sin toggle.
+    if (bajaDays > daysInMonth * 0.5) {
+      return { excluded: true, reason: `Ausencia crónica: ${bajaDays} de ${daysInMonth} días de baja/IT este mes`, category: 'leave' };
     }
   }
 
@@ -16268,6 +16300,9 @@ function classifyWorkerExclusion(w, day, month, year, shiftNeeded, excludeId, ab
   }
 
   // === LEGAL CHECKS: Annual hours proximity ===
+  // Si la proyección anual ya está por encima del 105% del tope (ANNUAL_HOURS×1.05)
+  // la consideramos exclusión. Por debajo (entre 95% y 105%) el penalty va en
+  // el scoring (findCoverageCandidates, ramas annualPct).
   const stats = getWorkerStats(w.id);
   const shiftH = RULES.SHIFT_HOURS[shiftNeeded] || 7;
   const monthsWorked = Object.keys(scheduleData).filter(k => {
@@ -16275,7 +16310,7 @@ function classifyWorkerExclusion(w, day, month, year, shiftNeeded, excludeId, ab
   }).length || 1;
   const projectedAnnual = (stats.h / monthsWorked) * 12;
   if (projectedAnnual + shiftH > RULES.ANNUAL_HOURS * 1.05) {
-    // Not a hard exclusion but flagged — will be scored heavily
+    return { excluded: true, reason: `Superaría ${Math.round(RULES.ANNUAL_HOURS * 1.05)}h anuales (proyección ${Math.round(projectedAnnual + shiftH)}h)`, category: 'legal' };
   }
 
   // === Consecutive work days check ===
@@ -16445,13 +16480,31 @@ function findCoverageCandidates(day, month, year, shiftNeeded, excludeId, return
       scoreBreakdown.push(`Holgura anual (${annualPct.toFixed(0)}%)`);
     }
 
-    // (11) NEW v5.0: Forbidden combinations check (N→M, T→M next day conflicts)
+    // (11) Forbidden combinations check (N→M, T→M next day conflicts)
+    // ÚLTIMA LÍNEA DE DEFENSA: una combinación prohibida NO debe ranquear,
+    // por mucho que el resto del scoring sea favorable. Antes se sumaba +50
+    // al score (sort ascending = peor) pero seguía siendo elegible. Ahora
+    // marcamos `hardFail` y el filter al final descarta al candidato.
+    let hardForbidden = false;
     const combWarnings = detectForbiddenCombinations(w.id, day, shiftNeeded, month, year);
     if (combWarnings.length > 0) {
       combWarnings.forEach(cw => {
-        score += cw.type === 'forbidden' ? 50 : 5;
+        if (cw.type === 'forbidden') {
+          hardForbidden = true;
+          score += 1000; // Por si algo se cuela en logs antes del filtro.
+        } else {
+          score += 5;
+        }
         warnings.push({ type: cw.type === 'forbidden' ? 'critical' : 'caution', text: cw.desc });
       });
+    }
+    if (hardForbidden) {
+      // Tira al excluded como cualquier otra exclusión legal en lugar de
+      // ranquear como peor candidato. Estamos en forEach → return = continue.
+      if (returnExcluded) {
+        excluded.push({ w, reason: combWarnings.filter(c=>c.type==='forbidden').map(c=>c.desc.replace(/<[^>]+>/g, '')).join('; '), category: 'legal' });
+      }
+      return;
     }
 
     // Calculate confidence: 0-100 based on how "safe" this candidate is
