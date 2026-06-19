@@ -6279,6 +6279,248 @@ table.schedule th.month-total-header {
 }
 .cco-btn:active { transform: scale(0.95); }
 
+.cco-tag {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(212,136,58,0.14);
+  color: #b06820;
+  letter-spacing: 0.3px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.guardia-cont-opt.is-ref {
+  background: rgba(212,136,58,0.05) !important;
+  border-left-color: #d4883a !important;
+}
+
+.guardia-cont-contract {
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(212,136,58,0.08);
+  border-left: 3px solid #d4883a;
+}
+.gcc-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #b06820;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 4px;
+}
+.gcc-sub {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.gcc-row {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(212,136,58,0.18);
+}
+.gcc-name { font-size: 12.5px; font-weight: 700; color: var(--text1); }
+.gcc-tag {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(212,136,58,0.16);
+  color: #b06820;
+  letter-spacing: 0.3px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.gcc-meta { font-size: 10.5px; color: var(--text3); margin-top: 2px; }
+.gcc-hint {
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: var(--text3);
+  font-style: italic;
+  line-height: 1.35;
+}
+
+/* ============================================================
+   PREVIEW DE COBERTURA — modal mini-mapa antes de confirmar
+   ============================================================ */
+.cov-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: covFadeIn 0.2s ease;
+}
+@keyframes covFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.cov-preview-sheet {
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  padding: 16px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  max-height: 88vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: 0 -10px 50px rgba(0,0,0,0.2);
+  animation: covSheetUp 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@keyframes covSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.cov-handle {
+  width: 38px; height: 4px;
+  background: var(--text3);
+  border-radius: 4px;
+  opacity: 0.32;
+  margin: 0 auto 12px;
+}
+.cov-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text1);
+  margin-bottom: 4px;
+}
+.cov-sub {
+  font-size: 12px;
+  color: var(--text3);
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+.cov-flag-ref {
+  background: rgba(212,136,58,0.10);
+  border-left: 3px solid #d4883a;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #b06820;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+.cov-block { margin-bottom: 14px; }
+.cov-block-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
+}
+.cov-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.cov-cell {
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 6px 2px;
+  text-align: center;
+  position: relative;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 1.5px solid transparent;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.cov-cell .cov-dow {
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.cov-cell .cov-day {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text2);
+  margin: 1px 0;
+}
+.cov-cell .cov-shift {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  margin-top: 2px;
+  min-width: 24px;
+}
+.cov-cell.cov-target { border-color: var(--accent); background: var(--surface3, var(--surface)); }
+.cov-cell.cov-changed { border-color: #d4883a; }
+.cov-shift-M { background: rgba(46,139,122,0.18); color: #1f6d5e; }
+.cov-shift-T { background: rgba(74,157,212,0.18); color: #2c6fa0; }
+.cov-shift-N { background: rgba(124,107,177,0.22); color: #4d4070; }
+.cov-shift-D { background: rgba(204,68,68,0.14); color: #a83838; }
+.cov-shift-LIB { background: transparent; color: var(--text3); }
+.cov-shift-abs { background: rgba(176,64,80,0.16); color: #843040; }
+.cov-arrow {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text3);
+  margin: 6px 0;
+  letter-spacing: 2px;
+}
+.cov-warnings {
+  background: rgba(204,68,68,0.06);
+  border: 1px solid rgba(204,68,68,0.2);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #a83838;
+  line-height: 1.4;
+}
+.cov-warnings-ok {
+  background: rgba(39,174,96,0.07);
+  border: 1px solid rgba(39,174,96,0.22);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: #1f7a47;
+  font-weight: 600;
+}
+.cov-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.cov-btn {
+  flex: 1;
+  padding: 12px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--surface2);
+  color: var(--text2);
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease;
+}
+.cov-btn:active { transform: scale(0.97); }
+.cov-btn.cov-btn-primary {
+  background: linear-gradient(135deg, var(--accent), #2980b9);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(41,128,185,0.25);
+}
+.cov-btn.cov-btn-primary.is-ref {
+  background: linear-gradient(135deg, #d4883a, #b06820);
+  box-shadow: 0 3px 10px rgba(212,136,58,0.3);
+}
+
 .guardia-longleave {
   background: rgba(176,64,80,0.06);
   border: 1px solid rgba(176,64,80,0.2);
@@ -10039,7 +10281,7 @@ function setAiExcludeBaja(val) {
 }
 
 // === BEGIN AUTO-GENERATED SEED 2026 (do not edit by hand) ===
-const REAL_WORKERS_2026 = [{"id":1,"name":"Sara Avanzas","role":"supervisora","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"noSwap":true,"noSwapReason":"Supervisora — responsabilidades de gestion","noCover":true,"noCoverReason":"Supervisora — no cubre ausencias","notes":"Supervisora"}},{"id":2,"name":"Sonia Fernández","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":true,"noSwap":true,"noSwapReason":"Conciliación familiar — jornada reducida","noCover":true,"noCoverReason":"Conciliación familiar — no cubre ausencias","notes":"Conciliación familiar"}},{"id":3,"name":"Marta Valle","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":true,"noSwap":true,"noSwapReason":"Conciliación familiar — jornada reducida","noCover":true,"noCoverReason":"Conciliación familiar — no cubre ausencias","notes":"Conciliación familiar"}},{"id":4,"name":"Diego Ciborro","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":"N","maxNightsPerMonth":null,"conciliacion":false,"notes":"Prefiere noches"}},{"id":5,"name":"Carmen Cerrada","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":"En INT desde junio 2026"}},{"id":6,"name":"Iouri Zhigunov","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":7,"name":"Soledad Azpiroz","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":8,"name":"Rebeca Goyanes","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":9,"name":"Laura Calvo","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":10,"name":"Yolanda Jiménez","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":11,"name":"Iris Velarde","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":"En LAC + RE (maternidad/embarazo)"}},{"id":12,"name":"Alejandra Iglesias","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":13,"name":"Salomé Cueto","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":14,"name":"Chema (José María García)","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":15,"name":"Graciela del Castillo","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":16,"name":"Guadalupe Alonso","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":"M","maxNightsPerMonth":10,"conciliacion":false,"notes":""}},{"id":17,"name":"Jenny García","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":18,"name":"Patricia Martín","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":19,"name":"Aitor Correia","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":"Refuerzo — se contrata si hay necesidad"}},{"id":20,"name":"Desirée Fernández","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":21,"name":"Beatriz Martínez","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"noMicro":true,"noMicroReason":"Encargada lab externo — siempre en laboratorio","noCover":true,"noCoverReason":"Encargada lab externo — no cubre ausencias","notes":"Lab externo — no reubicar a micro"}},{"id":22,"name":"Trinidad Rodríguez","role":"tec","type":"tec","area":"micro","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"noLab":true,"noLabReason":"Fija de Microbiología — no cubre Lab","notes":"Microbiología"}},{"id":23,"name":"Montserrat Bernardo","role":"tec","type":"tec","area":"micro","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"noLab":true,"noLabReason":"Fija de Microbiología — no cubre Lab","notes":"Microbiología"}},{"id":24,"name":"Mª Pilar García","role":"tec","type":"tec","area":"micro","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"noLab":true,"noLabReason":"Fija de Microbiología — no cubre Lab","notes":"Microbiología"}},{"id":25,"name":"Amanda Barrozo","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":"Nueva en planilla 2026"}},{"id":26,"name":"Montserrat Bode","role":"enf","type":"enf","area":"urgencias","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"noLab":true,"noLabReason":"Sección Urgencias — no cubre Lab/Hematología","noMicro":true,"noMicroReason":"Sección Urgencias — no cubre Microbiología","noCover":true,"noCoverReason":"Sección Urgencias — no comparte coberturas con Hematología","notes":"Urgencias — DUE"}}];
+const REAL_WORKERS_2026 = [{"id":1,"name":"Sara Avanzas","role":"supervisora","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"noSwap":true,"noSwapReason":"Supervisora — responsabilidades de gestion","noCover":true,"noCoverReason":"Supervisora — no cubre ausencias","notes":"Supervisora"}},{"id":2,"name":"Sonia Fernández","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":true,"noSwap":true,"noSwapReason":"Conciliación familiar — jornada reducida","noCover":true,"noCoverReason":"Conciliación familiar — no cubre ausencias","notes":"Conciliación familiar"}},{"id":3,"name":"Marta Valle","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":true,"noSwap":true,"noSwapReason":"Conciliación familiar — jornada reducida","noCover":true,"noCoverReason":"Conciliación familiar — no cubre ausencias","notes":"Conciliación familiar"}},{"id":4,"name":"Diego Ciborro","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":"N","maxNightsPerMonth":null,"conciliacion":false,"notes":"Prefiere noches"}},{"id":5,"name":"Carmen Cerrada","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":"En INT desde junio 2026"}},{"id":6,"name":"Iouri Zhigunov","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":7,"name":"Soledad Azpiroz","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":8,"name":"Rebeca Goyanes","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":9,"name":"Laura Calvo","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":10,"name":"Yolanda Jiménez","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":11,"name":"Iris Velarde","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":"En LAC + RE (maternidad/embarazo)"}},{"id":12,"name":"Alejandra Iglesias","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":13,"name":"Salomé Cueto","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":14,"name":"Chema (José María García)","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":15,"name":"Graciela del Castillo","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":16,"name":"Guadalupe Alonso","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":"M","maxNightsPerMonth":10,"conciliacion":false,"notes":""}},{"id":17,"name":"Jenny García","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":18,"name":"Patricia Martín","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":19,"name":"Aitor Correia","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"minNoticeDays":1,"isReinforcement":true,"notes":"Refuerzo — necesidad de contratación, requiere aviso 24h+"}},{"id":20,"name":"Desirée Fernández","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":""}},{"id":21,"name":"Beatriz Martínez","role":"tec","type":"tec","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"noMicro":true,"noMicroReason":"Encargada lab externo — siempre en laboratorio","noCover":true,"noCoverReason":"Encargada lab externo — no cubre ausencias","notes":"Lab externo — no reubicar a micro"}},{"id":22,"name":"Trinidad Rodríguez","role":"tec","type":"tec","area":"micro","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"noLab":true,"noLabReason":"Fija de Microbiología — no cubre Lab","notes":"Microbiología"}},{"id":23,"name":"Montserrat Bernardo","role":"tec","type":"tec","area":"micro","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"noLab":true,"noLabReason":"Fija de Microbiología — no cubre Lab","notes":"Microbiología"}},{"id":24,"name":"Mª Pilar García","role":"tec","type":"tec","area":"micro","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"noLab":true,"noLabReason":"Fija de Microbiología — no cubre Lab","notes":"Microbiología"}},{"id":25,"name":"Amanda Barrozo","role":"enf","type":"enf","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"notes":"Nueva en planilla 2026"}},{"id":26,"name":"Montserrat Bode","role":"enf","type":"enf","area":"urgencias","hours":0,"nights":0,"computoBalance":0,"computoUsed":0,"nightsThisYear":0,"scheduleImported":true,"rules":{"noNights":false,"preferredShift":null,"maxNightsPerMonth":null,"conciliacion":false,"noLab":true,"noLabReason":"Sección Urgencias — no cubre Lab/Hematología","noMicro":true,"noMicroReason":"Sección Urgencias — no cubre Microbiología","noCover":true,"noCoverReason":"Sección Urgencias — no comparte coberturas con Hematología","notes":"Urgencias — DUE"}}];
 const REAL_SCHEDULE_2026 = {"2026-0":{"1":["D","CAA","D","D","CAA","D","DLA","M7H","M8","M6","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M8","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D"],"2":["D","VAN","D","D","M65","D","CJ","M55","M55","D","D","M65","M55","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D"],"3":["D","CJ","D","D","LD","D","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","IQF","M7H","M7H","M7H","M7H","D"],"4":["T","T","D","D","M","D","M","T","D","D","D","M","M","M","M","D","D","D","M","M","M","N","D","D","D","D","D","M","M","M","D"],"5":["D","CJ","N","N","D","D","CJ","CJ","CJ","D","D","D","D","D","CJ","CJ","CJ","T","N","N","D","D","D","M","M","CJ","T","N","N","D","D"],"6":["D","M","M","M","M","T","N","N","D","D","D","CJ","CJ","T","T","N","D","D","CJ","HF","HF","D","T","N","N","D","D","CJ","HF","HF","D"],"7":["M","M7H","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M7H","M","M","D","M","N"],"8":["D","CJ","D","D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","CJ","D","D","D","M","M","T","T","N","D"],"9":["N","D","D","D","T","D","T","CJ","N","D","D","M","M","M","D","CJ","N","N","D","D","M","M","M","D","D","D","D","D","M","T","T"],"10":["CJ","N","D","D","M7H","M","M","D","T","N","N","D","D","M","M","M","D","D","D","D","D","M","M","CJ","CJ","N","N","D","D","D","M"],"11":["MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC"],"12":["D","T","D","N","N","D","D","M","T","D","N","D","T","N","D","D","M","M","M","T","T","N","D","D","M","M","M","T","T","N","D"],"13":["D","M","D","D","M","D","D","D","M","T","T","D","D","M","M","M","D","D","M","M","D","D","M","T","D","M","M","M","N","D","D"],"14":["N","D","D","D","M","M","T","T","N","D","D","D","D","HS","M","T","N","N","D","D","D","D","CJ","CJ","T","N","N","D","D","D","M"],"15":["D","M","T","T","N","N","D","D","D","M","M","CJ","CJ","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","M","CAA","N"],"16":["CJ","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","DLA","DLA","N","FLL","D","D","D","M","M","T","T","N","CJ","D","D"],"17":["D","D","M","M","CJ","T","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","M","CJ","N","N","D","D","D","D","M","T"],"18":["FFP","FFP","FFP","N","D","D","D","D","CJ","CJ","CJ","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D"],"19":["M","M","N","D","M","","","","","","","","","","","","","","","","","","","","","","","","","",""],"20":["T","M","D","D","T","D","M","M","M","D","D","T","T","D","D","M","T","T","D","N","D","D","T","D","D","T","M","M","M","T","D"],"21":["D","VAN","D","D","VAN","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D"],"22":["D","DLA","D","D","DLA","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D"],"23":["D","M","D","D","M","D","M","M","M","D","D","M","HS","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D"],"24":["D","M","D","D","M","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D"],"25":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"26":["INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","T","N","D","D","D","CAA","M","CAA","N","N","D","D","D","D","CAA","T","LD","N","D","D"]},"2026-1":{"1":["D","M7H","M7H","DLA","M7H","M8","D","D","M7H","M7H","CJ","M7H","M7H","D","D","DLA","D","M8","M8","M8","M4H","D","M7H","M8","M8","M7H","M7H","D"],"2":["D","M55","M55","M65","M55","M55","D","D","M55","M55","M65","M55","M55","D","D","CJ","D","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D"],"3":["D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","LD","D","M7H","M7H","M7H","D","D","M6H","M7H","M7H","M7H","M7H","D"],"4":["T","D","D","M","M","M","D","M","T","T","M","D","D","D","D","M","D","M","T","D","D","D","M","M","M","M","T","D"],"5":["D","M","CJ","T","T","N","D","D","CJ","CJ","CJ","D","CJ","N","N","D","D","CJ","CJ","CJ","D","D","D","D","D","M","M","T"],"6":["D","D","D","D","HF","HF","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D"],"7":["N","D","D","M","M","M","D","D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D"],"8":["D","M","M","M","D","T","N","N","D","D","CJ","CJ","CJ","D","D","D","D","D","M","M","T","CJ","N","N","D","D","D","M"],"9":["CJ","N","N","D","D","D","M","CJ","CJ","CJ","N","N","D","D","D","M7H","D","T","CJ","N","D","D","M","M","M","D","CJ","N"],"10":["M","T","T","IQF","N","D","D","D","M","M","T","T","N","D","D","M7H","M","M","D","T","N","N","D","D","M","M","M","D"],"11":["MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC","MTC"],"12":["D","D","M","M","M","M","T","D","D","D","M","D","T","D","D","M","D","M","M","M","D","D","D","D","M","N","D","D"],"13":["D","M","M","M","M","M","D","D","T","D","T","D","D","D","D","M","T","T","T","D","T","T","T","D","D","M","M","T"],"14":["M","T","HS","N","N","D","D","D","M","M","HS","T","N","D","D","D","D","M","M","T","CJ","N","D","D","D","D","CJ","CJ"],"15":["N","D","D","D","D","M","T","T","N","N","D","D","D","M","M","CJ","CJ","N","N","D","D","D","M","M","T","T","N","D"],"16":["D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","CJ","CJ","N","N","D","D","D","M"],"17":["T","N","N","D","D","D","M","M","M","T","N","N","D","D","D","M","M","CJ","CJ","N","D","D","D","D","M","M","T","N"],"18":["D","D","D","M","M","T","N","N","D","D","D","D","M","CJ","CJ","N","N","D","D","D","M","M","T","T","N","N","D","D"],"19":["","T","T","M","T","T","D","D","T","M","M","M","M","D","D","M","D","M","M","M","N","D","D","M","M","M","M","D"],"20":["D","M","M","M","M","M","D","D","M","M","D","D","D","T","T","T","D","M","M","M","D","D","M","M","M","M","CJ","D"],"21":["D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","CJ","D","M","M","M","D","D","M","M","M","M","M","D"],"22":["D","M","M","HF","HF","HF","D","D","M","M","M","M","M","D","D","M","D","M","M","M","D","D","M","M","M","M","M","D"],"23":["D","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT"],"24":["D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","DLA","D","VAN","VAN","VAN","D","D","M","M","M","M","M","D"],"25":["","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"26":["D","D","CJ","CJ","M","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D","M","M"]},"2026-2":{"1":["D","M7H","M7H","M8","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M","M6","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M8","M7H","M7H","CJ","D","D","M7H","M7H"],"2":["D","M55","M55","M55","M55","M55","D","D","M55","M55","M55","M55","CJ","D","D","M55","M55","M55","M55","M55","D","D","M55","M55","M","M55","M55","D","D","LD","LD"],"3":["D","M7H","M7H","M75","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","CJ","CJ"],"4":["D","CAA","CAA","CAA","CAA","CAA","D","D","D","D","M","M","M","D","D","D","D","T","T","CJ","T","T","N","N","D","D","D","M","M","T","T"],"5":["T","N","N","D","D","D","M","M","T","T","N","INT","INT","D","D","CJ","HF","HF","HF","N","D","M","CJ","CJ","CJ","D","T","N","N","D","D"],"6":["D","CJ","M","CJ","D","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT"],"7":["D","M","M","T","T","N","D","D","M","M","M","D","T","N","N","D","D","M","M","M","D","D","M8","D","D","M","M8","T","T","N","N"],"8":["M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M","M","M","D","T","N","N","D","D","CJ","CJ","CJ","D","D","D","D"],"9":["N","D","D","M","M","M","D","D","D","D","D","M","M","D","CJ","N","N","D","D","D","M","CJ","T","T","N","N","D","D","D","M7H","M7H"],"10":["D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M","M"],"11":["VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","VAA","LAC"],"12":["D","M","HF","D","D","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","D","D","D","M","M","M","M","D","D","M","M"],"13":["D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","T","T","T","M","D","D","D","M","M","M","M","M","D","D","M","M"],"14":["CAA","N","N","D","D","D","CAA","M","T","HS","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D"],"15":["D","D","D","M","M","CAA","N","N","D","D","D","D","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","CJ","CJ"],"16":["M","T","T","N","N","D","D","D","M","M","T","ANJ","N","D","D","D","D","M","M","T","CJ","N","D","D","D","D","M","CJ","CJ","N","N"],"17":["N","D","D","D","D","CJ","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","CJ","M","T","T","N","D","D","D","D"],"18":["D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","CJ","HF","D","D","D","M","M","T","T"],"19":["D","M","M","M","M","M","D","D","M","T","M","M","M","","","","","","","M","N","D","N","N","","","","","","","M"],"20":["T","T","T","D","D","T","M","D","T","M","D","T","T","D","D","M","M","M","D","D","D","D","T","T","T","D","D","T","T","M","M"],"21":["D","M","M","M","M","HF","D","D","HF","HF","HF","HF","HF","D","D","M","M","M","M","M","D","D","M","M","M","CJ","CJ","D","D","M","M"],"22":["D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","DLA"],"23":["INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M"],"24":["D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","DLA","DLA"],"25":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"26":["M","T","T","N","D","D","D","M","M","CJ","T","N","D","D","D","M","M","M","T","N","N","D","D","D","M","M","T","T","N","D","D"]},"2026-3":{"1":["M7H","D","D","D","D","M8","M7H","M7H","M8","M7H","D","D","M7H","M7H","M7H","M8","M8","D","D","M7H","M7H","M7H","M7H","CJ","D","D","M7H","M7H","M7H","M8"],"2":["CJ","D","D","D","D","M55","M55","M55","M55","M65","D","D","M55","M55","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D","D","M55","M55","M55","M55"],"3":["CJ","D","D","D","D","M6H","M6R","M6R","M75","LD","D","D","M6H","M6R","M6R","M6R","M6R","D","D","M6","M6R","M6R","M6R","M6R","D","D","M6H","M6R","M6R","M6R"],"4":["N","N","D","D","D","M","M","T","T","N","D","D","M","M","M","M","M75","D","D","M","M","M","M","M","D","D","M","M","M","M"],"5":["M","D","D","D","D","D","D","D","CJ","CJ","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T"],"6":["INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","D","D","M","M","M","D","T","N","N","D","D","CJ","CJ","M","D","D","D","D","D","M"],"7":["D","D","D","M","M","T","M","N","N","D","D","D","M8","M8","T","T","N","D","D","M8","M","M","D","T","N","N","D","D","M8","AE"],"8":["D","M","M","CJ","CJ","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M","M","M","D"],"9":["HS","T","N","D","D","M","T","M","D","CJ","N","N","D","D","M","M","M","D","D","D","D","D","M","M7H","T","CJ","N","N","D","D"],"10":["M","D","CJ","N","N","D","D","M","M","M","D","D","D","D","D","CJ","CJ","CJ","CJ","N","N","D","D","D","M","M","T","T","N","N"],"11":["LAC","LAC","D","D","D","LAC","LAC","LAC","LAC","LAC","D","D","LAC","LAC","LAC","D","LAC","LAC","LAC","D","D","LAC","LAC","LAC","D","D","D","D","D","LAC"],"12":["T","D","T","T","T","D","D","M","M","T","D","D","D","D","D","M","M","T","T","D","D","M","M","M","D","T","D","M","M","M"],"13":["T","D","D","M","M","T","T","T","M","D","M","D","M","M","M","M","M","D","D","D","D","D","D","T","T","T","T","T","D","D"],"14":["D","D","M","VAN","T","N","N","D","D","D","VAN","M","T","HS","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","M"],"15":["CJ","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","INT","INT","D","D","D","M","M","CJ","CJ","N","N"],"16":["D","D","D","CJ","CJ","CJ","CJ","N","N","D","D","D","M","M","T","CJ","N","D","M","D","D","M","M","CJ","N","N","D","D","D","D"],"17":["M","M","T","N","N","D","D","D","D","M","T","T","N","N","D","D","D","CJ","CJ","M","M","M","N","D","D","D","M","M","T","T"],"18":["N","N","D","D","D","M","M","T","T","N","D","D","D","D","HF","HF","HF","N","N","D","D","D","D","M","CJ","CJ","N","N","D","D"],"19":["M","","","","","M","","M","","","","","T","T","N","","","","","","","","","","","","","","",""],"20":["M","D","D","T","D","M","M","M","M","M","D","D","T","T","D","T","T","M","M","M","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC"],"21":["M","D","D","D","D","M","M","M","M","M","D","D","M","M","M","HF","HF","D","D","HF","HF","HF","M","M","D","D","M","M","M","M"],"22":["DLA","D","D","D","D","DLA","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M"],"23":["M","D","D","D","D","M","M","M","M","M","D","D","M","HS","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M"],"24":["DLA","D","D","D","D","VAN","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M"],"25":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"26":["D","M","T","T","T","N","D","D","D","M","M","M","T","CJ","D","D","D","M","M","CJ","N","N","D","D","D","D","CJ","T","T","N"]},"2026-4":{"1":["D","M6","D","M7H","M7H","M","FOR","M7H","D","D","M7H","FOR","M7H","M7H","M7H","D","D","M","M","M7H","M7H","CJ","D","D","M7H","M7H","M8","M7H","M7H","D","D"],"2":["D","D","D","M65","M55","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D","D","M55","M65","M65","M55","M65","D","D","M55","M55","M55","M55","M55","D","D"],"3":["D","D","D","LD","M6R","M6R","FOR","M6R","D","D","M6H","M6R","M6R","M6R","M6R","D","D","M6H","M75","M6R","M6R","LD","D","D","M6H","M6R","M75","M6R","M6R","D","D"],"4":["D","D","D","T","T","D","M","M","D","D","M","M","M","T","D","D","D","M","M","M","M","M","D","D","D","M","M","M","T","T","T"],"5":["N","D","D","CJ","M","M","D","T","N","N","D","D","CJ","CJ","CJ","D","D","D","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","M","M"],"6":["M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","D","D","T","T","T","N","N","D","D","D","N","N"],"7":["D","D","D","M8","D","D","M","M","T","T","N","N","D","D","M","M","M","T","T","N","N","D","N","D","T","M","T","T","N","D","D"],"8":["T","N","N","D","D","CJ","CJ","CJ","D","D","D","D","D","M","M8","T","T","N","N","D","D","D","M","M","M","T","N","N","D","D","D"],"9":["D","M","M","CJ","HS","N","N","D","D","D","M","M","T","CJ","N","D","D","M7H","M","M","D","M","N","N","D","D","M","M","M","D","D"],"10":["D","D","D","M","M","T","T","N","D","D","M","M","M","D","T","N","N","D","D","DLA","DLA","DLA","D","D","D","D","D","VAN","VAN","VAN","VAN"],"11":["LAC","LAC","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M","M","M","RE","CAA","RE","RE"],"12":["D","D","D","M","M","M","M7H","M","D","D","M","M7H","M","M","M","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","D"],"13":["D","T","T","M","D","D","M","M","T","T","N","D","D","D","M","T","T","N","N","D","D","D","FOR","CJ","T","T","N","N","D","D","D"],"14":["T","N","N","D","D","D","D","HS","DLA","DLA","CJ","N","D","D","D","CJ","M","T","T","N","N","D","D","D","M","HS","T","T","N","D","D"],"15":["D","D","D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","CAA","CAA","CJ","N","N","D","D","D","M","M"],"16":["D","CJ","CJ","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","CJ","T","N","D","N","D","D","M","M","T","N","N"],"17":["N","D","D","D","D","M","M","M","N","N","D","D","D","D","LD","PM","PM","PM","PM","PM","PM","PM","PM","PM","PM","PM","PM","PM","PM","PM","PM"],"18":["M","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","CJ","FOR","FOR","D","D","D","D","D","M","T","T"],"19":["T","","","","","M","M","T","M","M","D","","","","","","","","","","","","","","","","","","","",""],"20":["VAC","VAC","D","M","M","M","D","D","D","D","D","D","M","M","M","M","D","M","M","T","D","M","T","T","D","M","D","D","D","D","D"],"21":["D","D","D","M","M","M","M","CJ","D","D","M","M","M","M","M","D","D","M","M","CJ","M","M","D","D","M","M","M","M","M","D","D"],"22":["D","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D"],"23":["D","D","D","CJ","HS","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","FOR","FOR","D","D","M","M","M","M","M","D","D"],"24":["D","D","D","DLA","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D"],"25":["","","","M","M","M4H","M","M","D","D","M","M","M","M","M7H","D","D","","","","","","","","","","","","","",""],"26":["D","D","D","D","M","T","T","N","D","D","D","M","M","T","HF","N","N","D","D","D","M","M","T","T","N","D","D","D","HF","M","M"]},"2026-5":{"1":["M7H","FOR","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","CJ","M7H","M7H","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC"],"2":["M55","M55","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D","D","M55","M55","M65","M55","M55","D","D","CJ","CJ","M65","M65","M55","D","D","D","M65"],"3":["M6H","M6H","M6R","M6R","M6R","D","D","M6H","M6R","M6R","M6R","CJ","D","D","M6H","M6R","M6R","M6R","M6R","D","D","M6H","M6H","M6H","M6H","CJ","D","D","D","VAN"],"4":["D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","T","D","D","M","M"],"5":["T","T","N","N","D","D","D","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT"],"6":["D","D","D","D","D","N","D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","D","CJ"],"7":["M","M","M","D","M","N","N","D","D","M","M","M","D","D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T"],"8":["M","M","T","M","N","D","D","M","M","M","D","T","N","N","D","D","CJ","CJ","CJ","D","D","D","D","D","M","M7H","T","T","N","N"],"9":["D","D","D","T","T","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","VAC","VAC"],"10":["N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M","M","M","D","CJ","N","N","D","D"],"11":["RE","RE","CAA","CAA","CAA","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","CAA","CAA","RE","RE","RE","RE","RE","RE","RE","RE","CAA"],"12":["M","M","M","M","M","D","D","M","M","T","T","N","D","D","CJ","CJ","M","M","T","N","N","D","D","M","M","M","D","D","D","M"],"13":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","M","M","M","M","D","M","M","M","M","M","D","D","D","M","M"],"14":["D","D","HS","M","T","CJ","N","D","D","D","D","HS","T","T","N","N","D","D","D","M","CJ","T","T","N","N","D","D","D","CJ","CJ"],"15":["T","T","N","N","D","D","D","M","M","INT","INT","INT","D","D","D","D","CJ","CJ","CJ","N","N","D","D","D","D","M","T","T","N","N"],"16":["D","D","D","D","M","DLA","DLA","HF","HF","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D","D"],"17":["PM","PM","PM","PM","LD","D","D","D","D","M","M","CAA","N","N","D","D","D","D","CJ","CJ","CJ","N","N","D","D","D","M","M","T","T"],"18":["N","N","D","D","D","T","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D","D","CJ","CJ","CJ","N","N","D","D"],"19":["","M","M","D","D","M","T","","","","T","N","","","","","","","","","","","","","","","","","",""],"20":["M","M","T","T","N","LD","D","N","N","D","D","T","D","D","M","D","M","M","T","T","T","D","D","M","M","T","D","D","D","M"],"21":["M","M","M","M","M","D","D","M","M","M","M","M","D","D","CJ","CJ","M","M","M","D","D","M","M","M","M","M","D","D","D","M"],"22":["M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","LD","LD","LD","LD","LD","D","D","D","M"],"23":["M","HS","M","M","M","D","D","M","M","M","M","HS","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","D","CJ"],"24":["M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","D","M"],"25":["D","D","D","T","T","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","M","M","M","D","D","D","M"],"26":["T","HF","HF","D","D","D","M","CJ","T","T","N","D","D","D","VAN","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC"]},"2026-6":{"1":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAN","VAN","VAN","D","D","M7H","M7H","M7H","M7H","M7H","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC"],"2":["M55","M55","M55","D","D","M55","M65","M65","M65","M55","D","D","M55","M55","M55","M55","M55","D","D","M55","M55","M55","M65","M65","VAC","VAC","VAC","VAC","VAC","VAC","VAC"],"3":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","M6R","M6R","D","D","M6R","M6R","M6R","M6R","M6R","D","D","M6R","M6R","M6R","M6R","M6R"],"4":["T","T","N","D","D","M","M","M","D","T","N","N","D","D","M","M","M","D","D","D","D","D","M","M","M","T","N","N","D","D","D"],"5":["INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT"],"6":["D","D","D","M","M","T","T","N","N","D","D","T","N","N","D","D","T","N","N","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC"],"7":["N","N","D","D","D","M","M","T","T","N","D","D","M","M","LD","D","LD","LD","LD","D","D","CJ","CJ","CJ","D","D","D","D","D","CJ","CJ"],"8":["D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC"],"9":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAN","VAN","D","D","D","D","M","M","T","T","N","N","D","D","D","T","M","T","T","N","N","N"],"10":["M","M","M","D","D","D","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC"],"11":["RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE"],"12":["D","D","T","N","N","D","D","D","M","M","T","M","T","T","D","D","D","M","M","T","T","N","N","D","D","D","M","M","M","M","M"],"13":["M","M","T","N","N","D","D","D","D","M","T","T","N","N","D","D","D","M","M","T","T","D","N","N","D","D","M","M","T","T","N"],"14":["CJ","CJ","CJ","D","D","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","D","D","M","T","T","N","N","D","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC"],"15":["D","D","D","M","M","T","T","N","N","D","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","D","D","M","M","T","N","N","D","D","D","D","M"],"16":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","CJ"],"17":["N","N","D","D","D","M","M","T","T","N","D","D","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","D","D"],"18":["D","D","CJ","CJ","CJ","N","N","D","D","D","M","M","T","T","N","N","VAC","VAC","VAC","VAC","VAC","VAC","VAC","N","D","D","D","D","M","M","T"],"19":["T","T","N","D","D","N","N","D","D","D","M","M","T","T","N","N","D","N","N","D","D","N","D","M","T","T","N","N","D","D","D"],"20":["M","M","M","T","T","D","D","M","M","T","N","N","D","D","T","T","N","D","D","M","M","T","T","D","M","M","T","T","N","N","D"],"21":["M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M"],"22":["M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC"],"23":["LD","LD","LD","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M"],"24":["M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M"],"25":["M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","D","D","D","M","M","T","T","N","D","D","M","M","M","D","T","N","N","D","D","T","T","T"],"26":["D","CJ","M","T","T","N","N","D","D","M","M","D","D","D","N","N","D","D","D","M","M","T","T","N","D","D","M","M","M","M","M"]},"2026-7":{"1":["VAC","VAC","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H"],"2":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","M55","M55","M55","M55","M55","D","D","M55"],"3":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","D","M6R","M6R","M6R","M6R","M6R","D","D","M6R","M6R","M6R","M6R","M6R","D","D","M6R"],"4":["M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M","M","M","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","D","D","D","D"],"5":["INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT"],"6":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","M","M","T","T","N","D","D","D","D","D","D","T","N","N","D"],"7":["CJ","CJ","CJ","CJ","D","D","D","CJ","CJ","CJ","CJ","CJ","CJ","D","D","D","CJ","CJ","CJ","CJ","CJ","D","D","DLA","DLA","DLA","D","DLA","DLA","DLA","D"],"8":["D","D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M"],"9":["D","D","M","M","T","T","N","D","D","M","M","M","D","T","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC"],"10":["D","D","M","M","M","D","T","N","N","D","D","M","M","M","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","N","N","D","D","D","M","M","T"],"11":["RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE"],"12":["D","D","M","M","M","M","M","D","D","D","D","D","D","D","N","N","D","D","M","M","M","T","T","D","D","M","M","M","D","D","D"],"13":["D","D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","D","D","D","M","M","T","T","N","D","D","D"],"14":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","D","D","D","D","M","T","T","N","N","D","D","D","M","M","T"],"15":["T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC"],"16":["D","D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M"],"17":["M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","N"],"18":["N","N","D","D","D","D","M","T","T","N","N","VAC","VAC","VAC","VAC","VAC","VAC","VAC","N","N","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","D"],"19":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"20":["D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M"],"21":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","M"],"22":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M"],"23":["D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","M","M","M","M","M","D","D","M","M","M","M","M","D","D","VAC"],"24":["D","D","M","M","M","M","M","D","D","M","M","M","M","M","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC"],"25":["T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","D","D","M","M","T","N","N","D","D","D","M","M","T","T","N"],"26":["D","D","D","M","T","T","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D","M","M","M","T"]},"2026-8":{"1":["M7H","M7H","M7H","M7H","D","D","M7H","D","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H"],"2":["M55","M55","M55","M55","D","D","M55","D","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D","D","M55","M55","M55"],"3":["M6R","M6R","M6R","M6R","D","D","M6R","D","M6R","M6R","M6R","D","D","M6R","M6R","M6R","M6R","M6R","D","D","M6R","M6R","M6R","M6R","M6R","D","D","M6R","M6R","M6R"],"4":["D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M","M","M"],"5":["INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT"],"6":["D","M","M","M","D","D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","M"],"7":["D","VAN","VAN","VAN","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","",""],"8":["M","M","D","T","N","N","D","D","M","M","M","D","D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N"],"9":["VAC","VAC","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M","M","M","D","T","N","N","D","D","M"],"10":["T","N","N","D","D","D","M","D","T","T","N","D","D","M","M","M","D","T","N","N","D","D","M","M","M","D","D","D","D","D"],"11":["RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE"],"12":["M","M","M","M","D","D","M","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M"],"13":["M","M","M","M","D","D","M","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M"],"14":["T","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","N","N","D"],"15":["D","D","D","M","T","T","N","N","D","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","D","D","D","M"],"16":["M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","N","N","D","D","D","M","M","T","T","N"],"17":["N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D"],"18":["D","M","M","T","N","N","VAC","VAC","VAC","VAC","VAC","VAC","VAC","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T"],"19":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"20":["M","M","M","M","D","D","M","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M"],"21":["M","M","M","M","D","D","M","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M"],"22":["M","M","M","M","D","D","M","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M"],"23":["VAC","VAC","VAC","VAC","VAC","VAC","M","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M"],"24":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M"],"25":["D","D","M","M","D","D","M","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M"],"26":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","M","T","N","N","D","D","D","M","M","T","T","N","D","D","D"]},"2026-9":{"1":["M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","D","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","M","D","M7H","M7H","M7H","M7H","M7H","D"],"2":["M55","M55","D","D","M55","M55","M55","M55","M55","D","D","D","M55","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D"],"3":["M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","D","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D"],"4":["D","T","N","N","D","D","M","M","M","D","D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D"],"5":["INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT"],"6":["D","T","N","N","D","D","M","M","M","D","D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D"],"7":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"8":["N","D","D","D","M","M","T","T","N","D","D","M","M","M","D","T","N","N","D","D","M","M","M","D","D","D","D","D","M","M","T"],"9":["M","M","D","D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D"],"10":["M","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M","M","M","D","T","N"],"11":["RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE"],"12":["M","M","D","D","M","M","M","M","M","D","D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D"],"13":["M","M","D","D","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","M","M","M","M","D","D","M","M","M","M","M","D"],"14":["D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","T"],"15":["M","T","N","N","D","D","D","D","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D"],"16":["N","D","D","D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","N","N","D","D","D","M"],"17":["VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","VAC","D","D","D","M","M","T","T","N","D","D","D","D","M","M","T","N"],"18":["T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D"],"19":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"20":["M","M","D","D","M","M","M","M","M","D","D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D"],"21":["M","M","D","D","M","M","M","M","M","D","D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D"],"22":["M","M","D","D","M","M","M","M","M","D","D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D"],"23":["M","M","D","D","M","M","M","M","M","D","D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D"],"24":["M","M","D","D","M","M","M","M","M","D","D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D"],"25":["M","M","D","D","M","M","M","M","M","D","D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D"],"26":["M","T","T","T","N","D","D","D","M","M","T","T","N","D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","N","D","D"]},"2026-10":{"1":["D","D","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H"],"2":["D","D","M55","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D","D","M55"],"3":["D","D","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H"],"4":["D","D","M","T","T","N","D","D","M","M","M","D","T","N","N","D","D","M","M","M","D","D","D","D","D","M","M","T","T","N"],"5":["INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT"],"6":["D","D","M","T","T","N","D","D","M","M","M","D","T","N","N","D","D","M","M","M","D","D","D","D","D","M","M","T","T","N"],"7":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"8":["T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M","M","M","D","T","N","N","D"],"9":["D","M","M","M","D","T","N","N","D","D","M","M","M","D","D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T"],"10":["N","D","D","M","M","M","D","D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M"],"11":["RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE"],"12":["D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M"],"13":["D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M"],"14":["T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D"],"15":["D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M"],"16":["M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","N"],"17":["N","D","D","D","D","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D"],"18":["D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","N","N","D","D","D","M","M","T"],"19":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"20":["D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","",""],"21":["D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M"],"22":["D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M"],"23":["D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M"],"24":["D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","M","M","D","D","M"],"25":["D","D","M","M","M","M","D","D","M","M","M","M","M","D","D","M","M","","","","","","","","","","","","",""],"26":["D","D","M","T","T","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D","M","M","M","T"]},"2026-11":{"1":["M7H","M7H","M7H","M7H","D","D","D","D","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","D","D","D","D","M7H","M7H","M7H","D"],"2":["M55","M55","M55","M55","D","D","D","D","M55","M55","M55","D","D","M55","M55","M55","M55","M55","D","D","M55","M55","M55","D","D","D","D","M55","M55","M55","D"],"3":["M7H","M7H","M7H","M7H","D","D","D","D","M7H","M7H","M7H","D","D","M7H","M7H","M7H","M7H","M7H","D","D","M7H","M7H","M7H","D","D","D","D","M7H","M7H","M7H","D"],"4":["N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M","M","M","D","T","N","N","D","D","M","D"],"5":["INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT","INT"],"6":["N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","M","M","M","D","T","N","N","D","D","M","D"],"7":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"8":["D","M","M","M","D","D","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T"],"9":["T","N","N","D","D","D","D","D","T","T","N","D","D","M","M","M","D","T","N","N","D","D","M","D","D","D","D","D","D","D","M"],"10":["M","T","T","N","D","D","M","M","M","D","T","N","N","D","D","M","M","M","D","D","D","D","D","M","M","T","T","N","N","D","D"],"11":["RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE","RE"],"12":["M","M","M","M","D","D","D","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","D","D","D","D","M","M","M","D"],"13":["M","M","M","M","D","D","D","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","D","D","D","D","M","M","M","D"],"14":["D","D","D","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","M"],"15":["M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","N","N","D","D","D","M","M","T","T","N","N"],"16":["N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D"],"17":["D","M","M","T","N","N","D","D","D","D","M","T","T","N","N","D","D","D","M","M","T","T","N","N","D","D","D","M","M","T","T"],"18":["T","N","N","D","D","D","M","M","T","T","N","D","D","D","D","M","M","T","N","N","D","D","D","D","M","T","T","N","N","D","D"],"19":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"20":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"21":["M","M","M","M","D","D","D","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","D","D","D","D","M","M","M","D"],"22":["M","M","M","M","D","D","D","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","D","D","D","D","M","M","M","D"],"23":["M","M","M","M","D","D","D","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","D","D","D","D","M","M","M","D"],"24":["M","M","M","M","D","D","D","D","M","M","M","D","D","M","M","M","M","M","D","D","M","M","M","D","D","D","D","M","M","M","D"],"25":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"26":["T","N","D","D","D","M","M","T","T","N","D","D","D","M","M","M","T","N","N","D","D","D","M","M","T","T","N","D","D","D","M"]}};
 // === END AUTO-GENERATED SEED 2026 ===
 
@@ -16459,6 +16701,26 @@ function classifyWorkerExclusion(w, day, month, year, shiftNeeded, excludeId, ab
   if (w.rules && w.rules.noSwap) return { excluded: true, reason: 'Marcado como no intercambiable (noSwap)', category: 'rule' };
   if (w.rules && w.rules.noCover) return { excluded: true, reason: 'Excluido de coberturas (noCover)', category: 'rule' };
 
+  // Refuerzos con aviso mínimo (Aitor, otros bajo demanda): requieren X días
+  // de antelación entre HOY y el día objetivo. Si no hay aviso suficiente,
+  // se excluye con categoría 'reinforcement-notice' para que la UI lo trate
+  // como "necesidad de contratación pendiente" en lugar de invisibilizarlo.
+  if (w.rules && w.rules.minNoticeDays) {
+    const _now = new Date();
+    const _today = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate());
+    const _target = new Date(year, month, day + 1);
+    const daysAhead = Math.round((_target - _today) / 86400000);
+    if (daysAhead < w.rules.minNoticeDays) {
+      const hoursNeeded = w.rules.minNoticeDays * 24;
+      const txt = daysAhead < 0
+        ? `Refuerzo: día ya pasado (necesita ${hoursNeeded}h aviso)`
+        : daysAhead === 0
+          ? `Refuerzo: necesita ${hoursNeeded}h aviso (es hoy)`
+          : `Refuerzo: necesita ${hoursNeeded}h aviso (sólo quedan ${daysAhead * 24}h)`;
+      return { excluded: true, reason: txt, category: 'reinforcement-notice', daysAhead };
+    }
+  }
+
   // Lactancia / Reducción / Reserva — entire month exclusion
   if (sch[w.id] && sch[w.id].some(s => s === 'LAC' || s === 'RE'))
     return { excluded: true, reason: 'En LAC/RE (lactancia o reducción)', category: 'leave' };
@@ -17798,6 +18060,134 @@ function guardiaCallIn(wId, shift, dayIdx, year, month) {
   setTimeout(() => toast.remove(), 3000);
 }
 
+// ============================================================================
+// showContingencyPreview — modal con mini-mapa visual ANTES de confirmar la
+// cobertura. Muestra:
+//   - Cabecera "Vas a asignar a X cubriendo el turno Y del día Z"
+//   - Mini-mapa 7 días: ANTES (planilla actual) y DESPUÉS (cómo quedaría)
+//   - Resultado del motor de legalidad (reglas que pasan / advertencias)
+//   - Botones Cancelar / Confirmar
+//
+// Si es refuerzo (Aitor): la cabecera lo marca como "Contratación" y el
+// botón principal se llama "Confirmar contratación".
+// ============================================================================
+function showContingencyPreview(wId, shift, dayIdx, year, month, isReinforcement) {
+  const w = workers.find(x => x.id === wId);
+  if (!w) return;
+  const sch = scheduleData[`${year}-${month}`] || genSchedule(year, month);
+  const arr = sch[wId] || [];
+  const days = arr.length || new Date(year, month + 1, 0).getDate();
+
+  // Ventana: 3 días antes + target + 3 después (7 celdas)
+  const winStart = Math.max(0, dayIdx - 3);
+  const winEnd   = Math.min(days - 1, dayIdx + 3);
+  const dowLetters = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+  function shiftClass(s) {
+    if (!s) return 'cov-shift-LIB';
+    if (s === 'M' || /^M(R|\d)/.test(s)) return 'cov-shift-M';
+    if (s === 'T') return 'cov-shift-T';
+    if (s === 'N') return 'cov-shift-N';
+    if (s === 'D') return 'cov-shift-D';
+    return 'cov-shift-abs';
+  }
+
+  const before = [];
+  const after  = [];
+  for (let d = winStart; d <= winEnd; d++) {
+    const dt = new Date(year, month, d + 1);
+    const dow = dowLetters[dt.getDay()];
+    const cur = (arr[d] || '').toString().trim();
+    const next = (d === dayIdx) ? shift : cur;
+    const isTarget = d === dayIdx;
+    const changed  = cur !== next;
+    before.push({ d, dow, val: cur,  isTarget, changed: false });
+    after.push ({ d, dow, val: next, isTarget, changed });
+  }
+
+  // Evalúa la asignación con el motor (avisa de combinaciones prohibidas
+  // antes de confirmar — el mini-mapa NO sustituye la legalidad).
+  const forbidden = (typeof detectForbiddenCombinations === 'function')
+    ? detectForbiddenCombinations(wId, dayIdx, shift, month, year)
+    : [];
+  const hardForbidden = forbidden.filter(f => f.type === 'forbidden');
+
+  // Si Aitor (o refuerzo en general) intenta cubrir un día con menos aviso
+  // del que requiere, la clasificación lo bloqueará: avisamos arriba.
+  const exclusion = (typeof classifyWorkerExclusion === 'function')
+    ? classifyWorkerExclusion(w, dayIdx, month, year, shift, null, w.type, w.area || 'lab')
+    : { excluded: false };
+
+  function cellHtml(arr) {
+    return arr.map(c => `
+      <div class="cov-cell ${c.isTarget ? 'cov-target' : ''} ${c.changed ? 'cov-changed' : ''}">
+        <span class="cov-dow">${escHtml(c.dow)}</span>
+        <span class="cov-day">${c.d + 1}</span>
+        <span class="cov-shift ${shiftClass(c.val)}">${c.val ? escHtml(c.val) : '·'}</span>
+      </div>
+    `).join('');
+  }
+
+  // Si la ventana es < 7 celdas, igualamos la grid para que se vea simétrica.
+  const cols = winEnd - winStart + 1;
+  const gridStyle = `style="grid-template-columns: repeat(${cols}, minmax(0, 1fr));"`;
+
+  // Construye el modal
+  const modal = document.createElement('div');
+  modal.className = 'cov-preview';
+  modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
+
+  const targetDate = new Date(year, month, dayIdx + 1);
+  const dateLabel = targetDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const refFlag = isReinforcement
+    ? `<div class="cov-flag-ref">🔔 <strong>Refuerzo</strong> — esto es una <strong>contratación</strong>. Avísale con al menos 24h de antelación. La IA solo lo propone si hay margen.</div>`
+    : '';
+
+  let warnHtml = '';
+  if (exclusion.excluded) {
+    warnHtml = `<div class="cov-warnings">⚠ El motor IA lo excluiría: <strong>${escHtml(exclusion.reason)}</strong>. No deberías confirmar sin justificación.</div>`;
+  } else if (hardForbidden.length > 0) {
+    warnHtml = `<div class="cov-warnings">⚠ Combinación prohibida: ${hardForbidden.map(f => escHtml((f.desc || '').replace(/<[^>]+>/g, ''))).join(' · ')}</div>`;
+  } else {
+    warnHtml = `<div class="cov-warnings-ok">✓ Pasa el motor de legalidad — descansos, fatiga, sección, reglas individuales.</div>`;
+  }
+
+  modal.innerHTML = `
+    <div class="cov-preview-sheet" role="dialog" aria-modal="true" aria-labelledby="covPrevTitle">
+      <div class="cov-handle"></div>
+      <div class="cov-title" id="covPrevTitle">${isReinforcement ? 'Contratar refuerzo' : 'Confirmar cobertura'}</div>
+      <div class="cov-sub"><strong>${escHtml(w.name)}</strong> ${isReinforcement ? 'sería contratado' : 'cubriría'} el turno <strong>${escHtml(shift)}</strong> del <strong>${escHtml(dateLabel)}</strong>.</div>
+      ${refFlag}
+      <div class="cov-block">
+        <div class="cov-block-title">Antes (su planilla)</div>
+        <div class="cov-grid" ${gridStyle}>${cellHtml(before)}</div>
+      </div>
+      <div class="cov-arrow">▼</div>
+      <div class="cov-block">
+        <div class="cov-block-title">Después (con la cobertura)</div>
+        <div class="cov-grid" ${gridStyle}>${cellHtml(after)}</div>
+      </div>
+      ${warnHtml}
+      <div class="cov-actions">
+        <button type="button" class="cov-btn" data-action="cancel">Cancelar</button>
+        <button type="button" class="cov-btn cov-btn-primary ${isReinforcement ? 'is-ref' : ''}" data-action="confirm">${isReinforcement ? 'Confirmar contratación' : 'Confirmar cobertura'}</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  modal.querySelector('[data-action="cancel"]').addEventListener('click', () => modal.remove());
+  modal.querySelector('[data-action="confirm"]').addEventListener('click', () => {
+    modal.remove();
+    guardiaCallIn(wId, shift, dayIdx, year, month);
+  });
+  // Cierra con Escape
+  const escHandler = (e) => { if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', escHandler); } };
+  document.addEventListener('keydown', escHandler);
+}
+
 function getGuardiaFatigueInfo(wId, dayIdx, sch) {
   // Count consecutive work days ending at dayIdx
   let streak = 0;
@@ -17860,14 +18250,16 @@ function getGuardiaCountdown(currentShift, now) {
 // Aquí extraemos una "razón corta" para mostrar al supervisor en una línea.
 // ============================================================================
 function getContingencyOptions(originalWorker, dayIdx, year, month, shiftToCover, max) {
-  if (!originalWorker) return [];
+  if (!originalWorker) return { options: [], pendingContract: [] };
   max = max || 3;
-  const candidates = findCoverageCandidates(dayIdx, month, year, shiftToCover, originalWorker.id);
-  if (!Array.isArray(candidates) || candidates.length === 0) return [];
+  // returnExcluded=true para detectar refuerzos que quedaron fuera por falta
+  // de aviso (Aitor con minNoticeDays). El supervisor los necesita ver para
+  // decidir "contratar".
+  const result = findCoverageCandidates(dayIdx, month, year, shiftToCover, originalWorker.id, true);
+  const candidates = Array.isArray(result) ? result : (result.candidates || []);
+  const excluded   = Array.isArray(result) ? []      : (result.excluded   || []);
 
-  // Construye una razón corta legible móvil — toma las 2 señales más fuertes
-  // del scoreBreakdown que ya calcula el motor.
-  return candidates.slice(0, max).map(c => {
+  function decorate(c) {
     const hints = [];
     if (c.currentShift === 'D') hints.push('Descansa');
     else if (!c.currentShift) hints.push('Libre');
@@ -17882,9 +18274,30 @@ function getContingencyOptions(originalWorker, dayIdx, year, month, shiftToCover
       score: c.score,
       confidence: c.confidence,
       hints: hints.slice(0, 3),
-      warnings: c.warnings || []
+      warnings: c.warnings || [],
+      isReinforcement: !!(c.w.rules && c.w.rules.isReinforcement)
     };
-  });
+  }
+
+  const options = candidates.slice(0, max).map(decorate);
+
+  // Refuerzos pendientes de contratar: pasan TODAS las reglas excepto el aviso
+  // mínimo. Aparecen como "necesidad de contratación" para que el supervisor
+  // los avise con antelación si los va a usar.
+  const _now = new Date();
+  const _today = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate());
+  const _target = new Date(year, month, dayIdx + 1);
+  const _daysAhead = Math.round((_target - _today) / 86400000);
+  const pendingContract = excluded
+    .filter(e => e.category === 'reinforcement-notice')
+    .map(e => ({
+      w: e.w,
+      reason: e.reason,
+      daysAhead: _daysAhead,
+      noticeRequired: (e.w.rules && e.w.rules.minNoticeDays) ? e.w.rules.minNoticeDays * 24 : 24
+    }));
+
+  return { options, pendingContract };
 }
 
 // Detecta bajas largas para hoy con motivo legible.
@@ -18158,7 +18571,7 @@ function renderGuardia() {
       ${onNext.length === 0 ? `
         <div class="guardia-cont-empty">Nadie asignado al siguiente turno — sin contingencias que calcular.</div>
       ` : onNext.map(scheduled => {
-        const options = getContingencyOptions(scheduled, nextDayIdx, year, month, nextShift, 3);
+        const { options, pendingContract } = getContingencyOptions(scheduled, nextDayIdx, year, month, nextShift, 3);
         const planLabels = ['Plan A', 'Plan B', 'Plan C'];
         const planColors = ['#27ae60', '#4a9dd4', '#7a8a6a'];
         return `
@@ -18170,22 +18583,39 @@ function renderGuardia() {
               <div class="cc-fail-meta">${scheduled.type === 'enf' ? 'ENF' : 'TEC'}${scheduled.area === 'micro' ? ' · Micro' : ''}</div>
             </div>
           </div>
-          ${options.length === 0 ? `
+          ${options.length === 0 && pendingContract.length === 0 ? `
             <div class="guardia-cont-none">⚠ Sin alternativas legales — necesitarías refuerzo externo o reasignar carga del turno.</div>
-          ` : options.map((opt, i) => {
+          ` : ''}
+          ${options.map((opt, i) => {
             const c = planColors[i];
             const conf = opt.confidence || 0;
             const confTag = conf >= 80 ? '✓' : conf >= 60 ? '~' : '⚠';
+            const isRef = opt.isReinforcement;
+            const btnLabel = isRef ? 'Contratar' : 'Llamar';
+            const refBadge = isRef ? '<span class="cco-tag">🔔 Refuerzo · aviso 24h</span>' : '';
             return `
-            <div class="guardia-cont-opt" style="background:${c}0d;border-left-color:${c};">
+            <div class="guardia-cont-opt${isRef ? ' is-ref' : ''}" style="background:${c}0d;border-left-color:${c};">
               <div class="cco-rank" style="color:${c};">${planLabels[i]}</div>
               <div class="cco-body">
-                <div class="cco-name">${escHtml(opt.w.name)}</div>
+                <div class="cco-name">${escHtml(opt.w.name)} ${refBadge}</div>
                 <div class="cco-meta">${opt.w.type === 'enf' ? 'ENF' : 'TEC'}${opt.w.area === 'micro' ? ' · Micro' : ''} · ${opt.hints.length ? opt.hints.map(escHtml).join(' · ') : 'Disponible'} · <span title="Confianza del motor IA">${confTag} ${conf}</span></div>
               </div>
-              <button class="cco-btn" onclick="guardiaCallIn(${opt.w.id},'${nextShift}',${nextDayIdx},${year},${month})" style="background:${c}1a;border-color:${c}40;color:${c};" title="Asignar al turno siguiente">Llamar</button>
+              <button class="cco-btn" onclick="showContingencyPreview(${opt.w.id},'${nextShift}',${nextDayIdx},${year},${month},${isRef ? 'true' : 'false'})" style="background:${c}1a;border-color:${c}40;color:${c};" title="${isRef ? 'Avisar refuerzo (24h)' : 'Asignar al turno siguiente'}">${btnLabel}</button>
             </div>`;
           }).join('')}
+          ${pendingContract.length > 0 && options.length === 0 ? `
+            <div class="guardia-cont-contract">
+              <div class="gcc-title">⚡ Necesidad de contratación</div>
+              <div class="gcc-sub">Sin sustitutos internos legales para este turno. Refuerzos disponibles bajo aviso previo:</div>
+              ${pendingContract.map(pc => `
+                <div class="gcc-row">
+                  <div class="gcc-name">${escHtml(pc.w.name)} <span class="gcc-tag">Refuerzo · ${pc.noticeRequired}h aviso</span></div>
+                  <div class="gcc-meta">${pc.w.type === 'enf' ? 'ENF' : 'TEC'}${pc.w.area === 'micro' ? ' · Micro' : ''} · ${escHtml(pc.reason)}</div>
+                </div>
+              `).join('')}
+              <div class="gcc-hint">Para usarlo en un turno con menos de 24h, avísale ahora con antelación para futuros días — o busca refuerzo externo.</div>
+            </div>
+          ` : ''}
         </div>`;
       }).join('')}
     </div>
