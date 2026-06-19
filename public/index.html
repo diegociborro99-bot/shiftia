@@ -10709,46 +10709,10 @@ function detectSimultaneousAbsences(dayIdx, month, year) {
   };
 }
 
-// Optimize coverage for multiple simultaneous absences
-// Takes array of absent worker IDs and finds optimal coverage
-// Returns unified coverage plan
-function optimizeMultiAbsenceCoverage(absentWorkerIds, days, month, year) {
-  const key = `${year}-${month}`;
-  const sch = scheduleData[key] || genSchedule(year, month);
-  const plan = {};
+// (Eliminada `optimizeMultiAbsenceCoverage` — dead code sin callers que
+// llamaba al motor sin excludeId y mezclaba tipos. La auditoría la flageó
+// como landmine; quitarla evita el riesgo si en el futuro se intenta usar.)
 
-  days.forEach(dayIdx => {
-    const dayAbsences = detectSimultaneousAbsences(dayIdx, month, year);
-    const shifts = ['M', 'T', 'N'];
-    const dayPlan = { shifts: {} };
-
-    shifts.forEach(shift => {
-      const gapsForShift = dayAbsences.gaps.filter(g => g.shift === shift);
-      const assignments = [];
-
-      gapsForShift.forEach(gap => {
-        // Find coverage candidates without duplicating assignments on same day
-        const candidates = findCoverageCandidates(dayIdx, month, year, shift);
-        const available = candidates.filter(c => !assignments.some(a => a.w.id === c.w.id));
-
-        for (let i = 0; i < gap.deficit && available.length > 0; i++) {
-          if (canAssignShift(available[i].w.id, dayIdx, shift, sch)) {
-            assignments.push(available[i]);
-          }
-        }
-      });
-
-      dayPlan.shifts[shift] = {
-        gaps: gapsForShift,
-        assignments: assignments
-      };
-    });
-
-    plan[dayIdx] = dayPlan;
-  });
-
-  return plan;
-}
 function calcMonthHours(wId, schedule, days) {
   let h = 0;
   for (let d = 0; d < days; d++) h += RULES.SHIFT_HOURS[schedule[wId][d]] || 0;
@@ -17343,26 +17307,10 @@ function getCoverageForWeek(startDate, numDays) {
   return results;
 }
 
-function findSwapCandidates(workerFromId, day, month, year, shiftNeeded) {
-  const key = `${year}-${month}`;
-  const sch = scheduleData[key];
-  if (!sch) return [];
-  const wFrom = workers.find(w=>w.id===workerFromId);
-  const candidates = [];
-  workers.forEach(w => {
-    if (w.id === workerFromId) return;
-    if (w.rules && w.rules.noSwap) return;
-    if (w.rules && w.rules.noCover) return;
-    if (chatFilter !== 'all' && w.type !== chatFilter) return;
-    const s = sch[w.id] ? sch[w.id][day] : '';
-    if (s === 'D' || s === '') {
-      if (canAssignShift(w.id, day, shiftNeeded, sch)) {
-        candidates.push({w, currentShift: s, reason: s==='D'?'tiene descanso':'sin turno asignado'});
-      }
-    }
-  });
-  return candidates;
-}
+// (Eliminada `findSwapCandidates` — dead code sin callers que filtraba por
+// `chatFilter` en vez de por el tipo del trabajador origen; con chatFilter='all'
+// abría intercambios cruzados enf↔tec. Si volvemos a necesitar swap, debe
+// pasar por classifyWorkerExclusion como el resto del motor.)
 
 function analyzeHiringNeeds() {
   const analysis = getTeamWorkloadAnalysis();
@@ -17680,26 +17628,38 @@ function handleChatQuery(query) {
       return html;
     }
 
-    // Specific shift requested
-    const candidates = findCoverageCandidates(dayIdx, month, year, targetShift, null);
+    // Specific shift requested. Sin trabajador concreto ausente: pedimos
+    // candidatos con excludeId=-1 y AGRUPAMOS por tipo (enf / tec) para que
+    // el supervisor no pueda confundir un técnico con una enfermera (uno de
+    // los riesgos que destapó la auditoría: lista plana con tipo en spans
+    // pequeños es fácil de leer mal).
+    const candidates = findCoverageCandidates(dayIdx, month, year, targetShift, -1);
     const shiftLabel = {M:'Manana',T:'Tarde',N:'Noche'}[targetShift] || targetShift;
     let html = `<div class="chat-section-label">Candidatos para ${shiftLabel} dia ${targetDay}</div>`;
     if (candidates.length === 0) {
       html += '<div style="font-size:12px;color:var(--danger);">No hay candidatos disponibles que cumplan las reglas de descanso.</div>';
       html += '<div style="font-size:11px;margin-top:4px;">Puede que todos esten asignados o tengan restricciones.</div>';
     } else {
-      html += '<div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Ordenados por menor carga (mejor candidato primero)</div>';
-      candidates.slice(0, 8).forEach((c, i) => {
-        const nightColor = parseFloat(c.nightsVsAvg) > 3 ? 'var(--danger)' : parseFloat(c.nightsVsAvg) < -2 ? 'var(--success)' : 'var(--text2)';
-        html += `<div class="chat-metric">
-          <span>${i+1}. ${c.w.name} <span style="font-size:10px;color:var(--text3);">${c.w.type}</span></span>
-          <span style="font-size:10px;"><span style="color:${nightColor};">${c.stats.n}N</span> <span style="color:${computoColor(calcComputoBalance(c.w.id, c.stats).balance)}">${fmtComputo(c.w.id, c.stats)}</span> ${c.reason}</span>
-        </div>`;
+      const enfCands = candidates.filter(c => c.w.type === 'enf');
+      const tecCands = candidates.filter(c => c.w.type === 'tec');
+      const groups = [
+        { label: 'Enfermería',    cands: enfCands, color: '#5c7a6f' },
+        { label: 'Técnicos lab',  cands: tecCands.filter(c => c.w.area !== 'micro'), color: '#4a9dd4' },
+        { label: 'Microbiología', cands: tecCands.filter(c => c.w.area === 'micro'), color: '#7a8a6a' },
+      ];
+      html += '<div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Cada categoría se ordena por menor carga. <strong>No se mezclan</strong>: una técnica no cubre enfermería ni viceversa.</div>';
+      groups.forEach(g => {
+        if (g.cands.length === 0) return;
+        html += `<div style="margin-top:8px;padding:4px 8px;background:${g.color}14;border-left:3px solid ${g.color};font-size:11px;font-weight:700;color:${g.color};border-radius:4px;">${g.label} <span style="font-weight:500;color:var(--text3);">(${g.cands.length})</span></div>`;
+        g.cands.slice(0, 5).forEach((c, i) => {
+          const nightColor = parseFloat(c.nightsVsAvg) > 3 ? 'var(--danger)' : parseFloat(c.nightsVsAvg) < -2 ? 'var(--success)' : 'var(--text2)';
+          html += `<div class="chat-metric">
+            <span>${i+1}. ${escHtml(c.w.name)}${c.isLastResort ? ' <span style="font-size:9px;background:rgba(196,98,26,0.16);color:#8a4218;padding:1px 5px;border-radius:4px;font-weight:700;">último recurso</span>' : ''}</span>
+            <span style="font-size:10px;"><span style="color:${nightColor};">${c.stats.n}N</span> <span style="color:${computoColor(calcComputoBalance(c.w.id, c.stats).balance)}">${fmtComputo(c.w.id, c.stats)}</span> ${escHtml(c.reason)}</span>
+          </div>`;
+        });
+        if (g.cands.length > 5) html += `<div style="font-size:10px;color:var(--text3);">... y ${g.cands.length-5} mas en esta categoría</div>`;
       });
-      if (candidates.length > 8) html += `<div style="font-size:10px;color:var(--text3);">... y ${candidates.length-8} mas</div>`;
-      html += `<div style="margin-top:8px;padding:8px;background:rgba(92,122,111,0.08);border-radius:8px;font-size:11px;">`;
-      html += `<strong>Recomendacion:</strong> ${candidates[0].w.name} es el/la mejor candidato/a — tiene ${candidates[0].stats.n} noches (${candidates[0].nightsVsAvg} vs media), computo ${fmtComputo(candidates[0].w.id, candidates[0].stats)}.`;
-      html += `</div>`;
     }
     html += `<button class="chat-action-btn" onclick="goToDay(${year},${month},${targetDay})">Ver en planilla</button>`;
     return html;
@@ -18499,7 +18459,11 @@ function renderGuardia() {
   const cov = getCoverageRules(year, month, day);
   const covReq = cov[currentShift] || { enf: 1, tec: 1 };
   const enfNow = onNow.filter(w => w.type === 'enf').length;
-  const tecNow = onNow.filter(w => w.type === 'tec').length;
+  // Excluimos w.area==='micro' para alinear con getGuardiaCoverageRisk
+  // (línea 18413) y con la tabla RULES.COVERAGE: el contador "TEC del turno
+  // actual" se refiere a técnicos de lab, no a micros (que tienen su propia
+  // cobertura RULES.COVERAGE_MICRO).
+  const tecNow = onNow.filter(w => w.type === 'tec' && w.area !== 'micro').length;
   const covOk = enfNow >= covReq.enf && tecNow >= covReq.tec;
 
   // Countdown
@@ -22147,9 +22111,17 @@ function greedyAssign(days, candidates, strategy, avgN, avgH, avgWknd, absentWor
     // Re-evaluate ALL workers against the virtual schedule (not just pre-filtered list)
     // This is the key fix: we don't trust the Phase 1 candidate list because it was
     // built against the original schedule, not the evolving virtual schedule
-    const absentId = absentWorkerParam ? absentWorkerParam.id : 0;
-    const absentArea = absentWorkerParam ? (absentWorkerParam.area || 'lab') : 'lab';
-    const absentType = absentWorkerParam ? absentWorkerParam.type : 'enf';
+    if (!absentWorkerParam) {
+      // Defensa: la auditoría destapó que antes caíamos silenciosamente a
+      // absentType='enf' cuando el ausente era null, filtrando a todos los
+      // técnicos del plan masivo sin avisar. Mejor abortar — quien llame
+      // a greedyAssign tiene que pasar el ausente real.
+      console.error('[greedyAssign] absentWorkerParam es null — sin él no podemos saber el tipo/sección. Aborto.');
+      return [];
+    }
+    const absentId = absentWorkerParam.id;
+    const absentArea = absentWorkerParam.area || 'lab';
+    const absentType = absentWorkerParam.type;
 
     // Get fresh candidates from virtual schedule with full rejection logging
     const available = [];
@@ -23207,11 +23179,23 @@ function buildSwapAnalysis(w, dayDate) {
   }
 
   const swapCandidates = [];
+  const wArea = w.area || 'lab';
   workers.forEach(wx => {
     if (wx.id === w.id) return;
     if (wx.rules && wx.rules.noSwap) return;
     if (wx.rules && wx.rules.noCover) return;
-    if (wx.type !== w.type && !(w.area === 'micro' && wx.area === 'micro')) return;
+    // Tipo: base del modelo, sin excepciones — un técnico no intercambia
+    // con una enfermera ni viceversa.
+    if (wx.type !== w.type) return;
+    // Sección: ambos deben pertenecer a la misma (lab vs micro vs urgencias).
+    // Antes había una condición rara `wx.type !== w.type && !(w.area==='micro' && wx.area==='micro')`
+    // que era impractica (ambos micro implica ambos tec, así que el tipo
+    // ya coincidía). Aquí lo dejamos limpio.
+    const wxArea = wx.area || 'lab';
+    if (wxArea !== wArea) return;
+    // lastResort no acepta swaps directos — su lógica de "último recurso"
+    // está pensada para cobertura puntual, no para reorganizar planillas.
+    if (wx.rules && wx.rules.lastResort) return;
     const sOther = sch[wx.id] ? sch[wx.id][dayIdx] : '';
     if (!sOther || sOther === '' || sOther === 'D') return;
     if (sOther === wShift) return;

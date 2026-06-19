@@ -281,10 +281,16 @@ function isLegalAssignment(workerId, dayIdx, shift, scheduleData, workers, year,
 // ============================================================================
 function roleOf(worker) {
   const r = (worker?.role || '').toString().toUpperCase().trim();
-  if (!r) return null;
   if (r === 'DUE' || r === 'ENF' || r.startsWith('ENFERM')) return 'enf';
   if (r === 'TECNICO' || r === 'TÉCNICO' || r === 'TEC' || r.startsWith('TEC')) return 'tec';
   if (r.includes('MICRO')) return 'micro';
+  // Fallback al campo type (que la web hereda 1:1 del PDF). Resuelve el
+  // caso Sara (role='supervisora' → type='enf') y cualquier rol futuro que
+  // no encaje en los patrones; antes devolvía null y el filtro
+  // `!targetRole || roleOf(w) === targetRole` se abría para TODOS los
+  // roles, dejando cruzar enf↔tec en el backend.
+  const t = (worker?.type || '').toString().toLowerCase().trim();
+  if (t === 'enf' || t === 'tec' || t === 'micro') return t;
   return null;
 }
 
